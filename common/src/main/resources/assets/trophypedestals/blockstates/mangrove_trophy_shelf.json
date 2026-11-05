@@ -1,0 +1,124 @@
+{
+  "variants": {
+    "facing=north,gold_trim=true,left=false,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf"
+    },
+    "facing=north,gold_trim=false,left=false,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_bare"
+    },
+    "facing=north,gold_trim=true,left=true,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_left"
+    },
+    "facing=north,gold_trim=false,left=true,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_left_bare"
+    },
+    "facing=north,gold_trim=true,left=false,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_right"
+    },
+    "facing=north,gold_trim=false,left=false,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_right_bare"
+    },
+    "facing=north,gold_trim=true,left=true,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_both"
+    },
+    "facing=north,gold_trim=false,left=true,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_both_bare"
+    },
+    "facing=east,gold_trim=true,left=false,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf",
+      "y": 90
+    },
+    "facing=east,gold_trim=false,left=false,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_bare",
+      "y": 90
+    },
+    "facing=east,gold_trim=true,left=true,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_left",
+      "y": 90
+    },
+    "facing=east,gold_trim=false,left=true,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_left_bare",
+      "y": 90
+    },
+    "facing=east,gold_trim=true,left=false,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_right",
+      "y": 90
+    },
+    "facing=east,gold_trim=false,left=false,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_right_bare",
+      "y": 90
+    },
+    "facing=east,gold_trim=true,left=true,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_both",
+      "y": 90
+    },
+    "facing=east,gold_trim=false,left=true,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_both_bare",
+      "y": 90
+    },
+    "facing=south,gold_trim=true,left=false,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf",
+      "y": 180
+    },
+    "facing=south,gold_trim=false,left=false,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_bare",
+      "y": 180
+    },
+    "facing=south,gold_trim=true,left=true,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_left",
+      "y": 180
+    },
+    "facing=south,gold_trim=false,left=true,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_left_bare",
+      "y": 180
+    },
+    "facing=south,gold_trim=true,left=false,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_right",
+      "y": 180
+    },
+    "facing=south,gold_trim=false,left=false,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_right_bare",
+      "y": 180
+    },
+    "facing=south,gold_trim=true,left=true,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_both",
+      "y": 180
+    },
+    "facing=south,gold_trim=false,left=true,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_both_bare",
+      "y": 180
+    },
+    "facing=west,gold_trim=true,left=false,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf",
+      "y": 270
+    },
+    "facing=west,gold_trim=false,left=false,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_bare",
+      "y": 270
+    },
+    "facing=west,gold_trim=true,left=true,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_left",
+      "y": 270
+    },
+    "facing=west,gold_trim=false,left=true,right=false": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_left_bare",
+      "y": 270
+    },
+    "facing=west,gold_trim=true,left=false,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_right",
+      "y": 270
+    },
+    "facing=west,gold_trim=false,left=false,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_right_bare",
+      "y": 270
+    },
+    "facing=west,gold_trim=true,left=true,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_both",
+      "y": 270
+    },
+    "facing=west,gold_trim=false,left=true,right=true": {
+      "model": "trophypedestals:block/mangrove_trophy_shelf_both_bare",
+      "y": 270
+    }
+  }
+}

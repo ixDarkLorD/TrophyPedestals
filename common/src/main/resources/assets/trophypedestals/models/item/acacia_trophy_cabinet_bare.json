@@ -1,0 +1,7 @@
+{
+  "parent": "trophypedestals:item/trophy_cabinet_bare",
+  "textures": {
+    "wood": "minecraft:block/acacia_planks",
+    "particle": "minecraft:block/acacia_planks"
+  }
+}

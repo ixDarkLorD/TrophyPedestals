@@ -1,0 +1,7 @@
+{
+  "pack": {
+    "description": "Trophy Pedestals example: an amethyst pedestal recipe and a wither trophy",
+    "min_format": 101,
+    "max_format": 101
+  }
+}

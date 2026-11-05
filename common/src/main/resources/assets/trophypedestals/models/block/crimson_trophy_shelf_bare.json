@@ -1,0 +1,7 @@
+{
+  "parent": "trophypedestals:block/trophy_shelf_bare",
+  "textures": {
+    "wood": "minecraft:block/crimson_planks",
+    "particle": "minecraft:block/crimson_planks"
+  }
+}

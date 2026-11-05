@@ -1,0 +1,7 @@
+{
+  "parent": "trophypedestals:block/trophy_cabinet_left_up",
+  "textures": {
+    "wood": "minecraft:block/bamboo_planks",
+    "particle": "minecraft:block/bamboo_planks"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_fluted",
+  "textures": {
+    "side": "minecraft:block/purpur_block",
+    "top": "minecraft:block/purpur_block",
+    "bottom": "minecraft:block/purpur_block",
+    "column": "minecraft:block/purpur_pillar",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "minecraft:block/purpur_block"
+  }
+}

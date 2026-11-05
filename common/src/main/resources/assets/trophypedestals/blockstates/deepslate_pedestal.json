@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "trophypedestals:block/deepslate_pedestal"
+    },
+    "lit=true": {
+      "model": "trophypedestals:block/deepslate_pedestal"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "trophypedestals:block/trophy_shelf_both_bare",
+  "textures": {
+    "wood": "minecraft:block/acacia_planks",
+    "particle": "minecraft:block/acacia_planks"
+  }
+}

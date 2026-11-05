@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_fluted",
+  "textures": {
+    "side": "minecraft:block/nether_bricks",
+    "top": "minecraft:block/nether_bricks",
+    "bottom": "minecraft:block/nether_bricks",
+    "column": "minecraft:block/nether_bricks",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "minecraft:block/nether_bricks"
+  }
+}

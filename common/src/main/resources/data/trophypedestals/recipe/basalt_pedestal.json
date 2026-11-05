@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "trophypedestals:pedestal",
+  "key": {
+    "G": "minecraft:gold_ingot",
+    "S": "minecraft:polished_basalt"
+  },
+  "pattern": [
+    "SGS",
+    " S ",
+    "SSS"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trophypedestals:basalt_pedestal"
+  }
+}

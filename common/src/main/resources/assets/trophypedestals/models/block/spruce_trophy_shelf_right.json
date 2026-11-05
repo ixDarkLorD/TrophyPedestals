@@ -1,0 +1,7 @@
+{
+  "parent": "trophypedestals:block/trophy_shelf_right",
+  "textures": {
+    "wood": "minecraft:block/spruce_planks",
+    "particle": "minecraft:block/spruce_planks"
+  }
+}

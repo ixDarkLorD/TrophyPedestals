@@ -1,0 +1,244 @@
+{
+  "variants": {
+    "facing=north,part=left,up=false,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left"
+    },
+    "facing=north,part=left,up=false,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_bare"
+    },
+    "facing=north,part=left,up=true,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_up"
+    },
+    "facing=north,part=left,up=true,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_up_bare"
+    },
+    "facing=north,part=left,up=false,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_down"
+    },
+    "facing=north,part=left,up=false,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_down_bare"
+    },
+    "facing=north,part=left,up=true,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_middle"
+    },
+    "facing=north,part=left,up=true,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_middle_bare"
+    },
+    "facing=north,part=right,up=false,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right"
+    },
+    "facing=north,part=right,up=false,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_bare"
+    },
+    "facing=north,part=right,up=true,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_up"
+    },
+    "facing=north,part=right,up=true,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_up_bare"
+    },
+    "facing=north,part=right,up=false,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_down"
+    },
+    "facing=north,part=right,up=false,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_down_bare"
+    },
+    "facing=north,part=right,up=true,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_middle"
+    },
+    "facing=north,part=right,up=true,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_middle_bare"
+    },
+    "facing=east,part=left,up=false,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left",
+      "y": 90
+    },
+    "facing=east,part=left,up=false,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_bare",
+      "y": 90
+    },
+    "facing=east,part=left,up=true,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_up",
+      "y": 90
+    },
+    "facing=east,part=left,up=true,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_up_bare",
+      "y": 90
+    },
+    "facing=east,part=left,up=false,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_down",
+      "y": 90
+    },
+    "facing=east,part=left,up=false,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_down_bare",
+      "y": 90
+    },
+    "facing=east,part=left,up=true,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_middle",
+      "y": 90
+    },
+    "facing=east,part=left,up=true,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_middle_bare",
+      "y": 90
+    },
+    "facing=east,part=right,up=false,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right",
+      "y": 90
+    },
+    "facing=east,part=right,up=false,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_bare",
+      "y": 90
+    },
+    "facing=east,part=right,up=true,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_up",
+      "y": 90
+    },
+    "facing=east,part=right,up=true,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_up_bare",
+      "y": 90
+    },
+    "facing=east,part=right,up=false,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_down",
+      "y": 90
+    },
+    "facing=east,part=right,up=false,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_down_bare",
+      "y": 90
+    },
+    "facing=east,part=right,up=true,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_middle",
+      "y": 90
+    },
+    "facing=east,part=right,up=true,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_middle_bare",
+      "y": 90
+    },
+    "facing=south,part=left,up=false,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left",
+      "y": 180
+    },
+    "facing=south,part=left,up=false,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_bare",
+      "y": 180
+    },
+    "facing=south,part=left,up=true,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_up",
+      "y": 180
+    },
+    "facing=south,part=left,up=true,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_up_bare",
+      "y": 180
+    },
+    "facing=south,part=left,up=false,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_down",
+      "y": 180
+    },
+    "facing=south,part=left,up=false,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_down_bare",
+      "y": 180
+    },
+    "facing=south,part=left,up=true,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_middle",
+      "y": 180
+    },
+    "facing=south,part=left,up=true,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_middle_bare",
+      "y": 180
+    },
+    "facing=south,part=right,up=false,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right",
+      "y": 180
+    },
+    "facing=south,part=right,up=false,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_bare",
+      "y": 180
+    },
+    "facing=south,part=right,up=true,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_up",
+      "y": 180
+    },
+    "facing=south,part=right,up=true,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_up_bare",
+      "y": 180
+    },
+    "facing=south,part=right,up=false,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_down",
+      "y": 180
+    },
+    "facing=south,part=right,up=false,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_down_bare",
+      "y": 180
+    },
+    "facing=south,part=right,up=true,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_middle",
+      "y": 180
+    },
+    "facing=south,part=right,up=true,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_middle_bare",
+      "y": 180
+    },
+    "facing=west,part=left,up=false,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left",
+      "y": 270
+    },
+    "facing=west,part=left,up=false,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_bare",
+      "y": 270
+    },
+    "facing=west,part=left,up=true,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_up",
+      "y": 270
+    },
+    "facing=west,part=left,up=true,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_up_bare",
+      "y": 270
+    },
+    "facing=west,part=left,up=false,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_down",
+      "y": 270
+    },
+    "facing=west,part=left,up=false,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_down_bare",
+      "y": 270
+    },
+    "facing=west,part=left,up=true,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_middle",
+      "y": 270
+    },
+    "facing=west,part=left,up=true,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_left_middle_bare",
+      "y": 270
+    },
+    "facing=west,part=right,up=false,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right",
+      "y": 270
+    },
+    "facing=west,part=right,up=false,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_bare",
+      "y": 270
+    },
+    "facing=west,part=right,up=true,down=false,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_up",
+      "y": 270
+    },
+    "facing=west,part=right,up=true,down=false,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_up_bare",
+      "y": 270
+    },
+    "facing=west,part=right,up=false,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_down",
+      "y": 270
+    },
+    "facing=west,part=right,up=false,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_down_bare",
+      "y": 270
+    },
+    "facing=west,part=right,up=true,down=true,gold_trim=true": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_middle",
+      "y": 270
+    },
+    "facing=west,part=right,up=true,down=true,gold_trim=false": {
+      "model": "trophypedestals:block/jungle_trophy_cabinet_right_middle_bare",
+      "y": 270
+    }
+  }
+}

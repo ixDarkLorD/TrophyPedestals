@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "trophypedestals:block/cherry_pedestal"
+    },
+    "lit=true": {
+      "model": "trophypedestals:block/cherry_pedestal"
+    }
+  }
+}

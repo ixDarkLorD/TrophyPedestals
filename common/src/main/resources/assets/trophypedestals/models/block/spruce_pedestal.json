@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_fluted",
+  "textures": {
+    "side": "minecraft:block/spruce_planks",
+    "top": "minecraft:block/spruce_planks",
+    "bottom": "minecraft:block/spruce_planks",
+    "column": "minecraft:block/spruce_log",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "minecraft:block/spruce_planks"
+  }
+}

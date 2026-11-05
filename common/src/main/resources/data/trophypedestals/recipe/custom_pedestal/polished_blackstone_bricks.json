@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "trophypedestals:pedestal",
+  "key": {
+    "G": "minecraft:gold_ingot",
+    "S": "minecraft:polished_blackstone_bricks"
+  },
+  "pattern": [
+    "SGS",
+    " S ",
+    "SSS"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trophypedestals:custom_pedestal",
+    "components": {
+      "trophypedestals:pedestal_material": "minecraft:polished_blackstone_bricks"
+    }
+  }
+}
