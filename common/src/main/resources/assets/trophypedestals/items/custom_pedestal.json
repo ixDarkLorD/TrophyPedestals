@@ -1,0 +1,91 @@
+{
+  "model": {
+    "type": "minecraft:condition",
+    "property": "minecraft:has_component",
+    "component": "trophypedestals:pedestal",
+    "on_true": {
+      "type": "minecraft:composite",
+      "models": [
+        {
+          "type": "minecraft:special",
+          "base": "trophypedestals:item/custom_pedestal_trophy",
+          "model": {
+            "type": "trophypedestals:custom_pedestal"
+          }
+        },
+        {
+          "type": "minecraft:select",
+          "property": "minecraft:display_context",
+          "cases": [
+            {
+              "when": "gui",
+              "model": {
+                "type": "minecraft:special",
+                "base": "trophypedestals:item/custom_pedestal_trophy",
+                "model": {
+                  "type": "trophypedestals:trophy_icon"
+                }
+              }
+            }
+          ],
+          "fallback": {
+            "type": "minecraft:special",
+            "base": "trophypedestals:item/custom_pedestal_trophy",
+            "model": {
+              "type": "trophypedestals:trophy_icon",
+              "spin": true
+            }
+          }
+        }
+      ]
+    },
+    "on_false": {
+      "type": "minecraft:condition",
+      "property": "minecraft:has_component",
+      "component": "trophypedestals:mob_trophy",
+      "on_true": {
+        "type": "minecraft:composite",
+        "models": [
+          {
+            "type": "minecraft:special",
+            "base": "trophypedestals:item/custom_pedestal_trophy",
+            "model": {
+              "type": "trophypedestals:custom_pedestal"
+            }
+          },
+          {
+            "type": "minecraft:select",
+            "property": "minecraft:display_context",
+            "cases": [
+              {
+                "when": "gui",
+                "model": {
+                  "type": "minecraft:special",
+                  "base": "trophypedestals:item/custom_pedestal_trophy",
+                  "model": {
+                    "type": "trophypedestals:trophy_icon"
+                  }
+                }
+              }
+            ],
+            "fallback": {
+              "type": "minecraft:special",
+              "base": "trophypedestals:item/custom_pedestal_trophy",
+              "model": {
+                "type": "trophypedestals:trophy_icon",
+                "spin": true
+              }
+            }
+          }
+        ]
+      },
+      "on_false": {
+        "type": "minecraft:special",
+        "base": "trophypedestals:block/custom_pedestal",
+        "model": {
+          "type": "trophypedestals:custom_pedestal"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "trophypedestals:block/diorite_pedestal"
+    },
+    "lit=true": {
+      "model": "trophypedestals:block/diorite_pedestal"
+    }
+  }
+}

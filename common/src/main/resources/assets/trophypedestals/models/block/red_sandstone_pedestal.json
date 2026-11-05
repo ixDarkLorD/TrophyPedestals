@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_fluted",
+  "textures": {
+    "side": "minecraft:block/red_sandstone",
+    "top": "minecraft:block/red_sandstone_top",
+    "bottom": "minecraft:block/red_sandstone_bottom",
+    "column": "minecraft:block/cut_red_sandstone",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "minecraft:block/red_sandstone_top"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_fluted",
+  "textures": {
+    "side": "minecraft:block/cobbled_deepslate",
+    "top": "minecraft:block/cobbled_deepslate",
+    "bottom": "minecraft:block/cobbled_deepslate",
+    "column": "minecraft:block/deepslate_bricks",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "minecraft:block/cobbled_deepslate"
+  }
+}

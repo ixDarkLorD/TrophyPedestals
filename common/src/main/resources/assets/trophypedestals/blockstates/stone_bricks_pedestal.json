@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "trophypedestals:block/stone_bricks_pedestal"
+    },
+    "lit=true": {
+      "model": "trophypedestals:block/stone_bricks_pedestal"
+    }
+  }
+}

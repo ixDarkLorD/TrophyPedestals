@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "trophypedestals:block/mangrove_pedestal"
+    },
+    "lit=true": {
+      "model": "trophypedestals:block/mangrove_pedestal"
+    }
+  }
+}

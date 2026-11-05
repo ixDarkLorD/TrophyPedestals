@@ -1,0 +1,16 @@
+apply from: "${rootProject.sharedScripts}/common.gradle"
+
+dependencies {
+    // CoolCatLib (common): mod constructors, events, networking, configs, registries, game tests
+    compileOnly "net.ixdarklord.coolcatlib:coolcatlib-common:${coolcatlib_version}"
+
+    // Optional recipe viewer: tells mob trophies apart (compat/jei)
+    compileOnly "mezz.jei:jei-26.1.2-common-api:${jei_version}"
+}
+
+// The shared main.gradle publishes every subproject's shadowJar. For common it must be a plain jar of this
+// module's own classes (Shadow's default bundles the whole runtime classpath under an "-all" classifier).
+shadowJar {
+    configurations = []
+    archiveClassifier = null
+}

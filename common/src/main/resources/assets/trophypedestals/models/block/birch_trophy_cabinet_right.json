@@ -1,0 +1,7 @@
+{
+  "parent": "trophypedestals:block/trophy_cabinet_right",
+  "textures": {
+    "wood": "minecraft:block/birch_planks",
+    "particle": "minecraft:block/birch_planks"
+  }
+}

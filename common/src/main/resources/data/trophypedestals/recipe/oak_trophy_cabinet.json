@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "group": "trophy_cabinet",
+  "key": {
+    "P": "minecraft:oak_planks",
+    "G": "minecraft:gold_ingot",
+    "S": "minecraft:oak_slab"
+  },
+  "pattern": [
+    "PPP",
+    "GSG",
+    "PPP"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trophypedestals:oak_trophy_cabinet"
+  }
+}

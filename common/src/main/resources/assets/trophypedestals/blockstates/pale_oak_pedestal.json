@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "trophypedestals:block/pale_oak_pedestal"
+    },
+    "lit=true": {
+      "model": "trophypedestals:block/pale_oak_pedestal"
+    }
+  }
+}
