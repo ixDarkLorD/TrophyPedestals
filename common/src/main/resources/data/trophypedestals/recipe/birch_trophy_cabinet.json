@@ -3,10 +3,18 @@
   "category": "building",
   "group": "trophy_cabinet",
   "key": {
-    "P": "minecraft:birch_planks",
-    "S": "minecraft:birch_slab",
-    "T": "minecraft:stick",
-    "G": "minecraft:glass_pane"
+    "P": {
+      "item": "minecraft:birch_planks"
+    },
+    "S": {
+      "item": "minecraft:birch_slab"
+    },
+    "T": {
+      "item": "minecraft:stick"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    }
   },
   "pattern": [
     "PSP",

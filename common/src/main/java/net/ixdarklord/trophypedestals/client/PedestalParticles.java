@@ -11,9 +11,9 @@ import net.ixdarklord.trophypedestals.api.client.PedestalEffect;
 import net.ixdarklord.trophypedestals.api.client.PedestalEffects;
 import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.ParticleStatus;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ParticleStatus;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -37,9 +37,9 @@ public final class PedestalParticles {
     private static final int BURST_SPARKS = 16;
     // Trophy Pedestals's own particle textures, crisp pixel art in white for the colours to tint, drawn pixel for pixel: a
     // four-point sparkle, a diamond glint, a round halo.
-    private static final Identifier SPARKLE = TrophyPedestalsMod.id("textures/vfx/sparkle.png");
-    private static final Identifier GLINT = TrophyPedestalsMod.id("textures/vfx/glint.png");
-    private static final Identifier HALO = TrophyPedestalsMod.id("textures/vfx/halo.png");
+    private static final ResourceLocation SPARKLE = TrophyPedestalsMod.id("textures/vfx/sparkle.png");
+    private static final ResourceLocation GLINT = TrophyPedestalsMod.id("textures/vfx/glint.png");
+    private static final ResourceLocation HALO = TrophyPedestalsMod.id("textures/vfx/halo.png");
 
     private record Looks(ParticleSpec spiral, ParticleSpec glow, ParticleSpec star, ParticleSpec spark, ParticleSpec burst,
                          @Nullable SoundEvent ambient) {}
@@ -49,7 +49,7 @@ public final class PedestalParticles {
     private PedestalParticles() {}
 
     public static void tick(Level level, BlockPos pos, PedestalBlockEntity pedestal) {
-        Identifier rank = pedestal.rarity();
+        ResourceLocation rank = pedestal.rarity();
         Minecraft minecraft = Minecraft.getInstance();
         if (rank == null || minecraft.player == null) return;
         if (!pedestal.displayed() || PedestalRarities.isNone(rank)) return;

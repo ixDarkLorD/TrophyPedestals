@@ -3,11 +3,12 @@ package net.ixdarklord.trophypedestals.pedestal;
 import com.mojang.serialization.Codec;
 import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.api.PedestalTeams;
+import net.ixdarklord.trophypedestals.compat.ValueInput;
+import net.ixdarklord.trophypedestals.compat.ValueOutput;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.UUIDUtil;
-import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -15,7 +16,7 @@ import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.StringRepresentable;
@@ -27,8 +28,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
@@ -96,7 +95,7 @@ public class PedestalBlockEntity extends BlockEntity {
     private @Nullable PedestalRecord record;
     private @Nullable MobTrophyRecord mobTrophy;
     // A custom pedestal's material: the block it's drawn with.
-    private @Nullable Identifier material;
+    private @Nullable ResourceLocation material;
     private ItemStack display = ItemStack.EMPTY;
     private TextMode textMode = TextMode.LOOKING;
     private @Nullable UUID owner;
@@ -173,7 +172,7 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     /** A custom pedestal's material, the block whose textures it's drawn with; null for any other pedestal, or one with none. */
-    public @Nullable Identifier material() {
+    public @Nullable ResourceLocation material() {
         return material;
     }
 
@@ -192,7 +191,7 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     /** Its trophy's rarity id, or null if it isn't a trophy. */
-    public @Nullable Identifier rarity() {
+    public @Nullable ResourceLocation rarity() {
         return record != null ? record.rarity() : mobTrophy != null ? mobTrophy.rarity() : null;
     }
 
@@ -312,7 +311,7 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     private static boolean isOperator(Player player) {
-        return Commands.hasPermission(Commands.LEVEL_GAMEMASTERS).test(player::permissions);
+        return player.hasPermissions(Commands.LEVEL_GAMEMASTERS);
     }
 
     // Whether the player is on its owner's team (scoreboard teams, or another mod's: PedestalTeams).
@@ -614,18 +613,18 @@ public class PedestalBlockEntity extends BlockEntity {
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
 
-    @Override
+    /** As it's broken (on 1.21.1 its block's onRemove calls this). */
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
-        super.preRemoveSideEffects(pos, state);
         if (level != null && !display.isEmpty()) Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, display);
     }
 
     @Override
-    protected void saveAdditional(ValueOutput output) {
-        super.saveAdditional(output);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        ValueOutput output = ValueOutput.of(tag, registries);
         if (record != null) output.store(RECORD, PedestalRecord.CODEC, record);
         if (mobTrophy != null) output.store(MOB_TROPHY, MobTrophyRecord.CODEC, mobTrophy);
-        if (material != null) output.store(MATERIAL, Identifier.CODEC, material);
+        if (material != null) output.store(MATERIAL, ResourceLocation.CODEC, material);
         if (!display.isEmpty()) output.store(DISPLAY, ItemStack.CODEC, display);
         if (textMode != TextMode.LOOKING) output.store(TEXT_MODE, TextMode.CODEC, textMode);
         if (owner != null) {
@@ -662,14 +661,15 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void loadAdditional(ValueInput input) {
-        super.loadAdditional(input);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        ValueInput input = ValueInput.of(tag, registries);
         record = input.read(RECORD, PedestalRecord.CODEC).orElse(null);
         MobTrophyRecord shown = mobTrophy;
         mobTrophy = input.read(MOB_TROPHY, MobTrophyRecord.CODEC).orElse(null);
         // A different mob, or a different look: made again when next drawn.
         if (!Objects.equals(shown, mobTrophy)) shownMob = null;
-        material = input.read(MATERIAL, Identifier.CODEC).orElse(null);
+        material = input.read(MATERIAL, ResourceLocation.CODEC).orElse(null);
         display = input.read(DISPLAY, ItemStack.CODEC).orElse(ItemStack.EMPTY);
         owner = input.read(OWNER, UUIDUtil.CODEC).orElse(null);
         ownerName = input.getStringOr(OWNER_NAME, "");
@@ -715,7 +715,7 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentGetter components) {
+    protected void applyImplicitComponents(DataComponentInput components) {
         super.applyImplicitComponents(components);
         record = components.get(Pedestals.RECORD.get());
         mobTrophy = components.get(Pedestals.MOB_TROPHY.get());
@@ -731,8 +731,9 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void removeComponentsFromTag(ValueOutput output) {
-        super.removeComponentsFromTag(output);
+    public void removeComponentsFromTag(CompoundTag tag) {
+        super.removeComponentsFromTag(tag);
+        ValueOutput output = ValueOutput.of(tag);
         output.discard(RECORD);
         output.discard(MOB_TROPHY);
         output.discard(MATERIAL);

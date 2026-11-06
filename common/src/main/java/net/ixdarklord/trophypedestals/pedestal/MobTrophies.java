@@ -10,14 +10,14 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -60,7 +60,7 @@ public final class MobTrophies {
         LivingEvents.DEATH.register((entity, source) -> {
             if (entity.level() instanceof ServerLevel level) {
                 ItemStack trophy = roll(entity, source, level.getRandom());
-                if (trophy != null) entity.spawnAtLocation(level, trophy);
+                if (trophy != null) entity.spawnAtLocation(trophy);
             }
             return EventResult.pass();
         });
@@ -75,7 +75,7 @@ public final class MobTrophies {
         if (entity instanceof ServerPlayer victim) return rollPlayer(victim, source, random);
         if (!TrophyPedestalsConfig.MOB_TROPHIES.get() || !droppable(entity) || !(source.getEntity() instanceof ServerPlayer player)) return null;
         if (random.nextDouble() >= TrophyPedestalsConfig.MOB_TROPHY_CHANCE.get()) return null;
-        Identifier rank = rank(entity, player);
+        ResourceLocation rank = rank(entity, player);
         return trophy(Pedestals.DEFAULT.get(), entity, player.getName().getString(), System.currentTimeMillis(), rank);
     }
 
@@ -87,7 +87,7 @@ public final class MobTrophies {
     public static @Nullable ItemStack rollPlayer(ServerPlayer victim, DamageSource source, RandomSource random) {
         if (!TrophyPedestalsConfig.PLAYER_TROPHIES.get() || !(source.getEntity() instanceof ServerPlayer killer) || killer == victim) return null;
         if (random.nextDouble() >= TrophyPedestalsConfig.MOB_TROPHY_CHANCE.get()) return null;
-        Identifier rank = rank(victim, killer);
+        ResourceLocation rank = rank(victim, killer);
         return trophy(Pedestals.DEFAULT.get(), Statues.FIGURE, Statues.look(victim), killer.getName().getString(), System.currentTimeMillis(), rank);
     }
 
@@ -114,7 +114,7 @@ public final class MobTrophies {
     }
 
     /** The rank a trophy of this mob dropped for this player has, by the server's {@code mob_trophy_rarity}. */
-    public static Identifier rank(LivingEntity victim, ServerPlayer killer) {
+    public static ResourceLocation rank(LivingEntity victim, ServerPlayer killer) {
         return switch (TrophyPedestalsConfig.MOB_TROPHY_RARITY.get()) {
             case NONE -> PedestalRarities.NONE;
             case STRENGTH -> rarity(victim).id();
@@ -138,7 +138,7 @@ public final class MobTrophies {
      * that can't be read is logged and skipped.
      */
     public static int[] killCounts(EntityType<?> type) {
-        Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
+        ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
         int[] byTag = null;
         for (String entry : TrophyPedestalsConfig.KILLS_OVERRIDES.get()) {
             int split = entry.indexOf('=');
@@ -149,9 +149,9 @@ public final class MobTrophies {
                 continue;
             }
             if (target.startsWith("#")) {
-                Identifier tag = Identifier.tryParse(target.substring(1));
+                ResourceLocation tag = ResourceLocation.tryParse(target.substring(1));
                 if (byTag == null && tag != null && type.builtInRegistryHolder().is(TagKey.create(Registries.ENTITY_TYPE, tag))) byTag = counts;
-            } else if (id.equals(Identifier.tryParse(target))) {
+            } else if (id.equals(ResourceLocation.tryParse(target))) {
                 return counts;
             }
         }
@@ -216,7 +216,7 @@ public final class MobTrophies {
     public static PedestalRarity rarity(EntityType<?> type, ServerLevel level) {
         PedestalRarity tagged = tagged(type);
         if (tagged != null) return tagged;
-        return type.create(level, EntitySpawnReason.LOAD) instanceof LivingEntity mob ? rarity(mob) : PedestalRarities.COMMON;
+        return type.create(level) instanceof LivingEntity mob ? rarity(mob) : PedestalRarities.COMMON;
     }
 
     /** The rank a boss tag gives a mob's trophy, or null if it's in neither. */
@@ -232,7 +232,7 @@ public final class MobTrophies {
     }
 
     /** The same, by its rank's id ({@link PedestalRarities#NONE} for none). */
-    public static ItemStack trophy(Block pedestal, EntityType<?> type, String slayer, long slainAt, Identifier rarity) {
+    public static ItemStack trophy(Block pedestal, EntityType<?> type, String slayer, long slainAt, ResourceLocation rarity) {
         ItemStack stack = new ItemStack(pedestal);
         record(stack, new MobTrophyRecord(BuiltInRegistries.ENTITY_TYPE.getKey(type), slayer, slainAt, rarity));
         return stack;
@@ -242,12 +242,12 @@ public final class MobTrophies {
      * A pedestal of this block showing this mob as it looks ({@link MobLooks}: its variant, gear, name and the rest),
      * slain by {@code slayer} at {@code slainAt}, of this rank ({@link PedestalRarities#NONE} for none).
      */
-    public static ItemStack trophy(Block pedestal, LivingEntity mob, String slayer, long slainAt, Identifier rarity) {
+    public static ItemStack trophy(Block pedestal, LivingEntity mob, String slayer, long slainAt, ResourceLocation rarity) {
         return trophy(pedestal, mob.getType(), MobLooks.capture(mob), slayer, slainAt, rarity);
     }
 
     /** A pedestal of this block showing this mob with this look (in the mob's own saved-data format; empty for none). */
-    public static ItemStack trophy(Block pedestal, EntityType<?> type, CompoundTag look, String slayer, long slainAt, Identifier rarity) {
+    public static ItemStack trophy(Block pedestal, EntityType<?> type, CompoundTag look, String slayer, long slainAt, ResourceLocation rarity) {
         ItemStack stack = new ItemStack(pedestal);
         record(stack, new MobTrophyRecord(BuiltInRegistries.ENTITY_TYPE.getKey(type), slayer, slainAt, rarity, look));
         return stack;

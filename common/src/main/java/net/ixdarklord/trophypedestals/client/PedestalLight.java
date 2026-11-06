@@ -8,12 +8,13 @@ import net.ixdarklord.coolcatcanvas.api.client.vfx.VfxFrame;
 import net.ixdarklord.coolcatcanvas.api.client.vfx.VfxMaterial;
 import net.ixdarklord.coolcatcanvas.api.client.vfx.WorldVfx;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
+import net.ixdarklord.trophypedestals.compat.ARGB;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.ARGB;
-import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
@@ -53,7 +54,7 @@ public final class PedestalLight {
     }
 
     /** Draws the gathered light every frame. */
-    public static void init(Identifier flareTexture) {
+    public static void init(ResourceLocation flareTexture) {
         flareMaterial = new VfxMaterial(flareTexture, VfxBlend.ALPHA, 0.0F);
         WorldVfx.register(TrophyPedestalsMod.id("pedestal_light"), PedestalLight::render);
     }
@@ -153,7 +154,7 @@ public final class PedestalLight {
 
     /**
      * A pedestal's light in a scene of its own (a SceneViewport, where there are no world effects), added to the scene
-     * as the world effects add it: {@code RenderTypes.dragonRays()}, additive, depth-tested and writing no depth, so its
+     * as the world effects add it: {@code RenderType.dragonRays()}, additive, depth-tested and writing no depth, so its
      * faded parts don't cut into one another or into what's behind them. Triangles, each wound both ways.
      */
     static Glow additive(VertexConsumer consumer, PoseStack.Pose pose) {
@@ -317,7 +318,7 @@ public final class PedestalLight {
         private void vertex(float x, float y, float z, int color) {
             int strong = ARGB.color(Math.min(255, ARGB.alpha(color) * 2), ARGB.srgbLerp(0.15F, bright(color), 0xFFFFFFFF));
             consumer.addVertex(pose, x, y, z).setColor(strong).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY)
-                    .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(pose, 0.0F, 1.0F, 0.0F);
+                    .setLight(LightTexture.FULL_BRIGHT).setNormal(pose, 0.0F, 1.0F, 0.0F);
         }
 
         // The color scaled so its brightest channel is full (opaque; black stays black).

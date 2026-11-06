@@ -1,28 +1,26 @@
 package net.ixdarklord.trophypedestals.client;
 
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
+import net.ixdarklord.trophypedestals.compat.render.ArmedEntityRenderState;
+import net.ixdarklord.trophypedestals.compat.render.EntityRenderState;
+import net.ixdarklord.trophypedestals.compat.render.LivingEntityRenderState;
 import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.animation.AnimationDefinition;
-import net.minecraft.client.animation.KeyframeAnimation;
-import net.minecraft.client.model.Model;
+import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
-import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
-import net.minecraft.client.renderer.entity.state.AvatarRenderState;
-import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
-import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.AnimationState;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -31,31 +29,24 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The animations a mob (or a player's statue) on a pedestal can play on loop, found from the mob itself rather than a
- * fixed list. Its renderer's state and model are looked into once per kind of mob, and each candidate is tried on the
- * model: only those that actually move it are listed. Candidates are:
+ * fixed list (1.21.1's version: a mob's animations are kept on the mob, not on a render state). Candidates are:
  * <ul>
- *     <li>walking and running (its walk cycle), and attacking (a swing, for an armed or golem-like mob);</li>
- *     <li>its own keyframe animations, from its render state's {@code AnimationState}s (a warden's roar, a camel's
- *     sitting), looped over their own length;</li>
- *     <li>its own on/off states, from its render state's flags (a fox sitting or sleeping, a zombie's raised arms);</li>
- *     <li>its own poses, from its render state's choices (a parrot's flying and dancing).</li>
+ *     <li>walking and running (its walk cycle), and attacking (its swing), each listed only if it moves the mob's model;</li>
+ *     <li>its own keyframe animations, from its {@code AnimationState}s (a warden's roar, a camel's sitting), looped.
+ *     They're found by their names ("roarAnimationState"), which only a game running with Mojang's names has (NeoForge);
+ *     under Fabric's names none are found.</li>
  * </ul>
- * Names come from the game's own field names ("isSitting" as "sitting"), shown through {@code trophypedestals.animation.<id>}
- * or made readable.
+ * Names are shown through {@code trophypedestals.animation.<id>} or made readable. (26.1's on/off states and poses, read
+ * from its render states' fields, have no counterpart here.)
  */
 public final class MobAnimations {
     // How fast the walk cycle goes walking and running (vanilla's limb swing speed, 0 to 1).
     private static final float WALK_SPEED = 0.5F, RUN_SPEED = 1.0F;
     // An attack's swing and the rest after it, in ticks.
     private static final int SWING = 10, SWING_PERIOD = 20;
-    // How long one of a mob's own animations is taken to last when its model doesn't say, and the rest between plays of
-    // one that doesn't loop by itself, in ticks.
-    private static final int UNKNOWN_LENGTH = 60, REST = 10;
+    // How long one of a mob's own animations is taken to last (its model doesn't say here), in ticks.
+    private static final int UNKNOWN_LENGTH = 60;
     private static final String STATE_SUFFIX = "AnimationState";
-    // The render states whose fields aren't a mob's own (where it is, how it's lit, what it wears): their flags and
-    // choices aren't offered.
-    private static final Set<Class<?>> SHARED_STATES = Set.of(EntityRenderState.class, LivingEntityRenderState.class,
-            ArmedEntityRenderState.class, HumanoidRenderState.class, AvatarRenderState.class);
     // How far a part must move or turn for a candidate to count as moving the model.
     private static final float MOVED = 1.0E-3F;
 
@@ -71,7 +62,7 @@ public final class MobAnimations {
         }
     }
 
-    enum Kind { IDLE, WALK, RUN, SWING, GOLEM_SWING, KEYFRAME, FLAG, CHOICE }
+    enum Kind { IDLE, WALK, RUN, SWING, KEYFRAME }
 
     /** A name for players: {@code trophypedestals.animation.<id>}, or the name made readable. */
     public static Component name(String id) {
@@ -90,7 +81,7 @@ public final class MobAnimations {
     }
 
     /**
-     * Plays the named animation on what's drawn of the mob, at {@code time} (in ticks): its own keyframe animations other
+     * Plays the named animation on the mob as it's drawn, at {@code time} (in ticks): its own keyframe animations other
      * than that one stopped. One it doesn't have plays as idle.
      */
     public static void play(Entity mob, EntityRenderState shown, String id, float time) {
@@ -102,15 +93,15 @@ public final class MobAnimations {
         if (chosen == null) chosen = animations.getFirst();
         try {
             for (Animation animation : animations) {
-                if (animation != chosen && animation.kind() == Kind.KEYFRAME && animation.field().get(shown) instanceof AnimationState state) state.stop();
+                if (animation != chosen && animation.kind() == Kind.KEYFRAME && animation.field().get(mob) instanceof AnimationState state) state.stop();
             }
-            apply(chosen, shown, time);
+            apply(chosen, mob, shown, time);
         } catch (ReflectiveOperationException | RuntimeException e) {
             // (Looked into once already; one that turns out not to play is left standing.)
         }
     }
 
-    private static void apply(Animation animation, EntityRenderState shown, float time) throws ReflectiveOperationException {
+    private static void apply(Animation animation, Entity mob, EntityRenderState shown, float time) throws ReflectiveOperationException {
         switch (animation.kind()) {
             case IDLE -> {}
             case WALK, RUN -> {
@@ -126,15 +117,12 @@ public final class MobAnimations {
                     armed.attackTime = into < SWING ? into / SWING : 0.0F;
                 }
             }
-            case GOLEM_SWING -> animation.field().setFloat(shown, Math.max(0.0F, SWING - time % SWING_PERIOD));
             case KEYFRAME -> {
-                if (animation.field().get(shown) instanceof AnimationState state) {
+                if (animation.field().get(mob) instanceof AnimationState state) {
                     int now = (int) Math.floor(time);
                     state.start(now - now % animation.period());
                 }
             }
-            case FLAG -> animation.field().setBoolean(shown, true);
-            case CHOICE -> animation.field().set(shown, animation.value());
         }
     }
 
@@ -144,9 +132,9 @@ public final class MobAnimations {
         List<Animation> found = new ArrayList<>();
         found.add(new Animation(PedestalBlockEntity.IDLE, Kind.IDLE, null, null, 1));
         try {
-            EntityRenderer<?, ?> renderer = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(mob);
-            Model<?> model = renderer instanceof LivingEntityRenderer<?, ?, ?> living ? living.getModel() : null;
-            List<Animation> candidates = candidates(mob, model);
+            EntityRenderer<?> renderer = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(mob);
+            EntityModel<?> model = renderer instanceof LivingEntityRenderer<?, ?> living ? living.getModel() : null;
+            List<Animation> candidates = candidates(mob);
             Animation ownIdle = null;
             for (Animation candidate : candidates) {
                 if (candidate.kind() == Kind.KEYFRAME && candidate.id().equals(PedestalBlockEntity.IDLE)) ownIdle = candidate;
@@ -156,7 +144,7 @@ public final class MobAnimations {
             for (Animation candidate : candidates) {
                 if (candidate == ownIdle || found.stream().anyMatch(a -> a.id().equals(candidate.id()))) continue;
                 // Keyframe animations are always the mob's own; the rest are listed only if they move its model.
-                if (candidate.kind() == Kind.KEYFRAME || model == null || moves(mob, model, candidate)) found.add(candidate);
+                if (candidate.kind() == Kind.KEYFRAME || model != null && mob instanceof LivingEntity living && moves(living, model, candidate)) found.add(candidate);
             }
         } catch (RuntimeException | LinkageError e) {
             TrophyPedestalsMod.LOGGER.debug("Can't look into {}'s animations", EntityType.getKey(mob.getType()), e);
@@ -165,40 +153,22 @@ public final class MobAnimations {
     }
 
     // Everything the mob might play, before trying them on its model.
-    private static List<Animation> candidates(Entity mob, @Nullable Model<?> model) {
-        EntityRenderState shown = Minecraft.getInstance().getEntityRenderDispatcher().extractEntity(mob, 0.0F);
-        List<Animation> walking = new ArrayList<>(), keyframes = new ArrayList<>(), flags = new ArrayList<>(), choices = new ArrayList<>();
-        Field golemSwing = null;
-        for (Class<?> type = shown.getClass(); type != null && type != Object.class; type = type.getSuperclass()) {
-            boolean own = !SHARED_STATES.contains(type);
+    private static List<Animation> candidates(Entity mob) {
+        List<Animation> all = new ArrayList<>();
+        if (mob instanceof LivingEntity) {
+            all.add(new Animation("walk", Kind.WALK, null, null, 1));
+            all.add(new Animation("run", Kind.RUN, null, null, 1));
+            all.add(new Animation("attack", Kind.SWING, null, null, SWING_PERIOD));
+        }
+        for (Class<?> type = mob.getClass(); type != null && type != Object.class; type = type.getSuperclass()) {
             for (Field field : type.getDeclaredFields()) {
                 int modifiers = field.getModifiers();
-                if (Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) continue;
                 String name = field.getName();
-                if (field.getType() == AnimationState.class && name.endsWith(STATE_SUFFIX) && name.length() > STATE_SUFFIX.length()) {
-                    String base = name.substring(0, name.length() - STATE_SUFFIX.length());
-                    add(keyframes, new Animation(snake(base), Kind.KEYFRAME, field, null, period(model, base)));
-                } else if (field.getType() == float.class && name.equals("attackTicksRemaining")) {
-                    golemSwing = field;
-                } else if (own && !Modifier.isFinal(modifiers) && field.getType() == boolean.class) {
-                    add(flags, new Animation(snake(name.startsWith("is") && name.length() > 2 ? name.substring(2) : name), Kind.FLAG, field, true, 1));
-                } else if (own && !Modifier.isFinal(modifiers) && field.getType().isEnum()) {
-                    for (Object constant : field.getType().getEnumConstants()) {
-                        add(choices, new Animation(snake(name) + "_" + ((Enum<?>) constant).name().toLowerCase(Locale.ROOT), Kind.CHOICE, field, constant, 1));
-                    }
-                }
+                if (Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers) || field.getType() != AnimationState.class) continue;
+                if (!name.endsWith(STATE_SUFFIX) || name.length() <= STATE_SUFFIX.length()) continue;
+                add(all, new Animation(snake(name.substring(0, name.length() - STATE_SUFFIX.length())), Kind.KEYFRAME, field, null, UNKNOWN_LENGTH));
             }
         }
-        if (shown instanceof LivingEntityRenderState) {
-            walking.add(new Animation("walk", Kind.WALK, null, null, 1));
-            walking.add(new Animation("run", Kind.RUN, null, null, 1));
-        }
-        if (shown instanceof ArmedEntityRenderState) walking.add(new Animation("attack", Kind.SWING, null, null, SWING_PERIOD));
-        else if (golemSwing != null) walking.add(new Animation("attack", Kind.GOLEM_SWING, golemSwing, null, SWING_PERIOD));
-        List<Animation> all = new ArrayList<>(walking);
-        all.addAll(flags);
-        all.addAll(choices);
-        all.addAll(keyframes);
         return all;
     }
 
@@ -207,35 +177,56 @@ public final class MobAnimations {
         if (animation.id().matches("[a-z0-9_]{1,32}")) list.add(animation);
     }
 
-    // Whether the candidate moves the mob's model away from how it stands: tried once on a fresh copy of what's drawn.
+    // Whether the candidate moves the mob's model away from how it stands: its model posed once standing, once a moment
+    // into the candidate (where a swing or a step has moved something).
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static boolean moves(Entity mob, Model<?> model, Animation candidate) {
+    private static boolean moves(LivingEntity mob, EntityModel<?> model, Animation candidate) {
         try {
-            Model raw = model;
-            EntityRenderState still = Minecraft.getInstance().getEntityRenderDispatcher().extractEntity(mob, 0.0F);
-            raw.setupAnim(still);
+            EntityModel raw = model;
+            float age = SWING / 2.0F;
+            raw.attackTime = 0.0F;
+            raw.setupAnim(mob, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
             float[] before = pose(model);
-            EntityRenderState moving = Minecraft.getInstance().getEntityRenderDispatcher().extractEntity(mob, 0.0F);
-            // A moment into it, where a swing or a step has moved something.
-            moving.ageInTicks = SWING / 2.0F;
-            apply(candidate, moving, SWING / 2.0F);
-            raw.setupAnim(moving);
+            float limb = 0.0F, amount = 0.0F;
+            switch (candidate.kind()) {
+                case WALK, RUN -> {
+                    amount = candidate.kind() == Kind.WALK ? WALK_SPEED : RUN_SPEED;
+                    limb = age * amount;
+                }
+                case SWING -> raw.attackTime = 0.5F;
+                default -> {}
+            }
+            raw.setupAnim(mob, limb, amount, age, 0.0F, 0.0F);
             float[] after = pose(model);
+            raw.attackTime = 0.0F;
             for (int i = 0; i < before.length; i++) {
                 if (Math.abs(before[i] - after[i]) > MOVED) return true;
             }
             return false;
-        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+        } catch (RuntimeException | LinkageError e) {
             return false;
         }
     }
 
-    // Every part's place, turn, size and visibility, one after another.
-    private static float[] pose(Model<?> model) {
-        List<ModelPart> parts = model.allParts();
-        float[] pose = new float[parts.size() * 10];
+    // Every part's place, turn, size and visibility, one after another: the parts the model keeps (found by their type,
+    // whatever their names), with those under them.
+    private static float[] pose(EntityModel<?> model) {
+        Map<ModelPart, Boolean> parts = new IdentityHashMap<>();
+        for (Class<?> type = model.getClass(); type != null && type != Object.class; type = type.getSuperclass()) {
+            for (Field field : type.getDeclaredFields()) {
+                if (Modifier.isStatic(field.getModifiers()) || field.getType() != ModelPart.class) continue;
+                try {
+                    field.setAccessible(true);
+                    if (field.get(model) instanceof ModelPart part) part.getAllParts().forEach(found -> parts.put(found, true));
+                } catch (ReflectiveOperationException | RuntimeException ignored) {
+                    // (A part that can't be read isn't compared.)
+                }
+            }
+        }
+        Set<ModelPart> all = parts.keySet();
+        float[] pose = new float[all.size() * 10];
         int i = 0;
-        for (ModelPart part : parts) {
+        for (ModelPart part : all) {
             pose[i++] = part.x;
             pose[i++] = part.y;
             pose[i++] = part.z;
@@ -248,30 +239,6 @@ public final class MobAnimations {
             pose[i++] = part.visible ? 1.0F : 0.0F;
         }
         return pose;
-    }
-
-    // How long one of the mob's own animations takes before it plays again, in ticks: its model's keyframe animation of
-    // the same name ("roar" for "roarAnimationState"), with a rest after one that doesn't loop by itself.
-    private static int period(@Nullable Model<?> model, String base) {
-        if (model == null) return UNKNOWN_LENGTH;
-        try {
-            for (Class<?> type = model.getClass(); type != null && type != Object.class; type = type.getSuperclass()) {
-                for (Field field : type.getDeclaredFields()) {
-                    if (field.getType() != KeyframeAnimation.class || !field.getName().equals(base + "Animation")) continue;
-                    field.setAccessible(true);
-                    Object animation = field.get(model);
-                    if (animation == null) return UNKNOWN_LENGTH;
-                    Field definition = KeyframeAnimation.class.getDeclaredField("definition");
-                    definition.setAccessible(true);
-                    AnimationDefinition read = (AnimationDefinition) definition.get(animation);
-                    int length = Math.max(1, Math.round(read.lengthInSeconds() * 20.0F));
-                    return read.looping() ? length : length + REST;
-                }
-            }
-        } catch (ReflectiveOperationException | RuntimeException e) {
-            return UNKNOWN_LENGTH;
-        }
-        return UNKNOWN_LENGTH;
     }
 
     // "sitPose" as "sit_pose".

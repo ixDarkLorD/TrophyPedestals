@@ -3,10 +3,18 @@
   "category": "building",
   "group": "trophy_cabinet",
   "key": {
-    "P": "minecraft:mangrove_planks",
-    "S": "minecraft:mangrove_slab",
-    "T": "minecraft:stick",
-    "G": "minecraft:glass_pane"
+    "P": {
+      "item": "minecraft:mangrove_planks"
+    },
+    "S": {
+      "item": "minecraft:mangrove_slab"
+    },
+    "T": {
+      "item": "minecraft:stick"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    }
   },
   "pattern": [
     "PSP",

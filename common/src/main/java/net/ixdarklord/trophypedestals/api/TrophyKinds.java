@@ -2,7 +2,7 @@ package net.ixdarklord.trophypedestals.api;
 
 import net.ixdarklord.trophypedestals.pedestal.PedestalRecord;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,17 +15,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * still places and keeps its record; it shows its subject's id and no icon.
  */
 public final class TrophyKinds {
-    private static final Map<Identifier, TrophyKind> KINDS = new ConcurrentHashMap<>();
+    private static final Map<ResourceLocation, TrophyKind> KINDS = new ConcurrentHashMap<>();
 
     private TrophyKinds() {}
 
     /** Adds a kind of trophy; registering the same id again replaces it. */
-    public static void register(Identifier id, TrophyKind kind) {
+    public static void register(ResourceLocation id, TrophyKind kind) {
         KINDS.put(id, kind);
     }
 
     /** The kind with this id, or null if no mod registered it. */
-    public static @Nullable TrophyKind get(Identifier id) {
+    public static @Nullable TrophyKind get(ResourceLocation id) {
         return KINDS.get(id);
     }
 
@@ -48,7 +48,7 @@ public final class TrophyKinds {
     }
 
     /** The rank a trophy of this kind and subject gets unless one is named: the kind's, or common. */
-    public static PedestalRarity rarity(Identifier kind, Identifier subject) {
+    public static PedestalRarity rarity(ResourceLocation kind, ResourceLocation subject) {
         TrophyKind found = get(kind);
         PedestalRarity rarity = found == null ? null : found.rarity(subject);
         return rarity == null ? PedestalRarities.COMMON : rarity;

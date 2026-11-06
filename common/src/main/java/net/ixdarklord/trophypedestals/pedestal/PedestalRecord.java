@@ -7,7 +7,7 @@ import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
 
 import java.time.Instant;
@@ -26,7 +26,7 @@ import java.util.Locale;
  * @param unlockedAt when, in milliseconds since the epoch
  * @param rarity     its rarity's id ({@link PedestalRarities}); trophies from before rarities are common
  */
-public record PedestalRecord(Identifier kind, Identifier subject, Unlocker unlocker, String name, long unlockedAt, Identifier rarity) {
+public record PedestalRecord(ResourceLocation kind, ResourceLocation subject, Unlocker unlocker, String name, long unlockedAt, ResourceLocation rarity) {
     public enum Unlocker implements StringRepresentable {
         PLAYER, TEAM, SERVER;
 
@@ -39,8 +39,8 @@ public record PedestalRecord(Identifier kind, Identifier subject, Unlocker unloc
     }
 
     public static final Codec<PedestalRecord> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Identifier.CODEC.fieldOf("kind").forGetter(PedestalRecord::kind),
-            Identifier.CODEC.fieldOf("subject").forGetter(PedestalRecord::subject),
+            ResourceLocation.CODEC.fieldOf("kind").forGetter(PedestalRecord::kind),
+            ResourceLocation.CODEC.fieldOf("subject").forGetter(PedestalRecord::subject),
             Unlocker.CODEC.fieldOf("unlocker").forGetter(PedestalRecord::unlocker),
             Codec.STRING.optionalFieldOf("name", "").forGetter(PedestalRecord::name),
             Codec.LONG.fieldOf("unlocked_at").forGetter(PedestalRecord::unlockedAt),
@@ -48,12 +48,12 @@ public record PedestalRecord(Identifier kind, Identifier subject, Unlocker unloc
     ).apply(instance, PedestalRecord::new));
 
     public static final StreamCodec<ByteBuf, PedestalRecord> STREAM_CODEC = StreamCodec.composite(
-            Identifier.STREAM_CODEC, PedestalRecord::kind,
-            Identifier.STREAM_CODEC, PedestalRecord::subject,
+            ResourceLocation.STREAM_CODEC, PedestalRecord::kind,
+            ResourceLocation.STREAM_CODEC, PedestalRecord::subject,
             ByteBufCodecs.VAR_INT.map(index -> Unlocker.values()[index], Unlocker::ordinal), PedestalRecord::unlocker,
             ByteBufCodecs.STRING_UTF8, PedestalRecord::name,
             ByteBufCodecs.VAR_LONG, PedestalRecord::unlockedAt,
-            Identifier.STREAM_CODEC, PedestalRecord::rarity,
+            ResourceLocation.STREAM_CODEC, PedestalRecord::rarity,
             PedestalRecord::new);
 
     /** "Unlocked by Steve", "Unlocked by Team Red", or "Unlocked by the whole server". */

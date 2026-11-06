@@ -2,6 +2,7 @@ package net.ixdarklord.trophypedestals.client;
 import net.ixdarklord.coolcatcore.api.network.Network;
 import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
+import net.ixdarklord.trophypedestals.compat.render.EntityRenderStates;
 import net.ixdarklord.trophypedestals.network.AdjustDisplayedTrophyPayload;
 import net.ixdarklord.trophypedestals.network.AdjustPedestalPayload;
 import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
@@ -9,7 +10,7 @@ import net.ixdarklord.trophypedestals.pedestal.Statues;
 import net.ixdarklord.trophypedestals.pedestal.TrophyCabinetBlockEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -19,17 +20,13 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.InputWithModifiers;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
@@ -57,25 +54,25 @@ import java.util.function.Supplier;
  * player allowed to adjust it. Its sprites are in {@code textures/gui/sprites/pedestal/}.
  */
 public final class PedestalScreen extends Screen {
-    private static final Identifier PANEL = TrophyPedestalsMod.id("pedestal/panel");
-    private static final Identifier SEGMENT = TrophyPedestalsMod.id("pedestal/segment");
-    private static final Identifier SEGMENT_HOVER = TrophyPedestalsMod.id("pedestal/segment_hover");
-    private static final Identifier SEGMENT_SELECTED = TrophyPedestalsMod.id("pedestal/segment_selected");
-    private static final Identifier TRACK = TrophyPedestalsMod.id("pedestal/track");
-    private static final Identifier TRACK_FILL = TrophyPedestalsMod.id("pedestal/track_fill");
-    private static final Identifier HANDLE = TrophyPedestalsMod.id("pedestal/handle");
-    private static final Identifier HANDLE_HOVER = TrophyPedestalsMod.id("pedestal/handle_hover");
+    private static final ResourceLocation PANEL = TrophyPedestalsMod.id("pedestal/panel");
+    private static final ResourceLocation SEGMENT = TrophyPedestalsMod.id("pedestal/segment");
+    private static final ResourceLocation SEGMENT_HOVER = TrophyPedestalsMod.id("pedestal/segment_hover");
+    private static final ResourceLocation SEGMENT_SELECTED = TrophyPedestalsMod.id("pedestal/segment_selected");
+    private static final ResourceLocation TRACK = TrophyPedestalsMod.id("pedestal/track");
+    private static final ResourceLocation TRACK_FILL = TrophyPedestalsMod.id("pedestal/track_fill");
+    private static final ResourceLocation HANDLE = TrophyPedestalsMod.id("pedestal/handle");
+    private static final ResourceLocation HANDLE_HOVER = TrophyPedestalsMod.id("pedestal/handle_hover");
     // The mod logo's rarity gems, set into the middle of the panel's top and bottom edges (each in its edge's golds).
-    private static final Identifier GEMS_TOP = TrophyPedestalsMod.id("pedestal/gems_top");
-    private static final Identifier GEMS = TrophyPedestalsMod.id("pedestal/gems");
+    private static final ResourceLocation GEMS_TOP = TrophyPedestalsMod.id("pedestal/gems_top");
+    private static final ResourceLocation GEMS = TrophyPedestalsMod.id("pedestal/gems");
     private static final int GEMS_WIDTH = 28, FRAME = 4;
     private static final int MARGIN = 12, RESET = 16;
     // A display pedestal's screen: when its text shows, how it answers redstone, its sounds and its showcase light, in one column.
     private static final int COMPACT_WIDTH = 186, COMPACT_HEIGHT = 230, COMPACT_ROW_2 = 84, COMPACT_ROW_3 = 122, COMPACT_ROW_4 = 160;
-    private static final Identifier RESET_ICON = TrophyPedestalsMod.id("pedestal/reset");
+    private static final ResourceLocation RESET_ICON = TrophyPedestalsMod.id("pedestal/reset");
     // The "?" after each label, and how wide its tooltip's lines wrap.
-    private static final Identifier INFO = TrophyPedestalsMod.id("pedestal/info");
-    private static final Identifier INFO_HOVER = TrophyPedestalsMod.id("pedestal/info_hover");
+    private static final ResourceLocation INFO = TrophyPedestalsMod.id("pedestal/info");
+    private static final ResourceLocation INFO_HOVER = TrophyPedestalsMod.id("pedestal/info_hover");
     private static final int INFO_SIZE = 9, TOOLTIP_WIDTH = 180;
     // The mod logo's colors: its golds, its stone grey for labels, and the dark navy inside the panel's gold frame for
     // grooves and lists.
@@ -211,7 +208,7 @@ public final class PedestalScreen extends Screen {
         if (type == null || pedestal.getLevel() == null) return List.of();
         Entity mob = pedestal.shownMob();
         try {
-            if (mob == null || mob.getType() != type) mob = type.create(pedestal.getLevel(), EntitySpawnReason.LOAD);
+            if (mob == null || mob.getType() != type) mob = EntityRenderStates.create(type, pedestal.getLevel());
         } catch (RuntimeException | LinkageError e) {
             mob = null;
         }
@@ -387,7 +384,7 @@ public final class PedestalScreen extends Screen {
 
     // The groove (a dark rim, lit along its bottom and right like the dividers) and the thumb in it: gold with a bevel,
     // brighter while hovered or held, and three grip lines across its middle.
-    private void scrollBar(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+    private void scrollBar(GuiGraphics graphics, int mouseX, int mouseY) {
         int x = barX(), y0 = top + VIEW_TOP, y1 = top + VIEW_BOTTOM;
         graphics.fill(x - 1, y0 - 1, x + BAR_WIDTH + 1, y1 + 1, GROOVE_LIT);
         graphics.fill(x - 1, y0 - 1, x + BAR_WIDTH, y1, GROOVE_DARK);
@@ -741,21 +738,22 @@ public final class PedestalScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.render(graphics, mouseX, mouseY, partialTick);
         // The tab's widgets, clipped to the scrolling part (and not lit by a mouse outside it), and its scroll bar.
         if (!scrolled.isEmpty()) {
             boolean in = inView(mouseY);
             graphics.enableScissor(left, top + VIEW_TOP, left + panelWidth(), top + VIEW_BOTTOM);
             for (AbstractWidget widget : scrolled.keySet()) {
-                if (widget.visible) widget.extractRenderState(graphics, in ? mouseX : -1, in ? mouseY : -1, partialTick);
+                if (widget.visible) widget.render(graphics, in ? mouseX : -1, in ? mouseY : -1, partialTick);
             }
             graphics.disableScissor();
             if (maxScroll > 0) scrollBar(graphics, mouseX, mouseY);
         }
         if (!listOpen || animationButton == null) return;
         // Over everything else: a dark navy box with a gold edge, the chosen animation in pale gold, the one under the mouse lit.
-        graphics.nextStratum();
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, 0.0F, 400.0F);
         int[] list = listBounds();
         int x = list[0], y = list[1], width = list[2], rows = list[3];
         graphics.fill(x - 1, y - 1, x + width + 1, y + rows * LIST_ROW + 3, GOLD);
@@ -767,7 +765,7 @@ public final class PedestalScreen extends Screen {
             boolean hovered = mouseX >= x && mouseX < x + width && mouseY >= rowY && mouseY < rowY + LIST_ROW;
             if (hovered) graphics.fill(x + 1, rowY, x + width - 1, rowY + LIST_ROW, LIST_HOVER);
             int color = entry.id().equals(animation) ? PALE_GOLD : hovered ? 0xFFFFFFFF : TEXT;
-            graphics.text(font, entry.name(), x + 2 + LABEL_PADDING, rowY + (LIST_ROW - 8) / 2, color);
+            graphics.drawString(font, entry.name(), x + 2 + LABEL_PADDING, rowY + (LIST_ROW - 8) / 2, color);
         }
         // A scroll bar when there are more than fit.
         if (animations.size() > rows) {
@@ -775,13 +773,14 @@ public final class PedestalScreen extends Screen {
             int thumbY = y + 1 + (track - thumb) * listScroll / (animations.size() - rows);
             graphics.fill(x + width - 3, thumbY, x + width - 1, thumbY + thumb, PALE_GOLD);
         }
+        graphics.pose().popPose();
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (listOpen && animationButton != null) {
             int[] list = listBounds();
-            double x = event.x(), y = event.y();
+            double x = mouseX, y = mouseY;
             if (x >= list[0] && x < list[0] + list[2] && y >= list[1] + 1 && y < list[1] + 1 + list[3] * LIST_ROW) {
                 chooseAnimation(animations.get(listScroll + (int) ((y - list[1] - 1) / LIST_ROW)).id());
             } else {
@@ -791,39 +790,39 @@ public final class PedestalScreen extends Screen {
             return true;
         }
         // The scroll bar: its thumb is taken where it's clicked; the groove above or below it moves the thumb's middle there.
-        if (event.button() == 0 && overBar(event.x(), event.y())) {
+        if (button == 0 && overBar(mouseX, mouseY)) {
             int ty = thumbY(), th = thumbHeight();
-            dragOffset = event.y() >= ty && event.y() < ty + th ? (int) event.y() - ty : th / 2;
-            dragThumb(event.y());
+            dragOffset = mouseY >= ty && mouseY < ty + th ? (int) mouseY - ty : th / 2;
+            dragThumb(mouseY);
             return true;
         }
         // A click above or below the scrolling part doesn't reach the tab's widgets clipped there.
-        if (!scrolled.isEmpty() && !inView(event.y())) {
+        if (!scrolled.isEmpty() && !inView(mouseY)) {
             List<AbstractWidget> shown = scrolled.keySet().stream().filter(widget -> widget.visible).toList();
             shown.forEach(widget -> widget.visible = false);
-            boolean handled = super.mouseClicked(event, doubleClick);
+            boolean handled = super.mouseClicked(mouseX, mouseY, button);
             shown.forEach(widget -> widget.visible = true);
             return handled;
         }
-        return super.mouseClicked(event, doubleClick);
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if (dragOffset >= 0) {
-            dragThumb(event.y());
+            dragThumb(mouseY);
             return true;
         }
-        return super.mouseDragged(event, dragX, dragY);
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        if (dragOffset >= 0 && event.button() == 0) {
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (dragOffset >= 0 && button == 0) {
             dragOffset = -1;
             return true;
         }
-        return super.mouseReleased(event);
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     @Override
@@ -841,13 +840,13 @@ public final class PedestalScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(KeyEvent event) {
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         // Escape closes an open list before the screen.
-        if (listOpen && event.key() == 256) {
+        if (listOpen && keyCode == 256) {
             listOpen = false;
             return true;
         }
-        return super.keyPressed(event);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     // (Only the settings the server lets players change.)
@@ -927,17 +926,17 @@ public final class PedestalScreen extends Screen {
     // The panel, its header and its section labels (with their values, right-aligned before their reset buttons), under
     // the widgets.
     @Override
-    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        super.extractBackground(graphics, mouseX, mouseY, partialTick);
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTick);
         this.mouseX = mouseX;
         this.mouseY = mouseY;
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, PANEL, left, top, panelWidth(), panelHeight());
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, GEMS_TOP, left + (panelWidth() - GEMS_WIDTH) / 2, top, GEMS_WIDTH, FRAME);
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, GEMS, left + (panelWidth() - GEMS_WIDTH) / 2, top + panelHeight() - FRAME, GEMS_WIDTH, FRAME);
+        graphics.blitSprite(PANEL, left, top, panelWidth(), panelHeight());
+        graphics.blitSprite(GEMS_TOP, left + (panelWidth() - GEMS_WIDTH) / 2, top, GEMS_WIDTH, FRAME);
+        graphics.blitSprite(GEMS, left + (panelWidth() - GEMS_WIDTH) / 2, top + panelHeight() - FRAME, GEMS_WIDTH, FRAME);
         // The header: the pedestal, the title in gold and its owner under it, over a groove.
-        graphics.item(icon, left + MARGIN + 2, top + 12);
-        graphics.text(font, title, left + MARGIN + 24, top + 12, GOLD);
-        graphics.text(font, owner, left + MARGIN + 24, top + 23, LABEL);
+        graphics.renderItem(icon, left + MARGIN + 2, top + 12);
+        graphics.drawString(font, title, left + MARGIN + 24, top + 12, GOLD);
+        graphics.drawString(font, owner, left + MARGIN + 24, top + 23, LABEL);
         graphics.fill(left + MARGIN, top + 36, left + panelWidth() - MARGIN, top + 37, GROOVE_DARK);
         graphics.fill(left + MARGIN, top + 37, left + panelWidth() - MARGIN, top + 38, GROOVE_LIT);
         if (!trophy) {
@@ -956,7 +955,7 @@ public final class PedestalScreen extends Screen {
         graphics.disableScissor();
     }
 
-    private void tabLabels(GuiGraphicsExtractor graphics, int x, int valueRight) {
+    private void tabLabels(GuiGraphics graphics, int x, int valueRight) {
         switch (tab()) {
             case DISPLAY -> {
                 if (fixedSize()) {
@@ -993,23 +992,23 @@ public final class PedestalScreen extends Screen {
     }
 
     // "Rotation", with its yaw, pitch and roll in whole degrees.
-    private void rotationLabel(GuiGraphicsExtractor graphics, int x, int valueRight, int row) {
+    private void rotationLabel(GuiGraphics graphics, int x, int valueRight, int row) {
         label(graphics, "trophypedestals.pedestal.screen.rotation", x, row, Component.translatable("trophypedestals.pedestal.screen.rotation_value",
                 Math.round(yaw), Math.round(pitch), Math.round(roll)), valueRight);
     }
 
     // A section's label, a "?" after it that shows what the option does while hovered (from the key's ".tooltip"), and
     // its value right-aligned at {@code valueRight} from the label's left.
-    private void label(GuiGraphicsExtractor graphics, String key, int x, int row, @Nullable Component value, int valueRight) {
+    private void label(GuiGraphics graphics, String key, int x, int row, @Nullable Component value, int valueRight) {
         Component text = Component.translatable(key).withStyle(ChatFormatting.BOLD);
         // (A trophy's labels scroll with their tab.)
         if (trophy) row -= scroll;
-        graphics.text(font, text, x, top + row, LABEL);
+        graphics.drawString(font, text, x, top + row, LABEL);
         int iconX = x + font.width(text) + 3, iconY = top + row - 1;
         boolean hovered = (!trophy || inView(mouseY)) && mouseX >= iconX && mouseX < iconX + INFO_SIZE && mouseY >= iconY && mouseY < iconY + INFO_SIZE;
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, hovered ? INFO_HOVER : INFO, iconX, iconY, INFO_SIZE, INFO_SIZE);
-        if (hovered) graphics.setTooltipForNextFrame(font.split(Component.translatable(key + ".tooltip"), TOOLTIP_WIDTH), mouseX, mouseY);
-        if (value != null) graphics.text(font, value, x + valueRight - font.width(value), top + row, PALE_GOLD);
+        graphics.blitSprite(hovered ? INFO_HOVER : INFO, iconX, iconY, INFO_SIZE, INFO_SIZE);
+        if (hovered) setTooltipForNextRenderPass(font.split(Component.translatable(key + ".tooltip"), TOOLTIP_WIDTH));
+        if (value != null) graphics.drawString(font, value, x + valueRight - font.width(value), top + row, PALE_GOLD);
     }
 
     @Override
@@ -1059,17 +1058,17 @@ public final class PedestalScreen extends Screen {
         }
 
         @Override
-        public void onPress(InputWithModifiers input) {
+        public void onPress() {
             action.run();
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             boolean chosen = selected.getAsBoolean();
-            Identifier sprite = chosen ? SEGMENT_SELECTED : isHoveredOrFocused() ? SEGMENT_HOVER : SEGMENT;
-            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, getX(), getY(), width, height);
+            ResourceLocation sprite = chosen ? SEGMENT_SELECTED : isHoveredOrFocused() ? SEGMENT_HOVER : SEGMENT;
+            graphics.blitSprite(sprite, getX(), getY(), width, height);
             int color = chosen ? PALE_GOLD : isHoveredOrFocused() ? 0xFFFFFFFF : TEXT;
-            graphics.text(font, getMessage(), getX() + (width - font.width(getMessage())) / 2, getY() + (height - 8) / 2, color);
+            graphics.drawString(font, getMessage(), getX() + (width - font.width(getMessage())) / 2, getY() + (height - 8) / 2, color);
         }
 
         @Override
@@ -1088,14 +1087,14 @@ public final class PedestalScreen extends Screen {
         }
 
         @Override
-        public void onPress(InputWithModifiers input) {
+        public void onPress() {
             action.run();
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, isHoveredOrFocused() ? SEGMENT_HOVER : SEGMENT, getX(), getY(), width, height);
-            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, RESET_ICON, getX() + 3, getY() + 3, 10, 10);
+        protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            graphics.blitSprite(isHoveredOrFocused() ? SEGMENT_HOVER : SEGMENT, getX(), getY(), width, height);
+            graphics.blitSprite(RESET_ICON, getX() + 3, getY() + 3, 10, 10);
         }
 
         @Override
@@ -1111,14 +1110,14 @@ public final class PedestalScreen extends Screen {
         }
 
         @Override
-        public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             int trackY = getY() + (height - 6) / 2;
-            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, TRACK, getX(), trackY, width, 6);
+            graphics.blitSprite(TRACK, getX(), trackY, width, 6);
             int knob = getX() + (int) Math.round(value * (width - 9));
             // Filled up to the knob's middle, and all the way at the top of the range.
             int filled = value >= 1.0 ? width : knob + 5 - getX();
-            if (filled >= 4) graphics.blitSprite(RenderPipelines.GUI_TEXTURED, TRACK_FILL, getX(), trackY, filled, 6);
-            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, isHoveredOrFocused() ? HANDLE_HOVER : HANDLE, knob, getY(), 9, 13);
+            if (filled >= 4) graphics.blitSprite(TRACK_FILL, getX(), trackY, filled, 6);
+            graphics.blitSprite(isHoveredOrFocused() ? HANDLE_HOVER : HANDLE, knob, getY(), 9, 13);
         }
     }
 

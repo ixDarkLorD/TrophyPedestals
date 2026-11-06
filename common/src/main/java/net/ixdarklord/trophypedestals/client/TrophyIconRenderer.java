@@ -4,24 +4,26 @@ import com.mojang.math.Axis;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.ixdarklord.coolcatcore.api.client.registry.SpecialModelRendererRegistry;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.api.TrophyKinds;
+import net.ixdarklord.trophypedestals.compat.render.CameraRenderState;
+import net.ixdarklord.trophypedestals.compat.render.EntityRenderState;
+import net.ixdarklord.trophypedestals.compat.render.EntityRenderStates;
+import net.ixdarklord.trophypedestals.compat.render.ItemModelResolver;
+import net.ixdarklord.trophypedestals.compat.render.ItemStackRenderState;
+import net.ixdarklord.trophypedestals.compat.render.SpecialModelRenderer;
+import net.ixdarklord.trophypedestals.compat.render.SpecialModelRendererRegistry;
+import net.ixdarklord.trophypedestals.compat.render.SubmitNodeCollector;
 import net.ixdarklord.trophypedestals.pedestal.MobLooks;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophyRecord;
 import net.ixdarklord.trophypedestals.pedestal.PedestalRecord;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.client.renderer.special.SpecialModelRenderer;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.Util;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.Util;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -43,7 +45,7 @@ import java.util.function.Consumer;
  * frame) it stands upright and turns, as over the placed block. The item model picks which with {@code "spin"}.
  */
 public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIconRenderer.Shown> {
-    public static final Identifier TYPE = TrophyPedestalsMod.id("trophy_icon");
+    public static final ResourceLocation TYPE = TrophyPedestalsMod.id("trophy_icon");
     // Where the icon floats over the block (its middle) and how big it is, in the block's units; lit full bright.
     private static final float ICON_Y = 1.35F, ICON_SCALE = 0.95F;
     private static final int FULL_BRIGHT = 0xF000F0;
@@ -86,7 +88,7 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
      * What a trophy item shows over its pedestal: its icon (for a mob trophy, the mob's egg, shown only if the mob can't
      * be drawn), its rank (whose color its showcase light takes), and a mob trophy's record (whose mob is drawn).
      */
-    public record Shown(ItemStack icon, @Nullable Identifier rarity, @Nullable MobTrophyRecord mob) {
+    public record Shown(ItemStack icon, @Nullable ResourceLocation rarity, @Nullable MobTrophyRecord mob) {
         // Equal when they show the same (a new icon stack is made for each look), so the inventory draws a slot's trophy
         // once and keeps it, instead of drawing every trophy in sight (a mob each, for mob trophies) every frame.
         @Override
@@ -118,7 +120,7 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
         PedestalRenderer.submitItemLight(poseStack, collector, trophy.rarity(), spin ? Util.getMillis() / 50.0F : SLOT_TIME, spin, ICON_Y);
         Minecraft minecraft = Minecraft.getInstance();
         if (trophy.mob() != null && submitMob(trophy.mob(), poseStack, collector)) return;
-        minecraft.getItemModelResolver().updateForTopItem(icon, shown, ItemDisplayContext.GROUND, minecraft.level, null, 0);
+        ItemModelResolver.INSTANCE.updateForTopItem(icon, shown, ItemDisplayContext.GROUND, minecraft.level, null, 0);
         poseStack.pushPose();
         poseStack.translate(0.5F, ICON_Y, 0.5F);
         if (spin) {
@@ -150,14 +152,14 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
         try {
             Entity mob = MOBS.get(trophy);
             if (mob == null || mob.level() != minecraft.level) {
-                mob = type.create(minecraft.level, EntitySpawnReason.LOAD);
+                mob = EntityRenderStates.create(type, minecraft.level);
                 if (mob == null) return false;
                 DrawnMobs.numbered(mob);
                 MobLooks.apply(mob, trophy.look(), minecraft.level.registryAccess());
                 MOBS.put(trophy, mob);
             }
             long now = Util.getMillis();
-            EntityRenderState shown = minecraft.getEntityRenderDispatcher().extractEntity(mob, 0.0F);
+            EntityRenderState shown = EntityRenderStates.extract(mob, 0.0F);
             shown.lightCoords = FULL_BRIGHT;
             shown.shadowRadius = 0.0F;
             shown.shadowPieces.clear();
@@ -179,7 +181,7 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
             }
             poseStack.scale(scale, scale, scale);
             poseStack.translate(0.0F, -PedestalRenderer.sink(shown), 0.0F);
-            minecraft.getEntityRenderDispatcher().submit(shown, CAMERA, 0.0, 0.0, 0.0, poseStack, collector);
+            EntityRenderStates.submit(shown, CAMERA, 0.0, 0.0, 0.0, poseStack, collector);
             poseStack.popPose();
             return true;
         } catch (RuntimeException | LinkageError e) {

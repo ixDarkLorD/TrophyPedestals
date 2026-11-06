@@ -2,15 +2,14 @@ package net.ixdarklord.trophypedestals.pedestal;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -107,14 +106,14 @@ public class TrophyCabinetBlock extends TrophyDisplayBlock {
 
     // A half whose other half is gone goes too.
     @Override
-    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction direction,
-                                     BlockPos neighborPos, BlockState neighbor, RandomSource random) {
+    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbor, LevelAccessor level, BlockPos pos,
+                                     BlockPos neighborPos) {
         if (neighborPos.equals(partner(pos, state))
                 && !(neighbor.is(this) && neighbor.getValue(FACING) == state.getValue(FACING) && neighbor.getValue(PART) != state.getValue(PART))) {
             return Blocks.AIR.defaultBlockState();
         }
         if (direction.getAxis().isVertical()) state = state.setValue(direction == Direction.UP ? UP : DOWN, joins(state, neighbor));
-        return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighbor, random);
+        return super.updateShape(state, direction, neighbor, level, pos, neighborPos);
     }
 
     // Broken at its right half, the left half (which drops the cabinet) breaks as if broken itself.

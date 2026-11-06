@@ -4,6 +4,7 @@ import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
+import mezz.jei.api.ingredients.subtypes.UidContext;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
@@ -11,7 +12,7 @@ import mezz.jei.api.registration.ISubtypeRegistration;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophyRecord;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
@@ -28,7 +29,7 @@ import java.util.function.Function;
 @JeiPlugin
 public final class TrophyPedestalsJeiPlugin implements IModPlugin {
     @Override
-    public Identifier getPluginUid() {
+    public ResourceLocation getPluginUid() {
         return TrophyPedestalsMod.id("jei");
     }
 
@@ -46,14 +47,27 @@ public final class TrophyPedestalsJeiPlugin implements IModPlugin {
     }
 
     private static @Nullable String materialAndMob(ItemStack stack) {
-        Identifier material = stack.get(Pedestals.PEDESTAL_MATERIAL.get());
+        ResourceLocation material = stack.get(Pedestals.PEDESTAL_MATERIAL.get());
         String mob = mob(stack);
         return material == null && mob == null ? null : material + "/" + mob;
     }
 
     // A subtype interpreter from a subtype's name (null for none).
     private static ISubtypeInterpreter<ItemStack> interpreter(Function<ItemStack, @Nullable String> subtype) {
-        return (stack, context) -> subtype.apply(stack);
+        // (JEI 19's has two methods: the second is its old string form.)
+        return new ISubtypeInterpreter<>() {
+            @Override
+            public @Nullable Object getSubtypeData(ItemStack stack, UidContext context) {
+                return subtype.apply(stack);
+            }
+
+            @Override
+            @SuppressWarnings("removal")
+            public String getLegacyStringSubtypeInfo(ItemStack stack, UidContext context) {
+                String data = subtype.apply(stack);
+                return data == null ? "" : data;
+            }
+        };
     }
 
     // What isn't crafted: the trophy each mob can drop, and the trims of cabinets and shelves.
@@ -72,7 +86,7 @@ public final class TrophyPedestalsJeiPlugin implements IModPlugin {
     // The default pedestal (mob trophies drop on it) and the gold ingot (the gold trim) lead to their pages.
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
-        registration.addCraftingStation(MobTrophyCategory.TYPE, Pedestals.DEFAULT.get());
-        registration.addCraftingStation(TrimCategory.TYPE, Items.GOLD_INGOT);
+        registration.addRecipeCatalyst(Pedestals.DEFAULT.get(), MobTrophyCategory.TYPE);
+        registration.addRecipeCatalyst(Items.GOLD_INGOT, TrimCategory.TYPE);
     }
 }

@@ -3,10 +3,18 @@
   "category": "building",
   "group": "trophy_cabinet",
   "key": {
-    "P": "minecraft:acacia_planks",
-    "S": "minecraft:acacia_slab",
-    "T": "minecraft:stick",
-    "G": "minecraft:glass_pane"
+    "P": {
+      "item": "minecraft:acacia_planks"
+    },
+    "S": {
+      "item": "minecraft:acacia_slab"
+    },
+    "T": {
+      "item": "minecraft:stick"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    }
   },
   "pattern": [
     "PSP",

@@ -1,10 +1,10 @@
 {
   "variants": {
     "lit=false": {
-      "model": "trophypedestals:block/dark_prismarine_pedestal"
+      "model": "trophypedestals:block/dark_prismarine_pedestal_placed"
     },
     "lit=true": {
-      "model": "trophypedestals:block/dark_prismarine_pedestal"
+      "model": "trophypedestals:block/dark_prismarine_pedestal_placed"
     }
   }
 }

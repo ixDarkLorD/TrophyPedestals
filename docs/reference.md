@@ -18,10 +18,9 @@ Any other block, a mod's stones and woods included, makes a **custom pedestal** 
 whose material is data, the `trophypedestals:pedestal_material` component naming the block it's made of. It's drawn with that
 block's own textures (its top, bottom and sides, tinted as the block is), with the same gold carving and well as every
 pedestal, and named after it ("Mossy Stone Bricks Pedestal"; give the item a `minecraft:item_name` for another name). A
-data pack hands them out with a recipe, a loot table or `/give`, and breaking one keeps its material. The mod adds none of
-its own; the example data pack (`testpack/`) has six, crafted like the others: amethyst block, obsidian, copper block,
-mossy stone bricks, smooth stone and polished blackstone bricks (`data/trophypedestals_example/recipe/<block>_pedestal.json`).
-A recipe of your own looks like this:
+data pack hands them out with a recipe, a loot table or `/give`, and breaking one keeps its material. This mod's own
+recipes make six, crafted like the others: amethyst block, obsidian, copper block, mossy stone bricks, smooth stone and
+polished blackstone bricks (`data/trophypedestals/recipe/custom_pedestal/<block>.json`). A recipe of your own looks like this:
 
 ```json
 {

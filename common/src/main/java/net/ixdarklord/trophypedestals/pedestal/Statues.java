@@ -1,8 +1,12 @@
 package net.ixdarklord.trophypedestals.pedestal;
 
+import com.mojang.authlib.properties.PropertyMap;
+import java.util.Optional;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.component.ResolvableProfile;
@@ -14,19 +18,19 @@ import net.minecraft.world.item.component.ResolvableProfile;
  */
 public final class Statues {
     /** The figure a statue is: vanilla's mannequin. */
-    public static final EntityType<?> FIGURE = EntityType.MANNEQUIN;
+    public static final EntityType<?> FIGURE = EntityType.PLAYER;
 
     private Statues() {}
 
     /** A statue of the player by this name: their skin's looked up as the statue is drawn (the default skin until then). */
     public static CompoundTag look(String name) {
-        return look(ResolvableProfile.createUnresolved(name));
+        return look(new ResolvableProfile(Optional.of(name), Optional.empty(), new PropertyMap()));
     }
 
     /** A statue of this player, wearing the skin they have now, named after them. */
     public static CompoundTag look(Player player) {
-        CompoundTag look = look(ResolvableProfile.createResolved(player.getGameProfile()));
-        look.putString("CustomName", player.getName().getString());
+        CompoundTag look = look(new ResolvableProfile(player.getGameProfile()));
+        look.putString("CustomName", Component.Serializer.toJson(Component.literal(player.getName().getString()), RegistryAccess.EMPTY));
         return look;
     }
 

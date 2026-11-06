@@ -2,8 +2,8 @@ package net.ixdarklord.trophypedestals.api.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.ixdarklord.trophypedestals.api.PedestalRarity;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.ixdarklord.trophypedestals.compat.render.CameraRenderState;
+import net.ixdarklord.trophypedestals.compat.render.SubmitNodeCollector;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 

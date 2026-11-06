@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_fluted_placed",
+  "textures": {
+    "side": "minecraft:block/dark_oak_planks",
+    "top": "minecraft:block/dark_oak_planks",
+    "bottom": "minecraft:block/dark_oak_planks",
+    "column": "minecraft:block/dark_oak_log",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "minecraft:block/dark_oak_planks"
+  }
+}

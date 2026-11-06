@@ -1,10 +1,10 @@
 {
   "variants": {
     "lit=false": {
-      "model": "trophypedestals:block/acacia_pedestal"
+      "model": "trophypedestals:block/acacia_pedestal_placed"
     },
     "lit=true": {
-      "model": "trophypedestals:block/acacia_pedestal"
+      "model": "trophypedestals:block/acacia_pedestal_placed"
     }
   }
 }

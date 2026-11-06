@@ -3,9 +3,15 @@
   "category": "building",
   "group": "trophy_shelf",
   "key": {
-    "T": "minecraft:stick",
-    "G": "minecraft:glass_pane",
-    "S": "minecraft:warped_slab"
+    "T": {
+      "item": "minecraft:stick"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    },
+    "S": {
+      "item": "minecraft:warped_slab"
+    }
   },
   "pattern": [
     "TGT",
