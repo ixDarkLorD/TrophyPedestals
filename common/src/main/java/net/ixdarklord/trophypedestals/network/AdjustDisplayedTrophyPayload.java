@@ -8,6 +8,7 @@ import net.ixdarklord.trophypedestals.pedestal.TrophyCabinetBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Sent when a player closes the adjust screen of a trophy on a trophy display: the settings for its spot that can be
@@ -29,7 +30,7 @@ public record AdjustDisplayedTrophyPayload(BlockPos pos, int slot, PedestalBlock
     /** Applies it for this player, if they're near the display and there's a trophy on that spot. */
     public void apply(ServerPlayer player) {
         if (slot < 0 || slot >= TrophyCabinetBlockEntity.SLOTS) return;
-        if (!player.level().isLoaded(pos) || player.distanceToSqr(pos.getCenter()) > REACH * REACH) return;
+        if (!player.level().isLoaded(pos) || player.distanceToSqr(Vec3.atCenterOf(pos)) > REACH * REACH) return;
         if (!(player.level().getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display) || display.item(slot).isEmpty()) return;
         DisplayedTrophySettings old = display.settings(slot);
         // Each of the screen's tabs only if the server lets players change it (Behavior always).

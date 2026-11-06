@@ -734,7 +734,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         // to nothing, as it turns off.
         float scale = state.iconScale * state.rise;
         poseStack.translate(0.5F, state.iconY + state.bob - (1.0F - state.rise) * RISE_DROP, 0.5F);
-        poseStack.mulPose(Axis.YP.rotationDegrees(state.turn));
+        poseStack.rotate(Axis.YP.rotationDegrees(state.turn));
         tilt(state, poseStack, state.middle * state.rise);
         poseStack.scale(scale, scale, scale);
         state.icon.submit(poseStack, collector, FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
@@ -744,10 +744,10 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             poseStack.pushPose();
             float mobScale = state.mobScale * state.rise * state.lieScale;
             poseStack.translate(0.5F, MOB_FLOOR + state.lift + state.bob - (1.0F - state.rise) * RISE_DROP, 0.5F);
-            poseStack.mulPose(Axis.YP.rotationDegrees(state.turn));
+            poseStack.rotate(Axis.YP.rotationDegrees(state.turn));
             // (About its middle: from its feet, as far up as the icon's middle is over the floor.)
             tilt(state, poseStack, (ICON_Y + state.middle - MOB_FLOOR) * state.rise);
-            poseStack.mulPose(Axis.YP.rotationDegrees(modelTurn(state.mob)));
+            poseStack.rotate(Axis.YP.rotationDegrees(modelTurn(state.mob)));
             poseStack.scale(mobScale, mobScale, mobScale);
             poseStack.translate(0.0F, -sink(state.mob), 0.0F);
             // (A lying statue, moved to lie on the middle: in its own units, so at any size.)
@@ -769,8 +769,8 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static void tilt(State state, PoseStack poseStack, float middle) {
         if (state.pitch == 0.0F && state.roll == 0.0F) return;
         poseStack.translate(0.0F, middle, 0.0F);
-        if (state.pitch != 0.0F) poseStack.mulPose(Axis.XP.rotationDegrees(state.pitch));
-        if (state.roll != 0.0F) poseStack.mulPose(Axis.ZP.rotationDegrees(state.roll));
+        if (state.pitch != 0.0F) poseStack.rotate(Axis.XP.rotationDegrees(state.pitch));
+        if (state.roll != 0.0F) poseStack.rotate(Axis.ZP.rotationDegrees(state.roll));
         poseStack.translate(0.0F, -middle, 0.0F);
     }
 
@@ -791,7 +791,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         poseStack.pushPose();
         float top = state.displayPivot + (state.displayTop - state.displayPivot) * follow;
         poseStack.translate(0.5F, top + TOPPER_GAP * grow + state.bob - (1.0F - state.rise) * RISE_DROP, 0.5F);
-        poseStack.mulPose(Axis.YP.rotationDegrees(state.turn));
+        poseStack.rotate(Axis.YP.rotationDegrees(state.turn));
         poseStack.scale(grow, grow, grow);
         // Moved forward (the way what it shows faces as it turns) and up, then sized, as the pedestal is set.
         poseStack.translate(0.0F, state.topperY, state.topperX);
@@ -902,7 +902,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         float halfWidth = widest / 2.0F + PANEL_PAD, height = count * LINE_HEIGHT + 2 * PANEL_PAD - 2;
         poseStack.pushPose();
         poseStack.translate(atX, atY, atZ);
-        poseStack.mulPose(camera.orientation);
+        poseStack.rotate(camera.orientation);
         float panelScale = PANEL_SCALE * state.textScale;
         poseStack.scale(panelScale, -panelScale, panelScale);
         float x0 = -halfWidth, x1 = halfWidth, y0 = -height, y1 = 0.0F;

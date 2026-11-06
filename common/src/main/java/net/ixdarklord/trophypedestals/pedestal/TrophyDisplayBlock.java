@@ -8,11 +8,12 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -159,11 +160,11 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!(level.getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display)) return InteractionResult.TRY_WITH_EMPTY_HAND;
         // An axe takes its trim off.
-        if (stack.getItem() instanceof AxeItem) {
+        if (stack.is(ItemTags.AXES)) {
             if (display.trim() == null) return InteractionResult.TRY_WITH_EMPTY_HAND;
             if (!level.isClientSide()) {
                 setTrim(level, state, pos, null);
-                level.playSound(null, pos, SoundEvents.AXE_STRIP, SoundSource.BLOCKS, 1.0F, 1.0F);
+                level.playSound(null, pos, SoundEvents.AXE_STRIP.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
             }
             return InteractionResult.SUCCESS;
         }
@@ -202,7 +203,7 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
         if (!level.isClientSide()) {
             ItemStack taken = display.item(slot);
             display.setItem(slot, ItemStack.EMPTY);
-            if (!player.getInventory().add(taken)) player.drop(taken, false);
+            if (!player.getInventory().add(taken)) player.drop(taken, false, Prediction.SERVER_ONLY);
             level.playSound(null, pos, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS, 1.0F, 1.0F);
         }
         return InteractionResult.SUCCESS;

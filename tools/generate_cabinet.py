@@ -221,16 +221,12 @@ def main():
         write(os.path.join(models, 'item', f'{cabinet}_bare.json'), {'parent': 'trophypedestals:item/trophy_cabinet_bare', 'textures': textures})
         write(os.path.join(ASSETS, 'blockstates', f'{cabinet}.json'), turns(cabinet_parts))
         write(os.path.join(ASSETS, 'blockstates', f'{rack}.json'), turns(shelf_parts))
-        # Plain wood, and with a trim its trim over that, in its material (gold or any block's: see DisplayTrimItemRenderer,
-        # which draws the gold faces of the model named here in it).
+        # Plain wood, unless the item carries a trim (shown as gold, as a trimmed one's item is).
         for block in (cabinet, rack):
             model = f'trophypedestals:item/{cabinet}' if block == cabinet else f'trophypedestals:block/{rack}'
-            gold_faces = 'trophypedestals:models/item/trophy_cabinet.json' if block == cabinet else 'trophypedestals:models/block/trophy_shelf.json'
             write(os.path.join(ASSETS, 'items', f'{block}.json'), {'model': {
                 'type': 'minecraft:condition', 'property': 'minecraft:has_component', 'component': 'trophypedestals:trim_material',
-                'on_true': {'type': 'minecraft:composite', 'models': [
-                    {'type': 'minecraft:model', 'model': model + '_bare'},
-                    {'type': 'minecraft:special', 'base': model + '_bare', 'model': {'type': 'trophypedestals:display_trim', 'model': gold_faces}}]},
+                'on_true': {'type': 'minecraft:model', 'model': model},
                 'on_false': {'type': 'minecraft:model', 'model': model + '_bare'}}})
         # A cabinet drops once, from its left half; a shelf drops itself.
         conditions = [{'condition': 'minecraft:survives_explosion'}]
@@ -244,18 +240,15 @@ def main():
         write(os.path.join(DATA, 'loot_table', 'blocks', f'{rack}.json'), {
             'type': 'minecraft:block',
             'pools': [{'rolls': 1, 'entries': [{'type': 'minecraft:item', 'name': f'trophypedestals:{rack}', 'functions': keep}], 'conditions': conditions}]})
-        # Both are made round a glass pane (a display case's glass), so neither matches a vanilla recipe or another mod's
-        # plain planks-and-slabs one: a cabinet's pane between two sticks in a case of planks and slabs, a shelf's pane
-        # between two sticks over a row of slabs.
         write(os.path.join(DATA, 'recipe', f'{cabinet}.json'), {
             'type': 'minecraft:crafting_shaped', 'category': 'building', 'group': 'trophy_cabinet',
-            'key': {'P': f'minecraft:{wood}_planks', 'S': f'minecraft:{wood}_slab', 'T': 'minecraft:stick', 'G': 'minecraft:glass_pane'},
-            'pattern': ['PSP', 'TGT', 'PSP'],
+            'key': {'P': f'minecraft:{wood}_planks', 'G': 'minecraft:gold_ingot', 'S': f'minecraft:{wood}_slab'},
+            'pattern': ['PPP', 'GSG', 'PPP'],
             'result': {'count': 1, 'id': f'trophypedestals:{cabinet}'}})
         write(os.path.join(DATA, 'recipe', f'{rack}.json'), {
             'type': 'minecraft:crafting_shaped', 'category': 'building', 'group': 'trophy_shelf',
-            'key': {'T': 'minecraft:stick', 'G': 'minecraft:glass_pane', 'S': f'minecraft:{wood}_slab'},
-            'pattern': ['TGT', 'SSS'],
+            'key': {'G': 'minecraft:gold_nugget', 'S': f'minecraft:{wood}_slab'},
+            'pattern': ['G G', 'SSS'],
             'result': {'count': 2, 'id': f'trophypedestals:{rack}'}})
         names[f'block.trophypedestals.{cabinet}'] = f'{title(wood)} Trophy Cabinet'
         names[f'block.trophypedestals.{rack}'] = f'{title(wood)} Trophy Shelf'

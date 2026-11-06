@@ -6,6 +6,7 @@ import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * From a client's adjustment screen: when the pedestal at {@code pos} shows its text, how large its item or mob is, how
@@ -31,7 +32,7 @@ public record AdjustPedestalPayload(BlockPos pos, PedestalBlockEntity.TextMode t
 
     /** Applies it for this player, if they're near the pedestal and allowed to adjust it. */
     public void apply(ServerPlayer player) {
-        if (!player.level().isLoaded(pos) || player.distanceToSqr(pos.getCenter()) > REACH * REACH) return;
+        if (!player.level().isLoaded(pos) || player.distanceToSqr(Vec3.atCenterOf(pos)) > REACH * REACH) return;
         if (!(player.level().getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) || !pedestal.canAdjust(player)) return;
         // Each of the screen's tabs only if the server lets players change it (Behavior always).
         if (TrophyPedestalsConfig.PEDESTAL_DISPLAY_SETTINGS.get()) {

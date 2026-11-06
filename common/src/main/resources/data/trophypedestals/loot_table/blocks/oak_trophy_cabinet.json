@@ -7,29 +7,30 @@
         {
           "type": "minecraft:item",
           "name": "trophypedestals:oak_trophy_cabinet",
-          "functions": [
-            {
-              "function": "minecraft:copy_components",
-              "source": "block_entity",
-              "include": [
-                "trophypedestals:trim_material"
-              ]
-            }
-          ]
-        }
-      ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        },
-        {
-          "condition": "minecraft:block_state_property",
-          "block": "trophypedestals:oak_trophy_cabinet",
-          "properties": {
-            "part": "left"
+          "modifier": {
+            "type": "minecraft:copy_components",
+            "source": "block_entity",
+            "include": [
+              "trophypedestals:trim_material"
+            ]
           }
         }
-      ]
+      ],
+      "condition": {
+        "type": "minecraft:all_of",
+        "terms": [
+          {
+            "type": "minecraft:survives_explosion"
+          },
+          {
+            "type": "minecraft:match_block",
+            "blocks": "trophypedestals:oak_trophy_cabinet",
+            "state": {
+              "part": "left"
+            }
+          }
+        ]
+      }
     }
   ]
 }

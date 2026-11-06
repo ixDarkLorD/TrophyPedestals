@@ -1,6 +1,5 @@
 package net.ixdarklord.trophypedestals.pedestal;
 
-import com.mojang.serialization.MapCodec;
 import net.ixdarklord.coolcatcore.api.network.Network;
 import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
@@ -16,6 +15,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.util.Prediction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -51,7 +51,6 @@ import org.jetbrains.annotations.Nullable;
  * ({@link Pedestals.Material}).
  */
 public class PedestalBlock extends BaseEntityBlock {
-    public static final MapCodec<PedestalBlock> CODEC = simpleCodec(PedestalBlock::new);
     public static final int MAX_RANK = 5;
     /** Whether it holds something (a trophy's icon or a displayed item), whose hologram lights the area round it. */
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
@@ -140,11 +139,6 @@ public class PedestalBlock extends BaseEntityBlock {
     }
 
     @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
-
-    @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return SHAPE;
     }
@@ -191,7 +185,7 @@ public class PedestalBlock extends BaseEntityBlock {
         if (!level.isClientSide()) {
             ItemStack shown = pedestal.display();
             pedestal.setDisplay(ItemStack.EMPTY);
-            if (!player.getInventory().add(shown)) player.drop(shown, false);
+            if (!player.getInventory().add(shown)) player.drop(shown, false, Prediction.SERVER_ONLY);
             if (pedestal.sounds()) level.playSound(null, pos, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS, 1.0F, 1.0F);
         }
         return InteractionResult.SUCCESS;

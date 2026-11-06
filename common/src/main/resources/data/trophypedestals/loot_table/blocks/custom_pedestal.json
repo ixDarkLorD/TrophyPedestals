@@ -7,25 +7,21 @@
         {
           "type": "minecraft:item",
           "name": "trophypedestals:custom_pedestal",
-          "functions": [
-            {
-              "function": "minecraft:copy_components",
-              "source": "block_entity",
-              "include": [
-                "trophypedestals:pedestal_material",
-                "trophypedestals:pedestal",
-                "trophypedestals:mob_trophy",
-                "minecraft:item_name"
-              ]
-            }
-          ]
+          "modifier": {
+            "type": "minecraft:copy_components",
+            "source": "block_entity",
+            "include": [
+              "trophypedestals:pedestal_material",
+              "trophypedestals:pedestal",
+              "trophypedestals:mob_trophy",
+              "minecraft:item_name"
+            ]
+          }
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ]
 }

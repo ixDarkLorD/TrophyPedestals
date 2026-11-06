@@ -19,6 +19,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -100,7 +101,7 @@ public final class MobTrophies {
         record Ranked(EntityType<?> type, PedestalRarity rarity, String name) {}
         List<Ranked> mobs = new ArrayList<>();
         for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
-            if (type == EntityType.PLAYER || type == EntityType.ARMOR_STAND || type.builtInRegistryHolder().is(NONE) || !type.isEnabled(features)) continue;
+            if (type == EntityTypes.PLAYER || type == EntityTypes.ARMOR_STAND || type.builtInRegistryHolder().is(NONE) || !type.isEnabled(features)) continue;
             PedestalRarity rarity = rarity(type);
             if (rarity != null) mobs.add(new Ranked(type, rarity, type.getDescription().getString()));
         }

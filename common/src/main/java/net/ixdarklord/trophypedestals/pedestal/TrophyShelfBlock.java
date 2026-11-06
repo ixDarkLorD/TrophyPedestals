@@ -1,5 +1,4 @@
 package net.ixdarklord.trophypedestals.pedestal;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
@@ -7,7 +6,6 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ScheduledTickAccess;
-import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -26,7 +24,6 @@ import java.util.Map;
  * long shelf, with corner caps only at its ends.
  */
 public class TrophyShelfBlock extends TrophyDisplayBlock {
-    public static final MapCodec<TrophyShelfBlock> CODEC = simpleCodec(TrophyShelfBlock::new);
     /** Whether it's joined to a shelf on its left, or on its right (as seen from its front). */
     public static final BooleanProperty LEFT = BooleanProperty.create("left"), RIGHT = BooleanProperty.create("right");
     // Its board (with its lip), its rim and its brackets, facing north (its back to the wall on its south), in pixels.
@@ -35,11 +32,6 @@ public class TrophyShelfBlock extends TrophyDisplayBlock {
     public TrophyShelfBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(GOLD_TRIM, false).setValue(LEFT, false).setValue(RIGHT, false));
-    }
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

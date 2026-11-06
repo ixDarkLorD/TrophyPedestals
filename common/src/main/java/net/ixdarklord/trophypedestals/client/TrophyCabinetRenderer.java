@@ -161,7 +161,7 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
         if (state.trim != null && state.trimModel != null) {
             poseStack.pushPose();
             poseStack.translate(0.5F, 0.0F, 0.5F);
-            poseStack.mulPose(Axis.YP.rotationDegrees(state.turn));
+            poseStack.rotate(Axis.YP.rotationDegrees(state.turn));
             poseStack.translate(-0.5F, 0.0F, -0.5F);
             PedestalBody.submitTrim(state.trimModel, state.trim, poseStack, collector, state.lightCoords);
             poseStack.popPose();
@@ -172,7 +172,7 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
                 // The pedestal's model is drawn centered on its origin: on its spot, its foot on the shelf.
                 poseStack.pushPose();
                 poseStack.translate(state.x[i], state.top + SCALE / 2.0F, state.z[i]);
-                poseStack.mulPose(Axis.YP.rotationDegrees(state.turn));
+                poseStack.rotate(Axis.YP.rotationDegrees(state.turn));
                 poseStack.scale(SCALE, SCALE, SCALE);
                 state.trophies[i].submit(poseStack, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
                 poseStack.popPose();

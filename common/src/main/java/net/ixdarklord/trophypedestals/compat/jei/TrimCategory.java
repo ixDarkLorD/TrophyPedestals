@@ -37,7 +37,7 @@ public final class TrimCategory implements IRecipeCategory<TrimCategory.Trim> {
     // What a display's page shows it trimmed with: a gold ingot (the gold trim), then any block (a few for the page).
     private static final List<Item> MATERIALS = List.of(Items.GOLD_INGOT, Items.STONE, Items.COBBLESTONE, Items.DEEPSLATE_BRICKS,
             Items.POLISHED_BLACKSTONE, Items.QUARTZ_BLOCK, Items.SMOOTH_SANDSTONE, Items.BRICKS, Items.PRISMARINE, Items.PURPUR_BLOCK,
-            Items.END_STONE_BRICKS, Items.COPPER_BLOCK, Items.EMERALD_BLOCK, Items.DIAMOND_BLOCK, Items.AMETHYST_BLOCK, Items.OAK_LOG);
+            Items.END_STONE_BRICKS, Items.COPPER_BLOCK.weathering().unaffected(), Items.EMERALD_BLOCK, Items.DIAMOND_BLOCK, Items.AMETHYST_BLOCK, Items.OAK_LOG);
 
     private final IGuiHelper gui;
     private final IDrawable icon;

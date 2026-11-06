@@ -1,5 +1,4 @@
 package net.ixdarklord.trophypedestals.pedestal;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
@@ -11,7 +10,6 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ScheduledTickAccess;
-import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -30,7 +28,6 @@ import java.util.Locale;
  * half beside it; breaking either breaks both, and the cabinet drops once (from its left half), with its trophies.
  */
 public class TrophyCabinetBlock extends TrophyDisplayBlock {
-    public static final MapCodec<TrophyCabinetBlock> CODEC = simpleCodec(TrophyCabinetBlock::new);
     public static final EnumProperty<Part> PART = EnumProperty.create("part", Part.class);
     /** Whether it's joined to a cabinet's like half above it, or below it (stacked: their boards meet as one divider). */
     public static final BooleanProperty UP = BlockStateProperties.UP, DOWN = BlockStateProperties.DOWN;
@@ -49,11 +46,6 @@ public class TrophyCabinetBlock extends TrophyDisplayBlock {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(PART, Part.LEFT)
                 .setValue(UP, false).setValue(DOWN, false).setValue(GOLD_TRIM, false));
-    }
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override
