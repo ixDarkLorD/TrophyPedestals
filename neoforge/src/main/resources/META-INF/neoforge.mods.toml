@@ -9,7 +9,7 @@ displayName = "${mod_name}"
 version = "${version}"
 description = "${mod_description}"
 authors = "${mod_author}"
-logoFile = "mod_logo.png"
+iconFile = "mod_logo.png"
 displayURL = "${mod_page_url}"
 updateJSONURL = "${mod_neoforge_update_url}"
 

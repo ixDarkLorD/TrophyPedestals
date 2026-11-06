@@ -1,1 +1,0 @@
-net.ixdarklord.trophypedestals.neoforge.compat.kubejs.TrophyPedestalsKubeJSPlugin

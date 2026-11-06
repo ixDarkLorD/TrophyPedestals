@@ -126,13 +126,13 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
             long now = Util.getMillis();
             // (The clock is wrapped first: in milliseconds it's too large for a float to keep.)
             poseStack.translate(0.0F, (float) Math.sin(now / BOB_MILLIS) * BOB, 0.0F);
-            poseStack.mulPose(Axis.YP.rotationDegrees(now % SPIN_MILLIS * 360.0F / SPIN_MILLIS));
+            poseStack.rotate(Axis.YP.rotationDegrees(now % SPIN_MILLIS * 360.0F / SPIN_MILLIS));
         } else {
             // Turned to face the viewer in the inventory's view of the block, which turns it 225 degrees and tips it back 30
             // (edge on it would vanish). The trophy model lights itself from the front there ("gui_light": "front"), so
             // the icon's face takes the inventory's light rather than being shaded as a block's side.
-            poseStack.mulPose(Axis.YP.rotationDegrees(-45.0F));
-            poseStack.mulPose(Axis.XP.rotationDegrees(30.0F));
+            poseStack.rotate(Axis.YP.rotationDegrees(-45.0F));
+            poseStack.rotate(Axis.XP.rotationDegrees(30.0F));
         }
         poseStack.scale(ICON_SCALE, ICON_SCALE, ICON_SCALE);
         poseStack.translate(0.0F, -0.15F, 0.0F);
@@ -171,11 +171,11 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
             poseStack.translate(0.5F, PedestalRenderer.mobFloor(), 0.5F);
             if (spin) {
                 poseStack.translate(0.0F, (float) Math.sin(now / BOB_MILLIS) * BOB, 0.0F);
-                poseStack.mulPose(Axis.YP.rotationDegrees(now % SPIN_MILLIS * 360.0F / SPIN_MILLIS));
+                poseStack.rotate(Axis.YP.rotationDegrees(now % SPIN_MILLIS * 360.0F / SPIN_MILLIS));
             } else {
                 // Turned three quarters towards the viewer, looking out to the lower right, in the inventory's view of the
                 // block (which turns it 225 degrees; a mob faces south unturned).
-                poseStack.mulPose(Axis.YP.rotationDegrees(MOB_SLOT_YAW + PedestalRenderer.modelTurn(shown)));
+                poseStack.rotate(Axis.YP.rotationDegrees(MOB_SLOT_YAW + PedestalRenderer.modelTurn(shown)));
             }
             poseStack.scale(scale, scale, scale);
             poseStack.translate(0.0F, -PedestalRenderer.sink(shown), 0.0F);

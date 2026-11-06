@@ -5,6 +5,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.api.TrophyKinds;
+import net.minecraft.core.Holder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.context.ContextKey;
 import net.minecraft.world.entity.Entity;
@@ -15,7 +16,6 @@ import net.minecraft.world.level.storage.loot.functions.LootItemConditionalFunct
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -45,9 +45,9 @@ public class SetTrophyFunction extends LootItemConditionalFunction {
     private final Optional<String> name;
     private final Optional<Identifier> rarity;
 
-    private SetTrophyFunction(List<LootItemCondition> predicates, Identifier kind, Identifier subject, PedestalRecord.Unlocker unlocker, Optional<String> name,
+    private SetTrophyFunction(Optional<Holder<LootItemCondition>> condition, Identifier kind, Identifier subject, PedestalRecord.Unlocker unlocker, Optional<String> name,
                               Optional<Identifier> rarity) {
-        super(predicates);
+        super(condition);
         this.kind = kind;
         this.subject = subject;
         this.unlocker = unlocker;
@@ -69,7 +69,7 @@ public class SetTrophyFunction extends LootItemConditionalFunction {
     protected ItemStack run(ItemStack stack, LootContext context) {
         if (!(stack.getItem() instanceof BlockItem item) || !(item.getBlock() instanceof PedestalBlock)) return stack;
         String who = name.orElseGet(() -> {
-            Entity entity = context.getOptionalParameter(LootContextParams.THIS_ENTITY);
+            Entity entity = context.getOptional(LootContextParams.THIS_ENTITY);
             return entity == null ? "" : entity.getName().getString();
         });
         Identifier rank = rarity.orElseGet(() -> TrophyKinds.rarity(kind, subject).id());

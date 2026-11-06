@@ -123,7 +123,7 @@ public final class MobAnimations {
             case SWING -> {
                 if (shown instanceof ArmedEntityRenderState armed) {
                     float into = time % SWING_PERIOD;
-                    armed.attackTime = into < SWING ? into / SWING : 0.0F;
+                    armed.swingAnimation = into < SWING ? into / SWING : 0.0F;
                 }
             }
             case GOLEM_SWING -> animation.field().setFloat(shown, Math.max(0.0F, SWING - time % SWING_PERIOD));

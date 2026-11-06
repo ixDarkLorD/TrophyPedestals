@@ -7,13 +7,11 @@
         {
           "type": "minecraft:item",
           "name": "trophypedestals:blackstone_pedestal",
-          "functions": [
-            {
-              "function": "trophypedestals:set_mob_trophy",
-              "entity": "minecraft:wither",
-              "rarity": "legendary"
-            }
-          ]
+          "modifier": {
+            "type": "trophypedestals:set_mob_trophy",
+            "entity": "minecraft:wither",
+            "rarity": "legendary"
+          }
         }
       ]
     }
