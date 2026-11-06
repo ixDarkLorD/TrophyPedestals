@@ -5,7 +5,7 @@ dependencies {
     compileOnly "net.ixdarklord.coolcatlib:coolcatlib-common:${coolcatlib_version}"
 
     // Optional recipe viewer: tells mob trophies apart (compat/jei)
-    compileOnly "mezz.jei:jei-26.1.2-common-api:${jei_version}"
+    compileOnly "mezz.jei:jei-26.2-common-api:${jei_version}"
 }
 
 // The shared main.gradle publishes every subproject's shadowJar. For common it must be a plain jar of this

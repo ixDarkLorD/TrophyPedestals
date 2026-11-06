@@ -4,6 +4,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.component.ResolvableProfile;
 
@@ -14,7 +15,7 @@ import net.minecraft.world.item.component.ResolvableProfile;
  */
 public final class Statues {
     /** The figure a statue is: vanilla's mannequin. */
-    public static final EntityType<?> FIGURE = EntityType.MANNEQUIN;
+    public static final EntityType<?> FIGURE = EntityTypes.MANNEQUIN;
 
     private Statues() {}
 
