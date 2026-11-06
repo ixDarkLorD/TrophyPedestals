@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.ixdarklord.coolcatcore.api.client.registry.BlockEntityRendererRegistry;
+import net.ixdarklord.coolcatcore.api.client.registry.BlockRenderLayers;
 import net.ixdarklord.coolcatcore.api.client.registry.TooltipComponentRegistry;
 import net.ixdarklord.coolcatcore.api.event.v2.client.ItemTooltipEvents;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
@@ -12,6 +13,24 @@ import net.ixdarklord.trophypedestals.api.PedestalRarity;
 import net.ixdarklord.trophypedestals.api.TrophyKinds;
 import net.ixdarklord.trophypedestals.api.client.PedestalEffect;
 import net.ixdarklord.trophypedestals.api.client.PedestalEffects;
+import net.ixdarklord.trophypedestals.compat.ARGB;
+import net.ixdarklord.trophypedestals.compat.render.AvatarRenderState;
+import net.ixdarklord.trophypedestals.compat.render.BlockEntityRenderState;
+import net.ixdarklord.trophypedestals.compat.render.CameraRenderState;
+import net.ixdarklord.trophypedestals.compat.render.EnderDragonRenderState;
+import net.ixdarklord.trophypedestals.compat.render.EntityRenderState;
+import net.ixdarklord.trophypedestals.compat.render.EntityRenderStates;
+import net.ixdarklord.trophypedestals.compat.render.HumanoidRenderState;
+import net.ixdarklord.trophypedestals.compat.render.ItemModelResolver;
+import net.ixdarklord.trophypedestals.compat.render.ItemStackRenderState;
+import net.ixdarklord.trophypedestals.compat.render.LivingEntityRenderState;
+import net.ixdarklord.trophypedestals.compat.render.ModelFeatureRenderer;
+import net.ixdarklord.trophypedestals.compat.render.ModelSizes;
+import net.ixdarklord.trophypedestals.compat.render.OncePerFrame;
+import net.ixdarklord.trophypedestals.compat.render.OrderedSubmitNodeCollector;
+import net.ixdarklord.trophypedestals.compat.render.PedestalOverlays;
+import net.ixdarklord.trophypedestals.compat.render.SubmitNodeCollector;
+import net.ixdarklord.trophypedestals.compat.render.WitherRenderState;
 import net.ixdarklord.trophypedestals.pedestal.MobLooks;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophyRecord;
 import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
@@ -22,42 +41,30 @@ import net.ixdarklord.trophypedestals.pedestal.TrophyTooltip;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.model.HierarchicalModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.renderer.OrderedSubmitNodeCollector;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.Sheets;
-import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
-import net.minecraft.client.renderer.entity.state.AvatarRenderState;
-import net.minecraft.client.renderer.entity.state.EnderDragonRenderState;
-import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
-import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
-import net.minecraft.client.renderer.entity.state.WitherRenderState;
-import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
-import net.minecraft.client.renderer.item.ItemModelResolver;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.AtlasIds;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.ARGB;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Avatar;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -92,7 +99,7 @@ import java.util.function.Supplier;
  * larger or higher), leaving the icon and the
  * well (and a legendary beam, which is seen from far); nothing is allocated for what a rank doesn't have.
  */
-public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlockEntity, PedestalRenderer.State> {
+public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlockEntity> {
     // The text panel: the height its bottom floats at, its scale (a name tag's), its lines' height, its padding inside
     // the frame, and its frame's border (a third of the 48 pixel frame texture, drawn at half size).
     // (Over a mob or a large item it floats a little above its top instead, if that's higher.)
@@ -132,11 +139,11 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     // The pass a pedestal item's showcase light is drawn in: after the item's model.
     private static final int ITEM_LIGHT_ORDER = 1;
     // A plain white sprite in the item atlas, which an item's light is drawn with.
-    private static final Identifier ITEM_LIGHT_SPRITE = TrophyPedestalsMod.id("item/pedestal_light");
+    private static final ResourceLocation ITEM_LIGHT_SPRITE = TrophyPedestalsMod.id("item/pedestal_light");
     // Its frame's half width: a little inside the well's walls (half 0.25).
     private static final float FRAME_HALF = 0.235F;
     // The well's lens lit up: its bezel and glass in shades of white to take the rank's color, the rest cut away.
-    private static final Identifier WELL_GLOW = TrophyPedestalsMod.id("textures/block/pedestal/well_glow.png");
+    private static final ResourceLocation WELL_GLOW = TrophyPedestalsMod.id("textures/block/pedestal/well_glow.png");
     // The glow over it: out to a little past the lens's bezel (6 of the well's 16 pixels, each 1/32 of a block), in
     // a fan of this many slices.
     private static final float LENS_GLOW_RADIUS = 0.22F;
@@ -147,7 +154,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     // The flare around the icon: the cinematic's rays with their middle faded out (the icon, edge on, wouldn't hide it),
     // unlit so it keeps its color. It faces the camera centered behind the icon's middle, bobbing and turning with it;
     // the gap keeps it just clear of the icon's turning edges.
-    private static final Identifier FLARE = TrophyPedestalsMod.id("textures/vfx/pedestal_flare.png");
+    private static final ResourceLocation FLARE = TrophyPedestalsMod.id("textures/vfx/pedestal_flare.png");
     private static final float ICON_Y = 1.32F, ICON_SCALE = 1.2F, FLARE_GAP = 0.03F;
     // A mob trophy's mob: where its feet float (a little over the cap), and the most room it takes before it's shrunk to fit:
     // how far out from its middle it may reach as it turns (inside the hologram's outlines and its light), and how tall.
@@ -180,18 +187,18 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static final float BEAM_BAND_TICKS = 40.0F, BEAM_BAND_HALF = 0.22F, BEAM_BAND_WIDTH = 0.09F;
 
     // Each of Trophy Pedestals's ranks' text frames, and the crests over the grandest.
-    private static final Map<Identifier, Identifier> FRAMES = Map.of(
+    private static final Map<ResourceLocation, ResourceLocation> FRAMES = Map.of(
             PedestalRarities.COMMON.id(), TrophyPedestalsMod.id("textures/gui/trophy_frame/common.png"),
             PedestalRarities.UNCOMMON.id(), TrophyPedestalsMod.id("textures/gui/trophy_frame/uncommon.png"),
             PedestalRarities.RARE.id(), TrophyPedestalsMod.id("textures/gui/trophy_frame/rare.png"),
             PedestalRarities.EPIC.id(), TrophyPedestalsMod.id("textures/gui/trophy_frame/epic.png"),
             PedestalRarities.LEGENDARY.id(), TrophyPedestalsMod.id("textures/gui/trophy_frame/legendary.png"));
-    private static final Map<Identifier, Identifier> CRESTS = Map.of(
+    private static final Map<ResourceLocation, ResourceLocation> CRESTS = Map.of(
             PedestalRarities.EPIC.id(), TrophyPedestalsMod.id("textures/gui/trophy_frame/epic_crest.png"),
             PedestalRarities.LEGENDARY.id(), TrophyPedestalsMod.id("textures/gui/trophy_frame/legendary_crown.png"));
     // The crown worn over the grandest trophies' display: a square crown of voxels, the frame's crown art on each of its
     // four sides built out of little blocks, floating just over the top of what it shows and turning with it.
-    private static final Map<Identifier, Identifier> TOPPERS = Map.of(
+    private static final Map<ResourceLocation, ResourceLocation> TOPPERS = Map.of(
             PedestalRarities.LEGENDARY.id(), TrophyPedestalsMod.id("textures/gui/trophy_frame/legendary_crown.png"));
     // Half its width, and where its base sits from the display's top (right on it, worn as a crown is), in blocks at the
     // usual display size.
@@ -200,11 +207,11 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     // has room of its own below the text).
     private static final float TOPPER_CLEARANCE = 0.03F;
     // Which of each crown art's pixels are solid, read once from its texture (null for one that can't be read).
-    private static final Map<Identifier, boolean[][]> TOPPER_PIXELS = new ConcurrentHashMap<>();
+    private static final Map<ResourceLocation, boolean[][]> TOPPER_PIXELS = new ConcurrentHashMap<>();
     // The voxels' shading, as unshaded drawing has none of its own: their outer faces, inner faces, tops, sides and undersides.
     private static final float SHADE_OUTER = 0.92F, SHADE_INNER = 0.62F, SHADE_TOP = 1.0F, SHADE_SIDE = 0.76F, SHADE_UNDER = 0.5F;
     // The ornaments hanging from the grandest frames' bottom edge, tucked a little behind it.
-    private static final Map<Identifier, Identifier> PENDANTS = Map.of(
+    private static final Map<ResourceLocation, ResourceLocation> PENDANTS = Map.of(
             PedestalRarities.LEGENDARY.id(), TrophyPedestalsMod.id("textures/gui/trophy_frame/legendary_crest.png"));
     // How far behind its text the panel sits, in its own units.
     private static final float PANEL_DEPTH = -0.05F;
@@ -231,13 +238,15 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     // (Also made by the trophy displays, to draw the trophies on them as on their own pedestals.)
     PedestalRenderer(BlockEntityRendererProvider.Context context) {
-        this.items = context.itemModelResolver();
+        this.items = ItemModelResolver.INSTANCE;
     }
 
     public static void init() {
         PedestalLight.init(FLARE);
         BlockEntityRendererRegistry.register(Pedestals.BLOCK_ENTITY, PedestalRenderer::new);
         BlockEntityRendererRegistry.register(Pedestals.CABINET_ENTITY, TrophyCabinetRenderer::new);
+        Pedestals.BLOCKS_BY_STONE.values().forEach(block -> BlockRenderLayers.register(block, RenderType.cutout()));
+        BlockRenderLayers.register(Pedestals.CUSTOM, RenderType.cutout());
         TooltipComponentRegistry.register(TrophyTooltip.class, TrophyTooltipLine::new);
         ItemTooltipEvents.APPEND.register((stack, context, player, flag, lines) -> {
             // (What it records or its mob, and its rank are the line under its name: see TrophyTooltipLine.)
@@ -292,7 +301,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
                                                        State state, float partialTicks, float time) {
         Entity mob = pedestal.shownMob();
         if (mob == null || mob.getType() != type) {
-            mob = type.create(pedestal.getLevel(), EntitySpawnReason.LOAD);
+            mob = EntityRenderStates.create(type, pedestal.getLevel());
             if (mob == null) return null;
             DrawnMobs.numbered(mob);
             MobLooks.apply(mob, look.get(), pedestal.getLevel().registryAccess());
@@ -308,7 +317,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         float tall = Math.max(0.1F, mob.getBbHeight());
         state.mobReach = Math.max(0.05F, reach(mob, tall));
         state.mobScale = Math.min(1.0F, Math.min(MOB_REACH / state.mobReach, MOB_HEIGHT / tall)) * pedestal.scale();
-        EntityRenderState shown = Minecraft.getInstance().getEntityRenderDispatcher().extractEntity(mob, partialTicks);
+        EntityRenderState shown = EntityRenderStates.extract(mob, partialTicks);
         shown.lightCoords = FULL_BRIGHT;
         shown.shadowRadius = 0.0F;
         shown.shadowPieces.clear();
@@ -376,7 +385,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static final float SLOT_ROOM = 0.66F;
 
     /** Whether a trophy of this rank wears a crown over what it shows (so its screen offers to hide it). */
-    static boolean hasCrown(@Nullable Identifier rarity) {
+    static boolean hasCrown(@Nullable ResourceLocation rarity) {
         return rarity != null && TOPPERS.containsKey(rarity);
     }
 
@@ -413,7 +422,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         if (model == null) return tall;
         float scale = tall / model[1];
         float height = model[1] * (scale > OWN_SIZE_LOW && scale < OWN_SIZE_HIGH ? 1.0F : scale);
-        return mob instanceof Avatar ? height * AVATAR_SCALE : height;
+        return mob instanceof Player ? height * AVATAR_SCALE : height;
     }
 
     private static float reach(Entity mob, float tall) {
@@ -425,9 +434,10 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     // A mob's model at rest, as {reach, height} in blocks, or null if it has no model of parts.
     private static float @Nullable [] measure(Entity mob) {
-        if (!(Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(mob) instanceof LivingEntityRenderer<?, ?, ?> renderer)) return null;
+        if (!(Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(mob) instanceof LivingEntityRenderer<?, ?> renderer)) return null;
         try {
-            ModelPart root = renderer.getModel().root();
+            if (!(renderer.getModel() instanceof HierarchicalModel<?> model)) return ModelSizes.measure(renderer.getModel(), mob);
+            ModelPart root = model.root();
             root.getAllParts().forEach(ModelPart::resetPose);
             float[] bounds = {0.0F, Float.MAX_VALUE, -Float.MAX_VALUE};
             Vector3f corner = new Vector3f();
@@ -469,9 +479,9 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         float lieScale = 1.0F, lieY, lieZ;
         // Whether it's a custom pedestal, whose body is drawn here, and the block it's made of.
         boolean custom;
-        @Nullable Identifier material;
+        @Nullable ResourceLocation material;
         // The crown over its display, if its rank wears one, and the top of what it shows, which the crown floats over.
-        @Nullable Identifier topper;
+        @Nullable ResourceLocation topper;
         // Its crown's size, and how far it's moved forward and up (pedestal settings).
         float topperScale = 1.0F, topperX, topperY;
         // (and the height it grows and shrinks about as it turns on and off: its pivot)
@@ -499,8 +509,8 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         boolean scene;
         // Whether its rank's beam of light rises from it (not inside a trophy cabinet, whose top it would go through).
         boolean beam = true;
-        Identifier frame = FRAMES.get(PedestalRarities.COMMON.id());
-        @Nullable Identifier crest, pendant;
+        ResourceLocation frame = FRAMES.get(PedestalRarities.COMMON.id());
+        @Nullable ResourceLocation crest, pendant;
         int frameTint = 0xFFFFFFFF;
         // Its yaw (with its spin) about the upright axis, then its pitch and roll about its middle, in degrees.
         float turn, pitch, roll, spin, bob, time, middle, flareX, flareY, flareZ, flareScale, faceX, faceZ, beamX, beamZ;
@@ -519,7 +529,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     // A large item or mob reaches well past its block, so it's drawn even when the block itself is out of view.
     @Override
-    public boolean shouldRenderOffScreen() {
+    public boolean shouldRenderOffScreen(PedestalBlockEntity blockEntity) {
         return true;
     }
 
@@ -545,12 +555,22 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
                 pos.getX() + 0.5 + wide, pos.getY() + high, pos.getZ() + 0.5 + wide);
     }
 
-    @Override
     public State createRenderState() {
         return new State();
     }
 
+    // Drawn in one call here: its state filled, as it's extracted on 26.1, then drawn, as it's submitted.
     @Override
+    public void render(PedestalBlockEntity blockEntity, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light, int overlay) {
+        if (!OncePerFrame.first(blockEntity, partialTicks)) return;
+        State state = createRenderState();
+        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        extractRenderState(blockEntity, state, partialTicks, camera, null);
+        state.lightCoords = light;
+        submit(state, poseStack, new SubmitNodeCollector(buffers), CameraRenderState.current());
+        PedestalOverlays.draw(blockEntity.getBlockState(), poseStack, buffers, light);
+    }
+
     public void extractRenderState(PedestalBlockEntity pedestal, State state, float partialTicks, Vec3 cameraPosition,
                                    ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         BlockEntityRenderState.extractBase(pedestal, state, breakProgress);
@@ -696,7 +716,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             state.beamZ = (float) (toZ / across * reach);
         }
         Arrays.fill(state.lines, null);
-        Identifier frame = FRAMES.get(state.rarity.id());
+        ResourceLocation frame = FRAMES.get(state.rarity.id());
         state.frame = frame != null ? frame : FRAMES.get(PedestalRarities.COMMON.id());
         state.frameTint = frame != null || !state.trophy ? 0xFFFFFFFF : ARGB.opaque(state.rarity.color());
         state.crest = CRESTS.get(state.rarity.id());
@@ -725,7 +745,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         }
     }
 
-    @Override
     public void submit(State state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
         if (state.custom) PedestalBody.submit(state.material, poseStack, collector, state.lightCoords);
         if (!state.shown) return;
@@ -752,7 +771,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             poseStack.translate(0.0F, -sink(state.mob), 0.0F);
             // (A lying statue, moved to lie on the middle: in its own units, so at any size.)
             poseStack.translate(0.0F, state.lieY, state.lieZ);
-            Minecraft.getInstance().getEntityRenderDispatcher().submit(state.mob, camera, 0.0, 0.0, 0.0, poseStack, collector);
+            EntityRenderStates.submit(state.mob, camera, 0.0, 0.0, 0.0, poseStack, collector);
             poseStack.popPose();
         }
         submitWell(state, poseStack, collector);
@@ -799,7 +818,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         float side = 2.0F * TOPPER_HALF, voxel = side / (columns + 1), height = voxel * tall, length = voxel * columns;
         float u0 = first / (float) wide, u1 = (last + 1) / (float) wide;
         float[] xs = {-TOPPER_HALF, TOPPER_HALF, TOPPER_HALF, -TOPPER_HALF}, zs = {-TOPPER_HALF, -TOPPER_HALF, TOPPER_HALF, TOPPER_HALF};
-        collector.submitCustomGeometry(poseStack, RenderTypes.text(state.topper), (pose, consumer) -> {
+        collector.submitCustomGeometry(poseStack, RenderType.text(state.topper), (pose, consumer) -> {
             for (int i = 0; i < 4; i++) {
                 float x0 = xs[i], z0 = zs[i], x1 = xs[(i + 1) % 4], z1 = zs[(i + 1) % 4];
                 // Along the side, and in towards the middle by one voxel.
@@ -833,11 +852,11 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     }
 
     // Which pixels of a crown art are solid, as [x][y]; null (and logged once) if it can't be read.
-    private static boolean @Nullable [][] readPixels(Identifier texture) {
+    private static boolean @Nullable [][] readPixels(ResourceLocation texture) {
         try (InputStream in = Minecraft.getInstance().getResourceManager().getResourceOrThrow(texture).open(); NativeImage image = NativeImage.read(in)) {
             boolean[][] solid = new boolean[image.getWidth()][image.getHeight()];
             for (int x = 0; x < image.getWidth(); x++) {
-                for (int y = 0; y < image.getHeight(); y++) solid[x][y] = ARGB.alpha(image.getPixel(x, y)) > 127;
+                for (int y = 0; y < image.getHeight(); y++) solid[x][y] = ARGB.alpha(image.getPixelRGBA(x, y)) > 127;
             }
             return solid;
         } catch (IOException | RuntimeException e) {
@@ -910,7 +929,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         // Panels drawn back to front, the farthest first, so a nearer one's see-through middle shows the one behind it
         // rather than cutting it out; each panel's text right after it.
         int order = PANEL_ORDER + 2 * (int) Math.max(0.0, PANEL_ORDER_RANGE - Math.sqrt(state.distanceSq));
-        collector.order(order).submitCustomGeometry(poseStack, RenderTypes.text(state.frame), (pose, consumer) -> {
+        collector.order(order).submitCustomGeometry(poseStack, RenderType.text(state.frame), (pose, consumer) -> {
             float[] xs = {x0, x0 + PANEL_BORDER, x1 - PANEL_BORDER, x1};
             float[] ys = {y0, y0 + PANEL_BORDER, y1 - PANEL_BORDER, y1};
             for (int row = 0; row < 3; row++) {
@@ -921,14 +940,14 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         });
         if (state.crest != null) {
             float foot = y0 + (state.rarity.id().equals(PedestalRarities.EPIC.id()) ? GEM_FOOT : CREST_FOOT);
-            collector.order(order).submitCustomGeometry(poseStack, RenderTypes.text(state.crest), (pose, consumer) ->
+            collector.order(order).submitCustomGeometry(poseStack, RenderType.text(state.crest), (pose, consumer) ->
                     // A little in front of the frame (between it and the text), so where they overlap it's on top.
                     panelQuad(consumer, pose, -CREST_WIDTH, foot - 2 * CREST_HEIGHT, CREST_WIDTH, foot, 0.0F, 0.0F, 1.0F, 1.0F, 0xFFFFFFFF, PANEL_DEPTH / 2.0F));
         }
         if (state.pendant != null) {
             // Hanging from the bottom edge, upside down, its top tucked behind the frame's band.
             float hang = y1 - PENDANT_TUCK;
-            collector.order(order).submitCustomGeometry(poseStack, RenderTypes.text(state.pendant), (pose, consumer) ->
+            collector.order(order).submitCustomGeometry(poseStack, RenderType.text(state.pendant), (pose, consumer) ->
                     panelQuad(consumer, pose, -CREST_WIDTH, hang, CREST_WIDTH, hang + 2 * CREST_HEIGHT, 0.0F, 1.0F, 1.0F, 0.0F, 0xFFFFFFFF, 2.0F * PANEL_DEPTH));
         }
         OrderedSubmitNodeCollector text = collector.order(order + 1);
@@ -977,7 +996,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         int tint = ARGB.color((int) (255 * fade), ARGB.scaleRGB(rarity.color(), BREATH_DIM + (1.0F - BREATH_DIM) * breath));
         // (None of the lens, its glow, or the cone and frame with the showcase light turned off.)
         if (state.showcaseLight && fade > 0.01F) {
-            collector.submitCustomGeometry(poseStack, RenderTypes.entityTranslucent(WELL_GLOW), (pose, consumer) -> litGlass(consumer, pose, tint));
+            collector.submitCustomGeometry(poseStack, RenderType.entityTranslucent(WELL_GLOW), (pose, consumer) -> litGlass(consumer, pose, tint));
         }
         // With its flourishes off, only the showcase light and its outlines stay: no beam, halos or crown (nor flares,
         // custom effects or particles).
@@ -985,7 +1004,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         int glow = ARGB.color((int) ((40 + 8 * Math.min(rarity.rank(), 5)) * rise * (GLOW_DIM + (1.0F - GLOW_DIM) * breath)), rarity.color());
         if (state.scene) {
             // In a scene of its own there are no world effects: added to the scene with it, as they would add it.
-            collector.submitCustomGeometry(poseStack, RenderTypes.dragonRays(),
+            collector.submitCustomGeometry(poseStack, RenderType.dragonRays(),
                     (pose, consumer) -> light(state, PedestalLight.additive(consumer, pose), lo, hi, rings, beam, glow));
             return;
         }
@@ -1106,16 +1125,16 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
      * light and frame rising out of the well; with {@code rings}, its rank's rising outlines too (in hand, not in a slot,
      * where they'd crowd the icon). In the block's units, over its model.
      */
-    public static void submitItemLight(PoseStack poseStack, SubmitNodeCollector collector, @Nullable Identifier rarityId, float time,
+    public static void submitItemLight(PoseStack poseStack, SubmitNodeCollector collector, @Nullable ResourceLocation rarityId, float time,
                                        boolean rings, float iconMiddle) {
         PedestalRarity rarity = rarityId == null || PedestalRarities.isNone(rarityId) ? DISPLAY : PedestalRarities.get(rarityId);
         float breath = 0.5F + 0.5F * Mth.sin(time * Mth.TWO_PI / BREATH_TICKS);
         int tint = ARGB.opaque(ARGB.scaleRGB(rarity.color(), BREATH_DIM + (1.0F - BREATH_DIM) * breath));
         // After the item's own model, so the light rises out of its well rather than sitting behind it.
         OrderedSubmitNodeCollector later = collector.order(ITEM_LIGHT_ORDER);
-        later.submitCustomGeometry(poseStack, RenderTypes.entityTranslucent(WELL_GLOW), (pose, consumer) -> litGlass(consumer, pose, tint));
+        later.submitCustomGeometry(poseStack, RenderType.entityTranslucent(WELL_GLOW), (pose, consumer) -> litGlass(consumer, pose, tint));
         // (In the translucent item sheet, drawn after the item's own model and icon: see PedestalLight.itemSheet.)
-        TextureAtlasSprite white = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.ITEMS).getSprite(ITEM_LIGHT_SPRITE);
+        TextureAtlasSprite white = Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS).getSprite(ITEM_LIGHT_SPRITE);
         later.submitCustomGeometry(poseStack, Sheets.translucentItemSheet(), (pose, consumer) -> {
             int glow = ARGB.color((int) ((40 + 8 * Math.min(rarity.rank(), 5)) * (GLOW_DIM + (1.0F - GLOW_DIM) * breath)), rarity.color());
             // (Over the lens's raised glass.)
@@ -1250,7 +1269,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             // In a scene of its own, with it: each a quad facing the scene's camera, round the icon's middle.
             float fx = 0.5F + state.flareX, fy = state.iconY + state.middle + state.bob + state.flareY, fz = 0.5F + state.flareZ;
             Quaternionf facing = new Quaternionf(camera.orientation);
-            collector.submitCustomGeometry(poseStack, RenderTypes.entityTranslucentEmissive(FLARE), (pose, consumer) -> {
+            collector.submitCustomGeometry(poseStack, RenderType.entityTranslucentEmissive(FLARE), (pose, consumer) -> {
                 sceneFlare(consumer, pose, facing, fx, fy, fz, half * state.flareScale, angle, argb);
                 if (second) sceneFlare(consumer, pose, facing, fx, fy, fz, secondHalf * state.flareScale, secondAngle, secondArgb);
             });

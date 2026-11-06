@@ -3,10 +3,18 @@
   "category": "building",
   "group": "trophy_cabinet",
   "key": {
-    "P": "minecraft:crimson_planks",
-    "S": "minecraft:crimson_slab",
-    "T": "minecraft:stick",
-    "G": "minecraft:glass_pane"
+    "P": {
+      "item": "minecraft:crimson_planks"
+    },
+    "S": {
+      "item": "minecraft:crimson_slab"
+    },
+    "T": {
+      "item": "minecraft:stick"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    }
   },
   "pattern": [
     "PSP",

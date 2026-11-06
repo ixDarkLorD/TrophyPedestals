@@ -6,7 +6,7 @@ import net.ixdarklord.trophypedestals.pedestal.PedestalBlock;
 import net.ixdarklord.trophypedestals.pedestal.PedestalRecord;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -33,7 +33,7 @@ public final class TrophyPedestals {
     }
 
     /** The pedestal block with this id ({@code trophypedestals:quartz_pedestal}), or null if it isn't one. */
-    public static @Nullable PedestalBlock pedestal(Identifier id) {
+    public static @Nullable PedestalBlock pedestal(ResourceLocation id) {
         return Pedestals.pedestal(id);
     }
 
@@ -41,12 +41,12 @@ public final class TrophyPedestals {
      * A trophy on the default pedestal recording {@code subject} of {@code kind} as achieved now, of the kind's own rank
      * for it. {@code name} is the player's or team's name; it's ignored for {@link PedestalRecord.Unlocker#SERVER}.
      */
-    public static ItemStack create(Identifier kind, Identifier subject, PedestalRecord.Unlocker unlocker, String name) {
+    public static ItemStack create(ResourceLocation kind, ResourceLocation subject, PedestalRecord.Unlocker unlocker, String name) {
         return create(defaultPedestal(), kind, subject, unlocker, name, System.currentTimeMillis(), TrophyKinds.rarity(kind, subject));
     }
 
     /** A trophy on this pedestal and of this rarity, recording {@code subject} of {@code kind} as achieved at {@code unlockedAt} (milliseconds since the epoch). */
-    public static ItemStack create(PedestalBlock pedestal, Identifier kind, Identifier subject, PedestalRecord.Unlocker unlocker, String name,
+    public static ItemStack create(PedestalBlock pedestal, ResourceLocation kind, ResourceLocation subject, PedestalRecord.Unlocker unlocker, String name,
                                    long unlockedAt, PedestalRarity rarity) {
         return Pedestals.trophy(pedestal, kind, subject, unlocker, name, unlockedAt, rarity);
     }

@@ -1,10 +1,10 @@
 {
   "variants": {
     "lit=false": {
-      "model": "trophypedestals:block/mossy_cobblestone_pedestal"
+      "model": "trophypedestals:block/mossy_cobblestone_pedestal_placed"
     },
     "lit=true": {
-      "model": "trophypedestals:block/mossy_cobblestone_pedestal"
+      "model": "trophypedestals:block/mossy_cobblestone_pedestal_placed"
     }
   }
 }

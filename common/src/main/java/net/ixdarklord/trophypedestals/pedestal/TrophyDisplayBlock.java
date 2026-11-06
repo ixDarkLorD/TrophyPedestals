@@ -4,12 +4,13 @@ import net.ixdarklord.trophypedestals.network.OpenDisplayedTrophyPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.AxeItem;
@@ -22,11 +23,11 @@ import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -52,12 +53,18 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
     /** Whether its trim is gold (in its model); without it, it has none, or one of another block (drawn by its renderer). */
     public static final BooleanProperty GOLD_TRIM = BooleanProperty.create("gold_trim");
     /** The trim material that is the model's own gold: a gold block's. */
-    public static final Identifier GOLD = BuiltInRegistries.BLOCK.getKey(Blocks.GOLD_BLOCK);
+    public static final ResourceLocation GOLD = BuiltInRegistries.BLOCK.getKey(Blocks.GOLD_BLOCK);
     // Half a block deep, its back against the wall (and its gold a pixel proud): a cabinet's shape, facing each way.
     private static final Map<Direction, VoxelShape> HALF_DEEP = shapes(new double[][] {{0, 0, 7, 16, 16, 16}});
 
     protected TrophyDisplayBlock(Properties properties) {
         super(properties);
+    }
+
+    // Drawn by its model (a block with a block entity draws nothing unless it says so).
+    @Override
+    protected RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
     }
 
     @Override
@@ -73,7 +80,7 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
     }
 
     @Override
-    protected boolean propagatesSkylightDown(BlockState state) {
+    protected boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
         return true;
     }
 
@@ -105,7 +112,7 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
     }
 
     // Makes the trim of it (and what shares its trim) of this block (GOLD for gold), or takes it off (null).
-    private void setTrim(Level level, BlockState state, BlockPos pos, @Nullable Identifier material) {
+    private void setTrim(Level level, BlockState state, BlockPos pos, @Nullable ResourceLocation material) {
         for (BlockPos each : trimmedTogether(state, pos)) {
             BlockState there = level.getBlockState(each);
             if (!(there.getBlock() instanceof TrophyDisplayBlock) || !(level.getBlockEntity(each) instanceof TrophyCabinetBlockEntity display)) continue;
@@ -115,7 +122,7 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
     }
 
     // A block it can be trimmed with: any block's item but another display's or a pedestal's.
-    private static @Nullable Identifier trimMaterial(ItemStack stack) {
+    private static @Nullable ResourceLocation trimMaterial(ItemStack stack) {
         if (!(stack.getItem() instanceof BlockItem item) || item.getBlock() instanceof TrophyDisplayBlock || item.getBlock() instanceof PedestalBlock) return null;
         return BuiltInRegistries.BLOCK.getKey(item.getBlock());
     }
@@ -129,10 +136,17 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
         }
     }
 
+    // Its trophies drop as it's broken (1.21.1 block entities hear nothing of it).
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moved) {
+        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display) display.preRemoveSideEffects(pos, state);
+        super.onRemove(state, level, pos, newState, moved);
+    }
+
     // Its trophies' settings that answer redstone know whether a signal reaches it.
     @Override
-    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighbor, @Nullable Orientation orientation, boolean moved) {
-        super.neighborChanged(state, level, pos, neighbor, orientation, moved);
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighbor, BlockPos neighborPos, boolean moved) {
+        super.neighborChanged(state, level, pos, neighbor, neighborPos, moved);
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display) display.setPowered(level.hasNeighborSignal(pos));
     }
 
@@ -156,36 +170,36 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
 
     // A trophy in hand goes onto the spot used, if it's free; a block in hand makes its trim of that block.
     @Override
-    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!(level.getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display)) return InteractionResult.TRY_WITH_EMPTY_HAND;
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!(level.getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display)) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         // An axe takes its trim off.
         if (stack.getItem() instanceof AxeItem) {
-            if (display.trim() == null) return InteractionResult.TRY_WITH_EMPTY_HAND;
+            if (display.trim() == null) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
             if (!level.isClientSide()) {
                 setTrim(level, state, pos, null);
                 level.playSound(null, pos, SoundEvents.AXE_STRIP, SoundSource.BLOCKS, 1.0F, 1.0F);
             }
-            return InteractionResult.SUCCESS;
+            return ItemInteractionResult.SUCCESS;
         }
         // A gold ingot (or a gold block) gives it the gold trim; any other block a trim of that block.
-        Identifier material = stack.is(Items.GOLD_INGOT) ? GOLD : Pedestals.isTrophy(stack) ? null : trimMaterial(stack);
+        ResourceLocation material = stack.is(Items.GOLD_INGOT) ? GOLD : Pedestals.isTrophy(stack) ? null : trimMaterial(stack);
         if (material != null) {
-            if (material.equals(display.trim())) return InteractionResult.TRY_WITH_EMPTY_HAND;
+            if (material.equals(display.trim())) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
             if (!level.isClientSide()) {
                 setTrim(level, state, pos, material);
                 level.playSound(null, pos, SoundEvents.SMITHING_TABLE_USE, SoundSource.BLOCKS, 0.6F, 1.2F);
             }
-            return InteractionResult.SUCCESS;
+            return ItemInteractionResult.SUCCESS;
         }
-        if (!Pedestals.isTrophy(stack)) return InteractionResult.TRY_WITH_EMPTY_HAND;
+        if (!Pedestals.isTrophy(stack)) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         int slot = slot(state, pos, hit.getLocation());
-        if (!display.item(slot).isEmpty()) return InteractionResult.TRY_WITH_EMPTY_HAND;
+        if (!display.item(slot).isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (!level.isClientSide()) {
             display.setItem(slot, stack.copyWithCount(1));
             stack.consume(1, player);
             level.playSound(null, pos, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 1.0F, 1.0F);
         }
-        return InteractionResult.SUCCESS;
+        return ItemInteractionResult.SUCCESS;
     }
 
     // An empty hand takes the trophy on the spot used; sneaking, it opens that trophy's adjust screen.

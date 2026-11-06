@@ -3,8 +3,12 @@
   "category": "misc",
   "group": "trophypedestals:pedestal",
   "key": {
-    "G": "minecraft:gold_ingot",
-    "S": "minecraft:cobbled_deepslate"
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "S": {
+      "item": "minecraft:cobbled_deepslate"
+    }
   },
   "pattern": [
     "SGS",

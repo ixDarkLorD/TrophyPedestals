@@ -3,10 +3,18 @@
   "category": "building",
   "group": "trophy_cabinet",
   "key": {
-    "P": "minecraft:jungle_planks",
-    "S": "minecraft:jungle_slab",
-    "T": "minecraft:stick",
-    "G": "minecraft:glass_pane"
+    "P": {
+      "item": "minecraft:jungle_planks"
+    },
+    "S": {
+      "item": "minecraft:jungle_slab"
+    },
+    "T": {
+      "item": "minecraft:stick"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    }
   },
   "pattern": [
     "PSP",

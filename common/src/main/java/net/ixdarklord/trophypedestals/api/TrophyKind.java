@@ -1,7 +1,7 @@
 package net.ixdarklord.trophypedestals.api;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,18 +16,18 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface TrophyKind {
     /** The subject's name, as its trophy shows it ("Iron Age"). */
-    Component name(Identifier subject, boolean client);
+    Component name(ResourceLocation subject, boolean client);
 
     /** The color of its name on the trophy's text frame (RGB). White by default. */
-    default int color(Identifier subject, boolean client) {
+    default int color(ResourceLocation subject, boolean client) {
         return 0xFFFFFF;
     }
 
     /** What its trophy shows turning over it. Empty shows nothing. */
-    ItemStack icon(Identifier subject, boolean client);
+    ItemStack icon(ResourceLocation subject, boolean client);
 
     /** The rank its trophies get unless one is named, or null for common. Asked on the server. */
-    default @Nullable PedestalRarity rarity(Identifier subject) {
+    default @Nullable PedestalRarity rarity(ResourceLocation subject) {
         return null;
     }
 }

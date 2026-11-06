@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_fluted_placed",
+  "textures": {
+    "side": "minecraft:block/acacia_planks",
+    "top": "minecraft:block/acacia_planks",
+    "bottom": "minecraft:block/acacia_planks",
+    "column": "minecraft:block/acacia_log",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "minecraft:block/acacia_planks"
+  }
+}

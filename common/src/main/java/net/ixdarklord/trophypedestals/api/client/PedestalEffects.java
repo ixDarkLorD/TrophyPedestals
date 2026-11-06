@@ -1,7 +1,7 @@
 package net.ixdarklord.trophypedestals.api.client;
 
 import net.ixdarklord.trophypedestals.api.PedestalRarity;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * anything else.
  */
 public final class PedestalEffects {
-    private static final Map<Identifier, PedestalEffect> EFFECTS = new ConcurrentHashMap<>();
+    private static final Map<ResourceLocation, PedestalEffect> EFFECTS = new ConcurrentHashMap<>();
 
     private PedestalEffects() {}
 
@@ -22,7 +22,7 @@ public final class PedestalEffects {
      *
      * @throws IllegalStateException if the rarity already has one
      */
-    public static void register(Identifier rarity, PedestalEffect effect) {
+    public static void register(ResourceLocation rarity, PedestalEffect effect) {
         if (EFFECTS.putIfAbsent(rarity, effect) != null) throw new IllegalStateException("Pedestal rarity " + rarity + " already has an effect");
     }
 

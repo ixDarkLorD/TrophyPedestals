@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_fluted_placed",
+  "textures": {
+    "side": "minecraft:block/warped_planks",
+    "top": "minecraft:block/warped_planks",
+    "bottom": "minecraft:block/warped_planks",
+    "column": "minecraft:block/warped_stem",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "minecraft:block/warped_planks"
+  }
+}

@@ -3,8 +3,12 @@
   "category": "misc",
   "group": "trophypedestals:pedestal",
   "key": {
-    "G": "minecraft:gold_ingot",
-    "S": "minecraft:end_stone_bricks"
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "S": {
+      "item": "minecraft:end_stone_bricks"
+    }
   },
   "pattern": [
     "SGS",

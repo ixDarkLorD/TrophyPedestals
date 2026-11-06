@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_fluted_placed",
+  "textures": {
+    "side": "minecraft:block/quartz_block_side",
+    "top": "minecraft:block/quartz_block_top",
+    "bottom": "minecraft:block/quartz_block_bottom",
+    "column": "minecraft:block/quartz_pillar",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "minecraft:block/quartz_block_top"
+  }
+}

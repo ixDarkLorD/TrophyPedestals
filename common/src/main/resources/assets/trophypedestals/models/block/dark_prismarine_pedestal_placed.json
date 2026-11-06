@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_fluted_placed",
+  "textures": {
+    "side": "minecraft:block/dark_prismarine",
+    "top": "minecraft:block/dark_prismarine",
+    "bottom": "minecraft:block/dark_prismarine",
+    "column": "minecraft:block/prismarine_bricks",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "minecraft:block/dark_prismarine"
+  }
+}

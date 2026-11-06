@@ -2,31 +2,35 @@ apply from: "${rootProject.sharedScripts}/neoforge.gradle"
 
 dependencies {
     // CoolCatLib (NeoForge). Its common classes are inside this jar.
-    implementation "net.ixdarklord.coolcatlib:coolcatlib-neoforge:${coolcatlib_version}"
+    modImplementation("net.ixdarklord.coolcatlib:coolcatlib-neoforge:${coolcatlib_version}") { transitive = false }
 
     // Dev runs only, never published: MCP Bridge lets the game be driven from outside. Not transitive, because it still points
     // at CoolCatLib's old coordinates and would load a second copy of it.
-    localRuntime("net.ixdarklord.mcp_bridge:mcp_bridge-neoforge:${mcp_bridge_version}") { transitive = false }
+    modLocalRuntime("net.ixdarklord.mcp_bridge:mcp_bridge-neoforge:${mcp_bridge_version}") { transitive = false }
 
     // JEI in a dev run only when asked (-Ptest_jei=true).
-    if (project.findProperty("test_jei") == "true") localRuntime "mezz.jei:jei-26.1.2-neoforge:${jei_version}"
+    if (project.findProperty("test_jei") == "true") modLocalRuntime libs.jei.neoforge
 
-    // Optional KubeJS (NeoForge only on 26.x; its API exposes Rhino types): pedestal bindings (compat/kubejs).
-    compileOnly("maven.modrinth:kubejs:${kubejs_version}") { transitive = false }
-    compileOnly("maven.modrinth:rhino:${rhino_version}") { transitive = false }
+    // Optional KubeJS (NeoForge only; its API exposes Rhino types): pedestal bindings (compat/kubejs).
+    modCompileOnly("maven.modrinth:kubejs:${kubejs_version}") { transitive = false }
+    modCompileOnly("maven.modrinth:rhino:${rhino_version}") { transitive = false }
 
     // spark in a dev run only when asked (-Ptest_spark=true).
-    if (project.findProperty("test_spark") == "true") localRuntime "maven.modrinth:spark:${spark_version}-neoforge"
+    if (project.findProperty("test_spark") == "true") modLocalRuntime "maven.modrinth:spark:${spark_version}"
 }
 
 loom {
     runs {
-        // NeoForge's own game test server (its "gameTestServer" run template): runs every registered test and exits.
+        // NeoForge's game test server: runs every registered test and exits. On NeoForge 21.1 that's the normal server
+        // launch with these two properties (its "gameTestServer" template's props don't reach the run on their own,
+        // and without them a plain server starts and never exits).
         gameTestServer {
             server()
             forgeTemplate("gameTestServer")
             setConfigName("NeoForge Game Test Server ${libs.versions.minecraft.get()}")
             runDir(helper.runDir("run/gametest"))
+            property "neoforge.gameTestServer", "true"
+            property "neoforge.enableGameTest", "true"
             property "neoforge.enabledGameTestNamespaces", modid
             // The example data pack the tests load (it isn't in the mod jar).
             property "trophypedestals.testpack", rootProject.file("testpack").absolutePath

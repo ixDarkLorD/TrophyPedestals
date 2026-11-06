@@ -1,21 +1,20 @@
 package net.ixdarklord.trophypedestals.pedestal;
+import net.ixdarklord.trophypedestals.compat.ValueInput;
+import net.ixdarklord.trophypedestals.compat.ValueOutput;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
 
 /** A trophy cabinet half: its two trophies (empty where there's none), on the viewer's left and right. */
@@ -30,7 +29,7 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
     private final DisplayedTrophySettings[] settings = {DisplayedTrophySettings.DEFAULT, DisplayedTrophySettings.DEFAULT};
     private boolean powered;
     // The block its trim is made of, in place of its gold (null for gold).
-    private @Nullable Identifier trim;
+    private @Nullable ResourceLocation trim;
     // On clients: each trophy as a pedestal of its own, not in the world, for its renderer to draw as one; and the trophy
     // each was made for.
     private final @Nullable PedestalBlockEntity[] shown = new PedestalBlockEntity[SLOTS];
@@ -95,20 +94,21 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
 
-    public @Nullable Identifier trim() {
+    public @Nullable ResourceLocation trim() {
         return trim;
     }
 
-    public void setTrim(@Nullable Identifier trim) {
+    public void setTrim(@Nullable ResourceLocation trim) {
         this.trim = trim;
         setChanged();
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
 
     @Override
-    protected void saveAdditional(ValueOutput output) {
-        super.saveAdditional(output);
-        if (trim != null) output.store(TRIM, Identifier.CODEC, trim);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        ValueOutput output = ValueOutput.of(tag, registries);
+        if (trim != null) output.store(TRIM, ResourceLocation.CODEC, trim);
         if (powered) output.putBoolean(POWERED, true);
         for (int i = 0; i < SLOTS; i++) {
             if (!items[i].isEmpty()) output.store(KEYS[i], ItemStack.CODEC, items[i]);
@@ -117,19 +117,20 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void loadAdditional(ValueInput input) {
-        super.loadAdditional(input);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        ValueInput input = ValueInput.of(tag, registries);
         for (int i = 0; i < SLOTS; i++) {
             items[i] = input.read(KEYS[i], ItemStack.CODEC).orElse(ItemStack.EMPTY);
             settings[i] = input.read(SETTINGS_KEYS[i], DisplayedTrophySettings.CODEC).orElse(DisplayedTrophySettings.DEFAULT);
         }
-        trim = input.read(TRIM, Identifier.CODEC).orElse(null);
+        trim = input.read(TRIM, ResourceLocation.CODEC).orElse(null);
         powered = input.getBooleanOr(POWERED, false);
     }
 
     // Its trim's material goes with its item, and comes back when that's placed.
     @Override
-    protected void applyImplicitComponents(DataComponentGetter components) {
+    protected void applyImplicitComponents(DataComponentInput components) {
         super.applyImplicitComponents(components);
         trim = components.get(Pedestals.TRIM_MATERIAL.get());
     }
@@ -141,15 +142,15 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void removeComponentsFromTag(ValueOutput output) {
-        super.removeComponentsFromTag(output);
+    public void removeComponentsFromTag(CompoundTag tag) {
+        super.removeComponentsFromTag(tag);
+        ValueOutput output = ValueOutput.of(tag);
         output.discard(TRIM);
     }
 
     // Its trophies drop when it's broken.
-    @Override
+    /** As it's broken (on 1.21.1 its block's onRemove calls this). */
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
-        super.preRemoveSideEffects(pos, state);
         if (level == null) return;
         for (ItemStack item : items) {
             if (!item.isEmpty()) Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, item);

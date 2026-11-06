@@ -3,8 +3,12 @@
   "category": "misc",
   "group": "trophypedestals:pedestal",
   "key": {
-    "G": "minecraft:gold_ingot",
-    "S": "minecraft:mossy_cobblestone"
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "S": {
+      "item": "minecraft:mossy_cobblestone"
+    }
   },
   "pattern": [
     "SGS",

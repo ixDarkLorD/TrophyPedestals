@@ -1,10 +1,10 @@
 {
   "variants": {
     "lit=false": {
-      "model": "trophypedestals:block/crimson_pedestal"
+      "model": "trophypedestals:block/crimson_pedestal_placed"
     },
     "lit=true": {
-      "model": "trophypedestals:block/crimson_pedestal"
+      "model": "trophypedestals:block/crimson_pedestal_placed"
     }
   }
 }

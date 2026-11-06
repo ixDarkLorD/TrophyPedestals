@@ -3,11 +3,8 @@ package net.ixdarklord.trophypedestals.pedestal;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.storage.TagValueInput;
-import net.minecraft.world.level.storage.TagValueOutput;
 
 import java.util.Set;
 
@@ -45,9 +42,7 @@ public final class MobLooks {
     /** A mob's look, to keep on its trophy: empty if it can't be saved or takes too much. */
     public static CompoundTag capture(LivingEntity mob) {
         try {
-            TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, mob.registryAccess());
-            mob.saveWithoutId(output);
-            CompoundTag look = output.buildResult();
+            CompoundTag look = mob.saveWithoutId(new CompoundTag());
             NOT_LOOK.forEach(look::remove);
             if (look.sizeInBytes() <= MAX_BYTES) return look;
             TrophyPedestalsMod.LOGGER.debug("{}'s look is too big for its trophy ({} bytes); it shows as it spawns", mob.getType(), look.sizeInBytes());
@@ -63,7 +58,7 @@ public final class MobLooks {
         try {
             CompoundTag shown = look.copy();
             NOT_LOOK.forEach(shown::remove);
-            mob.load(TagValueInput.create(ProblemReporter.DISCARDING, registries, shown));
+            mob.load(shown);
         } catch (RuntimeException e) {
             TrophyPedestalsMod.LOGGER.debug("Couldn't show {}'s look on its trophy", mob.getType(), e);
         }

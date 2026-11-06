@@ -1,0 +1,125 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/client/PedestalBody.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/client/PedestalBody.java
+@@ -10,16 +10,13 @@
+ import net.ixdarklord.trophypedestals.compat.ARGB;
+ import net.ixdarklord.trophypedestals.compat.render.SubmitNodeCollector;
+ import net.ixdarklord.trophypedestals.pedestal.TrophyDisplayBlock;
+ import net.minecraft.client.Minecraft;
+-import net.minecraft.client.color.block.BlockTintSource;
+ import net.minecraft.client.renderer.RenderType;
+ import net.minecraft.client.renderer.Sheets;
+-import net.minecraft.client.renderer.block.BlockStateModelSet;
+-import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+-import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
++import net.minecraft.client.renderer.block.model.BakedQuad;
+ import net.minecraft.client.renderer.texture.OverlayTexture;
+ import net.minecraft.client.renderer.texture.TextureAtlas;
+ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+-import net.minecraft.client.resources.model.geometry.BakedQuad;
++import net.minecraft.client.resources.model.BakedModel;
+ import net.minecraft.core.Direction;
+ import net.minecraft.core.registries.BuiltInRegistries;
+ import net.minecraft.resources.ResourceLocation;
+@@ -55,8 +52,8 @@
+     // Faces turned to the light: as a block's are shaded.
+     private static final float SHADE_UP = 1.0F, SHADE_DOWN = 0.5F, SHADE_NORTH_SOUTH = 0.8F, SHADE_EAST_WEST = 0.6F;
+ 
+-    // What the shape and textures were read for: the models of the last resource load.
+-    private static @Nullable BlockStateModelSet readFor;
++    // What the shape and textures were read for: the models of the last resource load (known by its missing model).
++    private static @Nullable BakedModel readFor;
+     private static List<Face> faces = List.of();
+     private static final Map<Block, Look> LOOKS = new ConcurrentHashMap<>();
+     // The gold faces of the trophy displays' models, by model, for trims of other blocks.
+@@ -66,12 +63,10 @@
+ 
+     /** Draws a custom pedestal's body, of this material (stone for none), in this light. */
+     public static void submit(@Nullable ResourceLocation material, PoseStack poseStack, SubmitNodeCollector collector, int light) {
+-        Minecraft minecraft = Minecraft.getInstance();
+-        BlockStateModelSet models = minecraft.getModelManager().getBlockStateModelSet();
+-        reread(models);
++        reread();
+         if (faces.isEmpty()) return;
+         Block block = material == null ? FALLBACK : BuiltInRegistries.BLOCK.getOptional(material).orElse(FALLBACK);
+-        Look look = LOOKS.computeIfAbsent(block, found -> look(found, models));
++        Look look = LOOKS.computeIfAbsent(block, PedestalBody::look);
+         collector.submitCustomGeometry(poseStack, RenderType.entityCutout(TextureAtlas.LOCATION_BLOCKS), (pose, consumer) -> {
+             for (Face face : faces) if (!face.texture.overlay()) face(consumer, pose, face, look, light);
+         });
+@@ -82,7 +77,8 @@
+     }
+ 
+     // After the resources reload, the shapes and textures are read again.
+-    private static void reread(BlockStateModelSet models) {
++    private static void reread() {
++        BakedModel models = Minecraft.getInstance().getModelManager().getMissingModel();
+         if (models == readFor) return;
+         readFor = models;
+         faces = readFaces(TEMPLATE);
+@@ -96,12 +92,11 @@
+      * bottom on those turned down, a side on the rest), each pixel where the gold's would be, in this light.
+      */
+     public static void submitTrim(ResourceLocation model, ResourceLocation material, PoseStack poseStack, SubmitNodeCollector collector, int light) {
+-        BlockStateModelSet models = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
+-        reread(models);
++        reread();
+         List<Face> trim = TRIMS.computeIfAbsent(model, PedestalBody::readFaces);
+         if (trim.isEmpty()) return;
+         Block block = BuiltInRegistries.BLOCK.getOptional(material).orElse(FALLBACK);
+-        Look look = LOOKS.computeIfAbsent(block, found -> look(found, models));
++        Look look = LOOKS.computeIfAbsent(block, PedestalBody::look);
+         // (The gold trim, a trimmed item's when it's gold, in the gold trim's own texture.)
+         boolean gold = material.equals(TrophyDisplayBlock.GOLD);
+         collector.submitCustomGeometry(poseStack, RenderType.entityCutout(TextureAtlas.LOCATION_BLOCKS), (pose, consumer) -> {
+             for (Face face : trim) {
+                 if (face.texture != Texture.GOLD) continue;
+@@ -125,37 +120,32 @@
+ 
+     // A material's textures and tints, from its block's model: its top's, bottom's and a side's, or its particle texture
+     // for a face it doesn't have (a model that isn't a whole block).
+-    private static Look look(Block block, BlockStateModelSet models) {
++    private static Look look(Block block) {
+         BlockState state = block.defaultBlockState();
+-        BlockStateModel model = models.get(state);
+-        List<BlockStateModelPart> parts = new ArrayList<>();
+-        model.collectParts(RandomSource.create(42L), parts);
+-        TextureAtlasSprite particle = model.particleMaterial().sprite();
+-        BakedQuad top = quad(parts, Direction.UP), bottom = quad(parts, Direction.DOWN), side = quad(parts, Direction.NORTH);
+-        if (side == null) side = quad(parts, Direction.EAST);
++        BakedModel model = Minecraft.getInstance().getBlockRenderer().getBlockModel(state);
++        TextureAtlasSprite particle = model.getParticleIcon();
++        BakedQuad top = quad(model, state, Direction.UP), bottom = quad(model, state, Direction.DOWN), side = quad(model, state, Direction.NORTH);
++        if (side == null) side = quad(model, state, Direction.EAST);
+         TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
+         return new Look(sprite(top, particle), sprite(bottom, particle), sprite(side, particle),
+                 tint(top, state), tint(bottom, state), tint(side, state), atlas.getSprite(GOLD), atlas.getSprite(WELL_IMPRINT),
+                 atlas.getSprite(LENS), atlas.getSprite(FLUTES));
+     }
+ 
+-    private static @Nullable BakedQuad quad(List<BlockStateModelPart> parts, Direction direction) {
+-        for (BlockStateModelPart part : parts) {
+-            List<BakedQuad> quads = part.getQuads(direction);
+-            if (!quads.isEmpty()) return quads.getFirst();
+-        }
+-        return null;
++    private static @Nullable BakedQuad quad(BakedModel model, BlockState state, Direction direction) {
++        List<BakedQuad> quads = model.getQuads(state, direction, RandomSource.create(42L));
++        return quads.isEmpty() ? null : quads.getFirst();
+     }
+ 
+     private static TextureAtlasSprite sprite(@Nullable BakedQuad quad, TextureAtlasSprite fallback) {
+-        return quad == null ? fallback : quad.materialInfo().sprite();
++        return quad == null ? fallback : quad.getSprite();
+     }
+ 
+     // The face's tint, as the block's own colors give it (white for one that isn't tinted).
+     private static int tint(@Nullable BakedQuad quad, BlockState state) {
+-        if (quad == null || !quad.materialInfo().isTinted()) return 0xFFFFFF;
+-        BlockTintSource source = Minecraft.getInstance().getBlockColors().getTintSource(state, quad.materialInfo().tintIndex());
+-        return source == null ? 0xFFFFFF : source.color(state) & 0xFFFFFF;
++        if (quad == null || !quad.isTinted()) return 0xFFFFFF;
++        int color = Minecraft.getInstance().getBlockColors().getColor(state, null, null, quad.getTintIndex());
++        return color == -1 ? 0xFFFFFF : color & 0xFFFFFF;
+     }
+ 
+     // A model's shape: every face of its boxes (those of the textures drawn here), turned as each box is, in the block's
