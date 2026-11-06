@@ -17,7 +17,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -218,7 +218,7 @@ public final class Pedestals {
     public static final RegistryEntry<CreativeModeTab> MOB_TROPHIES_TAB = TABS.register("pedestals_mob_trophies", () -> CreativeTabs.builder(
                     (parameters, items) -> MobTrophies.creativeTrophies(parameters.enabledFeatures(), items))
             .title(Component.translatable("itemGroup.trophypedestals.pedestals_mob_trophies"))
-            .icon(() -> MobTrophies.trophy(DEFAULT.get(), EntityType.ZOMBIE, "", 0L, PedestalRarities.NONE))
+            .icon(() -> MobTrophies.trophy(DEFAULT.get(), EntityTypes.ZOMBIE, "", 0L, PedestalRarities.NONE))
             .build());
 
     private Pedestals() {}

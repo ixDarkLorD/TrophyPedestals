@@ -9,11 +9,7 @@ dependencies {
     localRuntime("net.ixdarklord.mcp_bridge:mcp_bridge-neoforge:${mcp_bridge_version}") { transitive = false }
 
     // JEI in a dev run only when asked (-Ptest_jei=true).
-    if (project.findProperty("test_jei") == "true") localRuntime "mezz.jei:jei-26.1.2-neoforge:${jei_version}"
-
-    // Optional KubeJS (NeoForge only on 26.x; its API exposes Rhino types): pedestal bindings (compat/kubejs).
-    compileOnly("maven.modrinth:kubejs:${kubejs_version}") { transitive = false }
-    compileOnly("maven.modrinth:rhino:${rhino_version}") { transitive = false }
+    if (project.findProperty("test_jei") == "true") localRuntime "mezz.jei:jei-26.2-neoforge:${jei_version}"
 
     // spark in a dev run only when asked (-Ptest_spark=true).
     if (project.findProperty("test_spark") == "true") localRuntime "maven.modrinth:spark:${spark_version}-neoforge"

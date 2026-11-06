@@ -9,7 +9,7 @@ dependencies {
     localRuntime("net.ixdarklord.mcp_bridge:mcp_bridge-fabric:${mcp_bridge_version}") { transitive = false }
 
     // JEI in a dev run only when asked (-Ptest_jei=true).
-    if (project.findProperty("test_jei") == "true") localRuntime "mezz.jei:jei-26.1.2-fabric:${jei_version}"
+    if (project.findProperty("test_jei") == "true") localRuntime "mezz.jei:jei-26.2-fabric:${jei_version}"
 }
 
 loom {

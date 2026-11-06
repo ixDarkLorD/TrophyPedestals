@@ -222,7 +222,7 @@ public final class PedestalScreen extends Screen {
     public static void open(BlockPos pos) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level != null && minecraft.level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) {
-            minecraft.setScreen(new PedestalScreen(pos, pedestal));
+            minecraft.gui.setScreen(new PedestalScreen(pos, pedestal));
         }
     }
 
@@ -231,7 +231,7 @@ public final class PedestalScreen extends Screen {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level != null && minecraft.level.getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display) {
             PedestalBlockEntity pedestal = display.shownPedestal(slot);
-            if (pedestal != null) minecraft.setScreen(new PedestalScreen(pos, pedestal, slot));
+            if (pedestal != null) minecraft.gui.setScreen(new PedestalScreen(pos, pedestal, slot));
         }
     }
 
