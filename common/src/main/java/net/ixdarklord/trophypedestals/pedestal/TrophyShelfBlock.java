@@ -1,12 +1,10 @@
 package net.ixdarklord.trophypedestals.pedestal;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -26,7 +24,6 @@ import java.util.Map;
  * long shelf, with corner caps only at its ends.
  */
 public class TrophyShelfBlock extends TrophyDisplayBlock {
-    public static final MapCodec<TrophyShelfBlock> CODEC = simpleCodec(TrophyShelfBlock::new);
     /** Whether it's joined to a shelf on its left, or on its right (as seen from its front). */
     public static final BooleanProperty LEFT = BooleanProperty.create("left"), RIGHT = BooleanProperty.create("right");
     // Its board (with its lip), its rim and its brackets, facing north (its back to the wall on its south), in pixels.
@@ -38,23 +35,18 @@ public class TrophyShelfBlock extends TrophyDisplayBlock {
     }
 
     @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+    public void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, GOLD_TRIM, LEFT, RIGHT);
     }
 
     @Override
-    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return SHAPES.get(state.getValue(FACING));
     }
 
     // Hung on the solid side of the block behind it.
     @Override
-    protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
+    public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         Direction facing = state.getValue(FACING);
         BlockPos wall = pos.relative(facing.getOpposite());
         return level.getBlockState(wall).isFaceSturdy(level, wall, facing);
@@ -85,12 +77,12 @@ public class TrophyShelfBlock extends TrophyDisplayBlock {
 
     // Its wall gone, it falls (dropping itself and its trophies).
     @Override
-    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction direction,
-                                     BlockPos neighborPos, BlockState neighbor, RandomSource random) {
+    public BlockState updateShape(BlockState state, Direction direction, BlockState neighbor, LevelAccessor level, BlockPos pos,
+                                     BlockPos neighborPos) {
         if (direction == state.getValue(FACING).getOpposite() && !state.canSurvive(level, pos)) return Blocks.AIR.defaultBlockState();
         Direction right = right(state.getValue(FACING));
         if (direction == right) state = state.setValue(RIGHT, joins(state, neighbor));
         else if (direction == right.getOpposite()) state = state.setValue(LEFT, joins(state, neighbor));
-        return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighbor, random);
+        return super.updateShape(state, direction, neighbor, level, pos, neighborPos);
     }
 }

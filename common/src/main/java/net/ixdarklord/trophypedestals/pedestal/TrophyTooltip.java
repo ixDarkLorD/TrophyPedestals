@@ -1,5 +1,6 @@
 package net.ixdarklord.trophypedestals.pedestal;
 
+import net.ixdarklord.trophypedestals.compat.component.Components;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
 
@@ -12,6 +13,6 @@ import java.util.Optional;
 public record TrophyTooltip(ItemStack stack) implements TooltipComponent {
     /** The line for this stack, if it's a trophy (an achievement's or a mob's). */
     public static Optional<TooltipComponent> of(ItemStack stack) {
-        return stack.has(Pedestals.RECORD.get()) || stack.has(Pedestals.MOB_TROPHY.get()) ? Optional.of(new TrophyTooltip(stack)) : Optional.empty();
+        return Components.has(stack, Pedestals.RECORD.get()) || Components.has(stack, Pedestals.MOB_TROPHY.get()) ? Optional.of(new TrophyTooltip(stack)) : Optional.empty();
     }
 }

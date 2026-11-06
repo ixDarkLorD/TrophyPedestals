@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_fluted_placed",
+  "textures": {
+    "side": "minecraft:block/polished_diorite",
+    "top": "minecraft:block/polished_diorite",
+    "bottom": "minecraft:block/polished_diorite",
+    "column": "minecraft:block/diorite",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "minecraft:block/polished_diorite"
+  }
+}

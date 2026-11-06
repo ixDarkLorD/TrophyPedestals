@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "trophypedestals:pedestal",
+  "key": {
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "S": {
+      "item": "minecraft:end_stone_bricks"
+    }
+  },
+  "pattern": [
+    "SGS",
+    " S ",
+    "SSS"
+  ],
+  "result": {
+    "item": "trophypedestals:end_stone_pedestal",
+    "count": 1
+  }
+}

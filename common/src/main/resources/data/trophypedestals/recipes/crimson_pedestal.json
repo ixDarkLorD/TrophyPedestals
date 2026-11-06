@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "trophypedestals:pedestal",
+  "key": {
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "S": {
+      "item": "minecraft:crimson_planks"
+    }
+  },
+  "pattern": [
+    "SGS",
+    " S ",
+    "SSS"
+  ],
+  "result": {
+    "item": "trophypedestals:crimson_pedestal",
+    "count": 1
+  }
+}

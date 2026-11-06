@@ -2,7 +2,7 @@ package net.ixdarklord.trophypedestals.network;
 
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
 
 /** To a client: open the adjustment screen of the pedestal at {@code pos}, which the server found they may adjust. */
 public record OpenPedestalPayload(BlockPos pos) implements CustomPacketPayload {

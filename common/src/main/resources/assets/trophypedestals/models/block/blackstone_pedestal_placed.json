@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_chiseled_placed",
+  "textures": {
+    "side": "trophypedestals:block/pedestal/blackstone_side",
+    "top": "trophypedestals:block/pedestal/blackstone_top",
+    "bottom": "trophypedestals:block/pedestal/blackstone_bottom",
+    "column": "trophypedestals:block/pedestal/blackstone_column",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "trophypedestals:block/pedestal/blackstone_top"
+  }
+}

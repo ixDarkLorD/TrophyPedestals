@@ -100,7 +100,6 @@ public final class TrophyPedestalsConfig {
             return Component.translatable("config.trophypedestals.server.mob_trophy_rarity." + name().toLowerCase(Locale.ROOT));
         }
 
-        @Override
         public Component description() {
             return Component.translatable("config.trophypedestals.server.mob_trophy_rarity." + name().toLowerCase(Locale.ROOT) + ".desc");
         }
@@ -118,7 +117,6 @@ public final class TrophyPedestalsConfig {
             return Component.translatable("config.trophypedestals.server.pedestal_access." + name().toLowerCase(Locale.ROOT));
         }
 
-        @Override
         public Component description() {
             return Component.translatable("config.trophypedestals.server.pedestal_access." + name().toLowerCase(Locale.ROOT) + ".desc");
         }

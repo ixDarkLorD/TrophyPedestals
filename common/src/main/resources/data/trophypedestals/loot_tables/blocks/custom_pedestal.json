@@ -1,0 +1,42 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "trophypedestals:custom_pedestal",
+          "functions": [
+            {
+              "function": "minecraft:copy_nbt",
+              "source": "block_entity",
+              "ops": [
+                {
+                  "source": "Material",
+                  "target": "BlockEntityTag.Material",
+                  "op": "replace"
+                },
+                {
+                  "source": "Record",
+                  "target": "BlockEntityTag.Record",
+                  "op": "replace"
+                },
+                {
+                  "source": "MobTrophy",
+                  "target": "BlockEntityTag.MobTrophy",
+                  "op": "replace"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
+    }
+  ]
+}

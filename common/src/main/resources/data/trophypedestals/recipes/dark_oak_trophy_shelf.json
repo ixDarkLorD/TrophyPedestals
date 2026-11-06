@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "group": "trophy_shelf",
+  "key": {
+    "T": {
+      "item": "minecraft:stick"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    },
+    "S": {
+      "item": "minecraft:dark_oak_slab"
+    }
+  },
+  "pattern": [
+    "TGT",
+    "SSS"
+  ],
+  "result": {
+    "item": "trophypedestals:dark_oak_trophy_shelf",
+    "count": 2
+  }
+}

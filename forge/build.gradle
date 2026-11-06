@@ -1,0 +1,31 @@
+apply from: "${rootProject.sharedScripts}/forge.gradle"
+
+dependencies {
+    // CoolCatLib (Forge). Its common classes are inside this jar.
+    modImplementation("net.ixdarklord.coolcatlib:coolcatlib-forge:${coolcatlib_version}") { transitive = false }
+
+    // Dev runs only, never published: MCP Bridge lets the game be driven from outside. Not transitive, because it still points
+    // at CoolCatLib's old coordinates and would load a second copy of it.
+    modLocalRuntime("net.ixdarklord.mcp_bridge:mcp_bridge-forge:${mcp_bridge_version}") { transitive = false }
+
+    // JEI in a dev run only when asked (-Ptest_jei=true).
+    if (project.findProperty("test_jei") == "true") modLocalRuntime libs.jei.forge
+}
+
+loom {
+    runs {
+        // Forge's game test server: runs every registered test and exits. On Forge 47 that's the normal server launch with
+        // these two properties (without them a plain server starts and never exits).
+        gameTestServer {
+            server()
+            forgeTemplate("gameTestServer")
+            setConfigName("Forge Game Test Server ${libs.versions.minecraft.get()}")
+            runDir(helper.runDir("run/gametest"))
+            property "forge.gameTestServer", "true"
+            property "forge.enableGameTest", "true"
+            property "forge.enabledGameTestNamespaces", modid
+            // The example data pack the tests load (it isn't in the mod jar).
+            property "trophypedestals.testpack", rootProject.file("testpack").absolutePath
+        }
+    }
+}

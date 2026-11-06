@@ -1,7 +1,4 @@
 {
-  "parent": "trophypedestals:item/trophy_cabinet",
-  "textures": {
-    "wood": "minecraft:block/birch_planks",
-    "particle": "minecraft:block/birch_planks"
-  }
+  "parent": "minecraft:builtin/entity",
+  "gui_light": "side"
 }

@@ -2,10 +2,15 @@ apply from: "${rootProject.sharedScripts}/common.gradle"
 
 dependencies {
     // CoolCatLib (common): mod constructors, events, networking, configs, registries, game tests
-    compileOnly "net.ixdarklord.coolcatlib:coolcatlib-common:${coolcatlib_version}"
+    modCompileOnly("net.ixdarklord.coolcatlib:coolcatlib-common:${coolcatlib_version}") { transitive = false }
 
     // Optional recipe viewer: tells mob trophies apart (compat/jei)
-    compileOnly "mezz.jei:jei-26.1.2-common-api:${jei_version}"
+    modCompileOnly libs.jei.api.common
+}
+
+// Java 17's javadoc reads the sources as the platform's encoding unless told.
+javadoc {
+    options.encoding = "UTF-8"
 }
 
 // The shared main.gradle publishes every subproject's shadowJar. For common it must be a plain jar of this

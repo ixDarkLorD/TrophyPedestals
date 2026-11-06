@@ -2,6 +2,13 @@ package net.ixdarklord.trophypedestals.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
+import net.ixdarklord.trophypedestals.compat.component.Components;
+import net.ixdarklord.trophypedestals.compat.render.BlockEntityRenderState;
+import net.ixdarklord.trophypedestals.compat.render.CameraRenderState;
+import net.ixdarklord.trophypedestals.compat.render.ItemModelResolver;
+import net.ixdarklord.trophypedestals.compat.render.ItemStackRenderState;
+import net.ixdarklord.trophypedestals.compat.render.ModelFeatureRenderer;
+import net.ixdarklord.trophypedestals.compat.render.SubmitNodeCollector;
 import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.ixdarklord.trophypedestals.pedestal.TrophyCabinetBlock;
@@ -9,18 +16,13 @@ import net.ixdarklord.trophypedestals.pedestal.TrophyCabinetBlockEntity;
 import net.ixdarklord.trophypedestals.pedestal.TrophyDisplayBlock;
 import net.ixdarklord.trophypedestals.pedestal.TrophyShelfBlock;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
-import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
-import net.minecraft.client.renderer.item.ItemModelResolver;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -39,7 +41,7 @@ import java.util.Arrays;
  * its mob or icon, its rank's light, flourishes and crown, and its text frame while it's looked at, all shrunk with it.
  * Also a trim of another block than gold.
  */
-public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCabinetBlockEntity, TrophyCabinetRenderer.State> {
+public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCabinetBlockEntity> {
     // How large a trophy stands on the shelf, where its foot is (the shelf's top), and how far back from the front: in a
     // cabinet (half a block deep), on its shelf midway between its front and its back; on a wall shelf, on its board
     // (half way up), back against its rim.
@@ -55,7 +57,7 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
     private final PedestalRenderer pedestals;
 
     public TrophyCabinetRenderer(BlockEntityRendererProvider.Context context) {
-        this.items = context.itemModelResolver();
+        this.items = ItemModelResolver.INSTANCE;
         this.pedestals = new PedestalRenderer(context);
     }
 
@@ -77,16 +79,24 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
         float turn;
         boolean wallShelf;
         // Its trim's material when it isn't gold, and the model whose gold faces it's drawn on.
-        @Nullable Identifier trim;
-        @Nullable Identifier trimModel;
+        @Nullable ResourceLocation trim;
+        @Nullable ResourceLocation trimModel;
     }
 
-    @Override
     public State createRenderState() {
         return new State();
     }
 
+    // Drawn in one call here: its state filled, as it's extracted on 26.1, then drawn, as it's submitted.
     @Override
+    public void render(TrophyCabinetBlockEntity blockEntity, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light, int overlay) {
+        State state = createRenderState();
+        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        extractRenderState(blockEntity, state, partialTicks, camera, null);
+        state.lightCoords = light;
+        submit(state, poseStack, new SubmitNodeCollector(buffers), CameraRenderState.current());
+    }
+
     public void extractRenderState(TrophyCabinetBlockEntity cabinet, State state, float partialTicks, Vec3 cameraPosition,
                                    ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         BlockEntityRenderState.extractBase(cabinet, state, breakProgress);
@@ -111,8 +121,8 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
             // Its pedestal: the trophy's item without its trophy, so its plain block model.
             state.body[i] = !pedestal.getBlockState().is(Pedestals.CUSTOM.get());
             ItemStack body = trophy.copy();
-            body.remove(Pedestals.RECORD.get());
-            body.remove(Pedestals.MOB_TROPHY.get());
+            Components.remove(body, Pedestals.RECORD.get());
+            Components.remove(body, Pedestals.MOB_TROPHY.get());
             items.updateForTopItem(state.trophies[i], body, ItemDisplayContext.NONE, cabinet.getLevel(), null, (int) cabinet.getBlockPos().asLong() + i);
             // What's over it, as over a placed pedestal: turned with the block, and its text frame shown only while this
             // spot is looked at.
@@ -145,7 +155,7 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
     }
 
     // The model with this block's gold faces: the shelf's, or the cabinet half's for how it's joined.
-    private static Identifier trimModel(BlockState block) {
+    private static ResourceLocation trimModel(BlockState block) {
         if (block.getBlock() instanceof TrophyShelfBlock) {
             boolean left = block.getValue(TrophyShelfBlock.LEFT), right = block.getValue(TrophyShelfBlock.RIGHT);
             return TrophyPedestalsMod.id("models/block/trophy_shelf" + (left && right ? "_both" : left ? "_left" : right ? "_right" : "") + ".json");
@@ -155,7 +165,6 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
         return TrophyPedestalsMod.id("models/block/trophy_cabinet_" + block.getValue(TrophyCabinetBlock.PART).getSerializedName() + join + ".json");
     }
 
-    @Override
     public void submit(State state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
         // A trim of another block: the model's gold, in that block's textures, turned as the model is.
         if (state.trim != null && state.trimModel != null) {

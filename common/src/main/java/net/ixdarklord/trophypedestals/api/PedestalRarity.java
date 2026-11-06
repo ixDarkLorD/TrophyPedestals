@@ -1,7 +1,7 @@
 package net.ixdarklord.trophypedestals.api;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -34,32 +34,32 @@ import org.jetbrains.annotations.Nullable;
  * @param ambientSound played now and then to a player near a trophy of this rank (null for none)
  * @param ambientTicks how often the ambient sound plays, in ticks
  */
-public record PedestalRarity(Identifier id, int rank, int color, int accent, int rings, float ringTicks, float flareSize, float flareAlpha,
+public record PedestalRarity(ResourceLocation id, int rank, int color, int accent, int rings, float ringTicks, float flareSize, float flareAlpha,
                              float flareSpin, float flarePulse, boolean secondFlare, int spiralArms, float spiralRate, float glints,
                              int orbiters, int halos, float haloRadius, int crown, float beamHeight, boolean shimmer, int burstTicks, @Nullable Sound placeSound,
                              @Nullable Sound ambientSound, int ambientTicks) {
     /** A sound by its sound event's id (vanilla's or a mod's), at a volume and pitch. */
-    public record Sound(Identifier id, float volume, float pitch) {}
+    public record Sound(ResourceLocation id, float volume, float pitch) {}
 
     /** Its name, in its color: the {@code trophypedestals.rarity.<namespace>.<path>} lang key. */
     public Component displayName() {
-        return Component.translatable("trophypedestals.rarity." + id.getNamespace() + "." + id.getPath()).withColor(color);
+        return Component.translatable("trophypedestals.rarity." + id.getNamespace() + "." + id.getPath()).withStyle(style -> style.withColor(color));
     }
 
     /** Starts a rarity of this rank with these colors and no effects or sounds; add the ones it has. */
-    public static Builder builder(Identifier id, int rank, int color, int accent) {
+    public static Builder builder(ResourceLocation id, int rank, int color, int accent) {
         return new Builder(id, rank, color, accent);
     }
 
     public static final class Builder {
-        private final Identifier id;
+        private final ResourceLocation id;
         private final int rank, color, accent;
         private int rings, spiralArms, orbiters, halos, crown, burstTicks, ambientTicks = 200;
         private float haloRadius = 0.6F, ringTicks = 32.0F, flareSize, flareAlpha, flareSpin, flarePulse, spiralRate, glints, beamHeight;
         private boolean secondFlare, shimmer;
         private @Nullable Sound placeSound, ambientSound;
 
-        private Builder(Identifier id, int rank, int color, int accent) {
+        private Builder(ResourceLocation id, int rank, int color, int accent) {
             this.id = id;
             this.rank = rank;
             this.color = color & 0xFFFFFF;
@@ -144,13 +144,13 @@ public record PedestalRarity(Identifier id, int rank, int color, int accent, int
         }
 
         /** A sound played to everyone near when a trophy of this rank is placed. */
-        public Builder placeSound(Identifier sound, float volume, float pitch) {
+        public Builder placeSound(ResourceLocation sound, float volume, float pitch) {
             this.placeSound = new Sound(sound, volume, pitch);
             return this;
         }
 
         /** A sound played now and then, every this many ticks, to a player near a trophy of this rank. */
-        public Builder ambientSound(Identifier sound, float volume, float pitch, int everyTicks) {
+        public Builder ambientSound(ResourceLocation sound, float volume, float pitch, int everyTicks) {
             this.ambientSound = new Sound(sound, volume, pitch);
             this.ambientTicks = Math.max(1, everyTicks);
             return this;

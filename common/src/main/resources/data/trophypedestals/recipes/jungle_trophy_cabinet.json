@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "group": "trophy_cabinet",
+  "key": {
+    "P": {
+      "item": "minecraft:jungle_planks"
+    },
+    "S": {
+      "item": "minecraft:jungle_slab"
+    },
+    "T": {
+      "item": "minecraft:stick"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    }
+  },
+  "pattern": [
+    "PSP",
+    "TGT",
+    "PSP"
+  ],
+  "result": {
+    "item": "trophypedestals:jungle_trophy_cabinet",
+    "count": 1
+  }
+}

@@ -1,0 +1,39 @@
+modLoader = "javafml"
+loaderVersion = "[${min_forge_fml_version},)"
+issueTrackerURL = "${mod_issue_url}"
+license = "${mod_license}"
+
+[[mods]]
+modId = "${modid}"
+displayName = "${mod_name}"
+version = "${version}"
+description = "${mod_description}"
+authors = "${mod_author}"
+logoFile = "mod_logo.png"
+displayURL = "${mod_page_url}"
+updateJSONURL = "${mod_forge_update_url}"
+displayTest = "${mod_forge_display_test}"
+
+[[dependencies.${modid}]]
+modId = "forge"
+mandatory = true
+versionRange = "[${min_forge_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${modid}]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[${project.supported_min_mc_version}]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${modid}]]
+modId = "coolcatlib"
+mandatory = true
+versionRange = "[${coolcatlib_min_version},)"
+ordering = "AFTER"
+side = "BOTH"
+
+[modproperties.${modid}]
+catalogueImageIcon = "mod_logo.png"

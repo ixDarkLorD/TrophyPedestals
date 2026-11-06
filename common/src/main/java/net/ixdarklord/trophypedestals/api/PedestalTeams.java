@@ -26,8 +26,7 @@ public final class PedestalTeams {
 
     /** Scoreboard teams. Only known for players who are online. */
     public static final Source VANILLA = player -> {
-        PlayerTeam team = player.getTeam();
-        return team == null ? null : "vanilla:" + team.getName();
+                return player.getTeam() instanceof PlayerTeam team ? "vanilla:" + team.getName() : null;
     };
 
     private static volatile Source source = VANILLA;
