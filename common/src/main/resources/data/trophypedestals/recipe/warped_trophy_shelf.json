@@ -3,11 +3,12 @@
   "category": "building",
   "group": "trophy_shelf",
   "key": {
-    "G": "minecraft:gold_nugget",
+    "T": "minecraft:stick",
+    "G": "minecraft:glass_pane",
     "S": "minecraft:warped_slab"
   },
   "pattern": [
-    "G G",
+    "TGT",
     "SSS"
   ],
   "result": {

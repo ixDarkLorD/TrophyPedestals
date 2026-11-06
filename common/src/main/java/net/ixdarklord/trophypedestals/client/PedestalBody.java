@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
+import net.ixdarklord.trophypedestals.pedestal.TrophyDisplayBlock;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -103,10 +104,12 @@ public final class PedestalBody {
         if (trim.isEmpty()) return;
         Block block = BuiltInRegistries.BLOCK.getOptional(material).orElse(FALLBACK);
         Look look = LOOKS.computeIfAbsent(block, found -> look(found, models));
+        // (The gold trim, a trimmed item's when it's gold, in the gold trim's own texture.)
+        boolean gold = material.equals(TrophyDisplayBlock.GOLD);
         collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(TextureAtlas.LOCATION_BLOCKS), (pose, consumer) -> {
             for (Face face : trim) {
                 if (face.texture != Texture.GOLD) continue;
-                Texture as = face.direction == Direction.UP ? Texture.TOP : face.direction == Direction.DOWN ? Texture.BOTTOM : Texture.SIDE;
+                Texture as = gold ? Texture.GOLD : face.direction == Direction.UP ? Texture.TOP : face.direction == Direction.DOWN ? Texture.BOTTOM : Texture.SIDE;
                 face(consumer, pose, face, look.sprite(as), look.tint(as), light);
             }
         });

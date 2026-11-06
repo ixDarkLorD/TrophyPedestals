@@ -128,12 +128,27 @@ public final class PedestalLight {
     /**
      * An item's light in the translucent item sheet (a white sprite, full bright, its fade in the vertex colors). Item
      * models are batched into the item sheets, which are drawn after everything else, so light drawn any other way would
-     * go under the pedestal's own model; the translucent item sheet is the last of them, after its body and icon. With
-     * {@code fine}, its faces are cut finer (for the outlines in hand, which stand close inside the cone).
+     * go under the pedestal's own model; the translucent item sheet is the last of them, after its body and icon. Its
+     * faces are cut into pieces as {@code detail} says.
      */
-    static Glow itemSheet(VertexConsumer consumer, PoseStack.Pose pose, TextureAtlasSprite white, boolean fine) {
-        return new ItemSheet(consumer, pose, (white.getU0() + white.getU1()) / 2.0F, (white.getV0() + white.getV1()) / 2.0F,
-                fine ? ItemSheet.FINE_PIECE : ItemSheet.PIECE_SIZE);
+    static Glow itemSheet(VertexConsumer consumer, PoseStack.Pose pose, TextureAtlasSprite white, Detail detail) {
+        return new ItemSheet(consumer, pose, (white.getU0() + white.getU1()) / 2.0F, (white.getV0() + white.getV1()) / 2.0F, detail.pieceSize);
+    }
+
+    /** How finely an item's light is cut into pieces (see ItemSheet), as how far it's seen calls for. */
+    enum Detail {
+        /** Uncut, in a slot: too small for its faces' order to show, and drawn every frame on versions that don't keep it. */
+        WHOLE(Float.MAX_VALUE),
+        /** In hand. */
+        NORMAL(0.06F),
+        /** In hand with outlines, which stand close inside the cone. */
+        FINE(0.03F);
+
+        private final float pieceSize;
+
+        Detail(float pieceSize) {
+            this.pieceSize = pieceSize;
+        }
     }
 
     /**
@@ -242,8 +257,7 @@ public final class PedestalLight {
         // face's middle, and writes depth: a broad face (the cone's) and a thin one (an outline's) sorted by their
         // middles can come out in the wrong order, so a faded outline in front hides the light behind it. Small pieces
         // sort true: each is cut into pieces no longer than this (in blocks) each way (finer where faces stand close to
-        // one another), at most this many each way.
-        private static final float PIECE_SIZE = 0.06F, FINE_PIECE = 0.03F;
+        // one another: see Detail), at most this many each way.
         private static final int MAX_CUTS = 24;
         // Scratch for one piece (drawn on the render thread only): its corners and colors, and the order its corners go
         // in, once each way round.

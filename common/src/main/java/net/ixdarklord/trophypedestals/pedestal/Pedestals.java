@@ -209,7 +209,7 @@ public final class Pedestals {
      */
     public static final RegistryEntry<CreativeModeTab> PEDESTALS_TAB = TABS.register("pedestals", () -> CreativeTabs.builder((parameters, items) -> {
                 ITEMS_BY_STONE.values().forEach(item -> items.accept(new ItemStack(item.get())));
-                items.accept(new ItemStack(CUSTOM_ITEM.get()));
+                // (Not the custom pedestal: it's made of a data pack's material, and a bare one would show as stone.)
                 DISPLAY_ITEMS.forEach(item -> items.accept(new ItemStack(item.get())));
             })
             .title(Component.translatable("itemGroup.trophypedestals.pedestals"))

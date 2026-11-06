@@ -1,48 +1,99 @@
-# Trophy Pedestals
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ixDarkLorD/TrophyPedestals/26.1.2/common/src/main/resources/mod_logo.png" alt="Trophy Pedestals" width="160">
+</p>
 
-Pedestals to show off what you've done. Put any item on a **display pedestal** in a soft cone of light; collect **mob
-trophies**, pedestals showing a mob as it looked when you slew it; defeat a player for their **statue**; and line them
-up in **trophy cabinets** and **wall shelves**. Other mods give trophies for their own achievements:
-[Tierwise](https://modrinth.com/mod/tierwise) gives one for every tier unlocked.
+<h1 align="center">Trophy Pedestals</h1>
 
-Built on [CoolCatLib](https://ixdarklord.github.io/CoolCatLib/), which must be installed on the server and every client.
+<p align="center">
+  <b>Show off what you've done.</b><br>
+  Put any item on a pedestal in a soft cone of light, collect trophies of the mobs you slay, and line them up in cabinets and shelves.
+</p>
 
-| Minecraft | Loaders | Branch |
-|---|---|---|
-| 26.1 – 26.1.2 | NeoForge, Fabric | `26.1.2` (main line) |
+<p align="center">
+  <a href="https://modrinth.com/mod/trophypedestals"><img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/trophypedestals/modrinth.svg" alt="Modrinth" height="26"></a>
+  <a href="https://www.curseforge.com/minecraft/mc-mods/trophy-pedestals"><img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/trophypedestals/curseforge.svg" alt="CurseForge" height="26"></a>
+  <a href="https://discord.gg/ZapGEPqm2V"><img src="https://img.shields.io/discord/1173075408556654592?style=flat&logo=discord&logoColor=white&label=&labelColor=e0ac3c&color=3A3F58" alt="Discord" width="110" height="26"></a>
+</p>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/trophypedestals/fabric.svg" alt="Fabric" height="26">
+  <img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/trophypedestals/neoforge.svg" alt="NeoForge" height="26">
+  <img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/trophypedestals/forge.svg" alt="Forge" height="26">
+</p>
 
-1.21.1, 1.20.1, 26.2 and 26.3 come later.
+<hr>
 
-## What's in it
+## ✨ About
 
-- **Pedestals** in 37 vanilla stones and woods, each crafted from six of its material around a gold ingot, and a
-  custom pedestal of any block (a mod's included) through data.
-- **Five ranks**, common to legendary, each grander than the last: light, outlines, flares, a beam, halos, a crown and
-  sounds.
-- **Mob trophies:** mobs now and then drop a pedestal showing them as they looked, posed or animated; bosses give epic
-  and legendary ones, and other mods' mobs drop them too. With `player_trophies` on, a defeated player can drop their
-  statue in their own skin.
-- **Trophy cabinets and shelves** in every wood: cabinets hold four and stack, shelves hang on walls and join; their
-  gold trim can be any block.
-- An **adjust screen** (sneak and use an empty hand): size, height, facing, text, pose and animation, spin,
-  flourishes, sounds, light, crown and redstone.
-- For packs and mods: the `trophypedestals:set_trophy` and `trophypedestals:set_mob_trophy` loot functions,
+Trophy Pedestals gives you somewhere to show off what you've done. Put any item on a pedestal and it turns slowly in a
+cone of warm light; slay mobs and now and then they leave a trophy of themselves behind; defeat a player for their
+statue. Then line them all up in trophy cabinets and wall shelves. It's needed **on both the client and the server**.
+
+Other mods can hand out trophies for their own achievements: [Tierwise](https://modrinth.com/mod/tierwise) gives one
+for every tier you unlock.
+
+## 🧩 Features
+
+- **🏛️ Pedestals.** 37 pedestals in vanilla stones and woods, each crafted from six of its material around a gold
+  ingot. Put any item on one: it floats over a glowing lens, its name over it as you look. Custom pedestals of any
+  block, a mod's too, come from data packs, drawn with that block's own textures.
+- **🏆 Mob trophies.** Mobs you slay now and then drop a pedestal with the mob standing on it, as it looked, posed or
+  animated. Bosses give epic and legendary ones, and other mods' mobs drop them too.
+- **⭐ Five ranks.** Common to legendary, by how tough the mob is: each grander than the last, with outlines, flares,
+  a beam, halos, a crown and sounds.
+- **🗿 Player statues.** Turn on `player_trophies` and a defeated player can drop their statue, in their own skin.
+- **🗄️ Cabinets and shelves.** Trophy cabinets hold four trophies and stack into tall cases; wall shelves hang on walls
+  and join side by side. Both come in every wood, and their gold trim can be any block (an axe takes it off).
+- **🎛️ Make it yours.** Sneak and use an empty hand on a pedestal to adjust its size (up to 20 times), height,
+  rotation, text, pose and animation, spin, flourishes, sounds, light, crown and redstone. Pedestals can be kept
+  private to their owner.
+- **🧰 For packs and mods.** The `trophypedestals:set_trophy` and `trophypedestals:set_mob_trophy` loot functions,
   `/trophypedestals mob_trophy`, the `TrophyPedestals`, `TrophyKinds`, `PedestalSettings` and `PedestalRarities` APIs,
-  and a `TrophyPedestals` KubeJS binding (NeoForge).
+  a `TrophyPedestals` KubeJS binding (NeoForge), and JEI pages for mob trophies and trims. Every field, setting and
+  API is in the [reference](docs/reference.md).
 
-See the [reference](docs/reference.md) for every field, setting and API.
+## 📦 Download
 
-## Building
+| CurseForge | Modrinth |
+|---|---|
+| [trophy-pedestals](https://www.curseforge.com/minecraft/mc-mods/trophy-pedestals) | [trophypedestals](https://modrinth.com/mod/trophypedestals) |
+
+It needs [CoolCatLib](https://modrinth.com/mod/coolcatlib), and [Fabric API](https://modrinth.com/mod/fabric-api) on
+Fabric. JEI is optional.
+
+## 🧭 Versions
+
+Each Minecraft version lives on its own branch.
+
+| Minecraft | Loaders | Branch | Status | Latest |
+|---|---|---|:-:|---|
+| **26.3** | Fabric, NeoForge | [`26.3`](https://github.com/ixDarkLorD/TrophyPedestals/tree/26.3) | ✅ Supported | — |
+| **26.2** | Fabric, NeoForge | [`26.2`](https://github.com/ixDarkLorD/TrophyPedestals/tree/26.2) | ✅ Supported | — |
+| **26.1 – 26.1.2** | Fabric, NeoForge | [`26.1.2`](https://github.com/ixDarkLorD/TrophyPedestals/tree/26.1.2) | ✅ Supported | — |
+| **1.21.1** | Fabric, NeoForge | [`1.21-1.21.1`](https://github.com/ixDarkLorD/TrophyPedestals/tree/1.21-1.21.1) | ✅ Supported | — |
+| **1.20.1** | Fabric, Forge | [`1.20.1`](https://github.com/ixDarkLorD/TrophyPedestals/tree/1.20.1) | ✅ Supported | — |
+
+## 🛠️ Building
+
+Check out the branch for your Minecraft version, then run:
 
 ```bash
-./gradlew build                        # NeoForge and Fabric jars
-./gradlew publishToMavenLocal          # for Tierwise, which compiles against it
-./gradlew :neoforge:runGameTestServer  # game tests (also :fabric:runGameTestServer)
+./gradlew build                        # the jars, in each loader's build/libs
+./gradlew :fabric:runClient            # a game with the mod (or :neoforge: / :forge:)
+./gradlew :neoforge:runGameTestServer  # the game tests (also :fabric: / :forge:)
 ```
 
-CoolCatLib 8.1.0 isn't released yet, so it's built from source into Maven Local first. Every pinned version is in
-[docs/VERSIONS.md](docs/VERSIONS.md), and the layout in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+It needs the Java its Minecraft version runs on (25 for 26.x, 21 for 1.21.1, 17 for 1.20.1). CoolCatLib comes from the
+ModResources Maven, and the build scripts and dependency versions from
+[ModResources](https://github.com/ixDarkLorD/ModResources). Every pinned version is in [docs/VERSIONS.md](docs/VERSIONS.md),
+and the layout in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## License
+## 🐞 Issues and ideas
 
-To be decided by the author (the build currently says MPL-2.0 as a placeholder).
+Found a bug or have an idea? Open an [issue](https://github.com/ixDarkLorD/TrophyPedestals/issues), or drop by the
+[Discord](https://discord.gg/ZapGEPqm2V).
+
+## 📄 License
+
+Trophy Pedestals is under the [Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/). You can use it in
+modpacks, make videos and reviews of it, and reuse or change its code, as long as files you change stay under the same
+license.

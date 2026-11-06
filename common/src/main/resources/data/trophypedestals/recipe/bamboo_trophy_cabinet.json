@@ -4,13 +4,14 @@
   "group": "trophy_cabinet",
   "key": {
     "P": "minecraft:bamboo_planks",
-    "G": "minecraft:gold_ingot",
-    "S": "minecraft:bamboo_slab"
+    "S": "minecraft:bamboo_slab",
+    "T": "minecraft:stick",
+    "G": "minecraft:glass_pane"
   },
   "pattern": [
-    "PPP",
-    "GSG",
-    "PPP"
+    "PSP",
+    "TGT",
+    "PSP"
   ],
   "result": {
     "count": 1,

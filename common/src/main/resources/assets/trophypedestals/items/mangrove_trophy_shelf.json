@@ -4,8 +4,21 @@
     "property": "minecraft:has_component",
     "component": "trophypedestals:trim_material",
     "on_true": {
-      "type": "minecraft:model",
-      "model": "trophypedestals:block/mangrove_trophy_shelf"
+      "type": "minecraft:composite",
+      "models": [
+        {
+          "type": "minecraft:model",
+          "model": "trophypedestals:block/mangrove_trophy_shelf_bare"
+        },
+        {
+          "type": "minecraft:special",
+          "base": "trophypedestals:block/mangrove_trophy_shelf_bare",
+          "model": {
+            "type": "trophypedestals:display_trim",
+            "model": "trophypedestals:models/block/trophy_shelf.json"
+          }
+        }
+      ]
     },
     "on_false": {
       "type": "minecraft:model",

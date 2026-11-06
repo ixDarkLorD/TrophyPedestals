@@ -4,13 +4,14 @@
   "group": "trophy_cabinet",
   "key": {
     "P": "minecraft:spruce_planks",
-    "G": "minecraft:gold_ingot",
-    "S": "minecraft:spruce_slab"
+    "S": "minecraft:spruce_slab",
+    "T": "minecraft:stick",
+    "G": "minecraft:glass_pane"
   },
   "pattern": [
-    "PPP",
-    "GSG",
-    "PPP"
+    "PSP",
+    "TGT",
+    "PSP"
   ],
   "result": {
     "count": 1,
