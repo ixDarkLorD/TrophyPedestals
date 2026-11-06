@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_fluted_placed",
+  "textures": {
+    "side": "minecraft:block/bamboo_planks",
+    "top": "minecraft:block/bamboo_planks",
+    "bottom": "minecraft:block/bamboo_planks",
+    "column": "minecraft:block/bamboo_block",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "minecraft:block/bamboo_planks"
+  }
+}

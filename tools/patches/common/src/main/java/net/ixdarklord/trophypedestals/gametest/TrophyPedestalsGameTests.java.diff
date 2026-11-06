@@ -1,0 +1,26 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/gametest/TrophyPedestalsGameTests.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/gametest/TrophyPedestalsGameTests.java
+@@ -53,6 +53,7 @@
+ import net.minecraft.world.item.Items;
+ import net.minecraft.world.item.SpawnEggItem;
+ import net.minecraft.world.item.crafting.Recipe;
++import net.minecraft.world.item.crafting.RecipeManager;
+ import net.minecraft.world.level.GameType;
+ import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.Blocks;
+@@ -431,10 +432,11 @@
+         }
+         try {
+             JsonObject recipe = JsonParser.parseString(Files.readString(Path.of(pack,
+-                    "data", "trophypedestals_example", "recipe", "amethyst_pedestal.json"))).getAsJsonObject();
+-            RegistryOps<JsonElement> ops = level.registryAccess().createSerializationContext(JsonOps.INSTANCE);
+-            helper.assertTrue(Recipe.CODEC.parse(ops, recipe).isSuccess(), "the example pack's amethyst pedestal recipe reads");
+-            ItemStack made = ItemStack.CODEC.parse(ops, recipe.get("result")).getOrThrow(false, error -> {});
++                    "data", "trophypedestals_example", "recipes", "amethyst_pedestal.json"))).getAsJsonObject();
++            // (1.20.1: read by its serializer, a shaped recipe whose result carries data.)
++            Recipe<?> read = RecipeManager.fromJson(TrophyPedestalsMod.id("amethyst_pedestal"), recipe);
++            helper.assertTrue(read != null, "the example pack's amethyst pedestal recipe reads");
++            ItemStack made = read.getResultItem(level.registryAccess());
+             helper.assertTrue(made.is(Pedestals.CUSTOM_ITEM.get()) && BuiltInRegistries.BLOCK.getKey(Blocks.AMETHYST_BLOCK).equals(Components.get(made, Pedestals.PEDESTAL_MATERIAL.get())),
+                     "and makes an amethyst pedestal: " + made);
+         } catch (IOException e) {

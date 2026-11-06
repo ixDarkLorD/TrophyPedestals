@@ -1,15 +1,15 @@
 package net.ixdarklord.trophypedestals.pedestal;
 
-import com.mojang.serialization.MapCodec;
 import net.ixdarklord.coolcatcore.api.network.Network;
 import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.api.PedestalRarity;
 import net.ixdarklord.trophypedestals.client.PedestalParticles;
+import net.ixdarklord.trophypedestals.compat.ItemInteractionResult;
 import net.ixdarklord.trophypedestals.network.OpenPedestalPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -27,6 +27,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -35,7 +36,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
-import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -51,7 +51,6 @@ import org.jetbrains.annotations.Nullable;
  * ({@link Pedestals.Material}).
  */
 public class PedestalBlock extends BaseEntityBlock {
-    public static final MapCodec<PedestalBlock> CODEC = simpleCodec(PedestalBlock::new);
     public static final int MAX_RANK = 5;
     /** Whether it holds something (a trophy's icon or a displayed item), whose hologram lights the area round it. */
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
@@ -77,8 +76,14 @@ public class PedestalBlock extends BaseEntityBlock {
         registerDefaultState(defaultBlockState().setValue(LIT, false).setValue(RANK, 0));
     }
 
+    // Drawn by its model (a block with a block entity draws nothing unless it says so).
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
+    }
+
+    @Override
+    public void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(LIT, RANK);
     }
 
@@ -92,12 +97,12 @@ public class PedestalBlock extends BaseEntityBlock {
     // A lit pedestal with no rank in its state may be a trophy placed before pedestals' light followed their rank: now and
     // then it checks, and takes its rank's light.
     @Override
-    protected boolean isRandomlyTicking(BlockState state) {
+    public boolean isRandomlyTicking(BlockState state) {
         return state.getValue(LIT) && state.getValue(RANK) == 0;
     }
 
     @Override
-    protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+    public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) pedestal.syncLight();
     }
 
@@ -107,7 +112,7 @@ public class PedestalBlock extends BaseEntityBlock {
     }
 
     /** The {@link #RANK} a trophy of this rarity has: 0 for none, its rank up to {@link #MAX_RANK}. */
-    public static int rank(@Nullable Identifier rarity) {
+    public static int rank(@Nullable ResourceLocation rarity) {
         if (rarity == null || PedestalRarities.isNone(rarity)) return 0;
         return Mth.clamp(PedestalRarities.get(rarity).rank(), 1, MAX_RANK);
     }
@@ -120,7 +125,7 @@ public class PedestalBlock extends BaseEntityBlock {
             pedestal.markPlaced();
             if (placer instanceof Player player) pedestal.setOwner(player);
         }
-        Identifier rarity = Pedestals.rarity(stack);
+        ResourceLocation rarity = Pedestals.rarity(stack);
         if (level.isClientSide() || rarity == null || PedestalRarities.isNone(rarity)) return;
         PedestalRarity.Sound sound = PedestalRarities.get(rarity).placeSound();
         if (sound != null) level.playSound(null, pos, SoundEvent.createVariableRangeEvent(sound.id()), SoundSource.BLOCKS, sound.volume(), sound.pitch());
@@ -128,46 +133,55 @@ public class PedestalBlock extends BaseEntityBlock {
 
     // Its redstone signal, kept on its block entity for its redstone setting (and sent to clients, which draw by it).
     @Override
-    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighbor, @Nullable Orientation orientation, boolean moved) {
-        super.neighborChanged(state, level, pos, neighbor, orientation, moved);
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighbor, BlockPos neighborPos, boolean moved) {
+        super.neighborChanged(state, level, pos, neighbor, neighborPos, moved);
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) pedestal.setPowered(level.hasNeighborSignal(pos));
     }
 
     @Override
-    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState old, boolean moved) {
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState old, boolean moved) {
         super.onPlace(state, level, pos, old, moved);
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) pedestal.setPowered(level.hasNeighborSignal(pos));
     }
 
     @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moved) {
+        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) pedestal.preRemoveSideEffects(pos, state);
+        super.onRemove(state, level, pos, newState, moved);
     }
 
     @Override
-    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return SHAPE;
     }
 
-    // An item in hand goes on display on a crafted pedestal with nothing on it.
+    // 1.20.1 uses a block once, with whatever's in hand: the item's use first, then (passed on) the empty hand's.
     @Override
-    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        ItemStack stack = player.getItemInHand(hand);
+        ItemInteractionResult item = stack.isEmpty() ? ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION
+                : useItemOn(stack, state, level, pos, player, hand, hit);
+        if (item != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION) return item.result();
+        return hand == InteractionHand.MAIN_HAND ? useWithoutItem(state, level, pos, player, hit) : InteractionResult.PASS;
+    }
+
+    // An item in hand goes on display on a crafted pedestal with nothing on it.
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         // (An empty hand goes on to useWithoutItem: the adjustment screen, or taking an item back.)
         if (stack.isEmpty() || !(level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) || pedestal.isTrophy() || !pedestal.display().isEmpty()) {
-            return InteractionResult.TRY_WITH_EMPTY_HAND;
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         if (!level.isClientSide()) {
             pedestal.setDisplay(stack.copyWithCount(1));
-            stack.consume(1, player);
+            if (!player.getAbilities().instabuild) stack.shrink(1);
             if (pedestal.sounds()) level.playSound(null, pos, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 1.0F, 1.0F);
         }
-        return InteractionResult.SUCCESS;
+        return ItemInteractionResult.SUCCESS;
     }
 
     // Sneaking with an empty hand opens its adjustment screen (its text and display size), for those allowed to; otherwise
     // a displayed item comes back off it into the player's hands, unless the server turned that off (pedestal_take_items:
     // a server setting, sent to the clients, so both sides agree).
-    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!(level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal)) return InteractionResult.PASS;
         if (player.isSecondaryUseActive()) {
@@ -175,13 +189,13 @@ public class PedestalBlock extends BaseEntityBlock {
                 if (pedestal.locked()) {
                     // Locked by a mod: refused with its message, or silently.
                     if (pedestal.refusal() != null) {
-                        server.sendOverlayMessage(pedestal.refusal());
+                        server.displayClientMessage(pedestal.refusal(), true);
                         level.playSound(null, pos, SoundEvents.VILLAGER_NO, SoundSource.BLOCKS, 0.5F, 1.0F);
                     }
                 } else if (pedestal.canAdjust(server)) {
                     Network.sendToPlayer(server, new OpenPedestalPayload(pos));
                 } else {
-                    server.sendOverlayMessage(Component.translatable("trophypedestals.pedestal.not_yours", pedestal.ownerName()));
+                    server.displayClientMessage(Component.translatable("trophypedestals.pedestal.not_yours", pedestal.ownerName()), true);
                     level.playSound(null, pos, SoundEvents.VILLAGER_NO, SoundSource.BLOCKS, 0.5F, 1.0F);
                 }
             }

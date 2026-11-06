@@ -2,15 +2,16 @@ package net.ixdarklord.trophypedestals.client;
 
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.api.PedestalRarity;
+import net.ixdarklord.trophypedestals.compat.ARGB;
+import net.ixdarklord.trophypedestals.compat.component.Components;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophyRecord;
 import net.ixdarklord.trophypedestals.pedestal.PedestalRecord;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.ixdarklord.trophypedestals.pedestal.TrophyTooltip;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.ARGB;
 import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,8 +43,8 @@ public final class TrophyTooltipLine implements ClientTooltipComponent {
     private final @Nullable FormattedCharSequence label;
 
     public TrophyTooltipLine(TrophyTooltip tooltip) {
-        PedestalRecord record = tooltip.stack().get(Pedestals.RECORD.get());
-        MobTrophyRecord mob = tooltip.stack().get(Pedestals.MOB_TROPHY.get());
+        PedestalRecord record = Components.get(tooltip.stack(), Pedestals.RECORD.get());
+        MobTrophyRecord mob = Components.get(tooltip.stack(), Pedestals.MOB_TROPHY.get());
         if (record != null) {
             name = PedestalRenderer.name(record);
             rarity = PedestalRarities.isNone(record.rarity()) ? null : PedestalRarities.get(record.rarity());
@@ -59,7 +60,7 @@ public final class TrophyTooltipLine implements ClientTooltipComponent {
     }
 
     @Override
-    public int getHeight(Font font) {
+    public int getHeight() {
         // (Nothing to show: an unranked mob trophy.)
         return label == null && name.getString().isEmpty() ? 0 : HEIGHT - RAISE + BELOW;
     }
@@ -80,9 +81,9 @@ public final class TrophyTooltipLine implements ClientTooltipComponent {
     }
 
     @Override
-    public void extractImage(Font font, int x, int y, int width, int height, GuiGraphicsExtractor graphics) {
+    public void renderImage(Font font, int x, int y, GuiGraphics graphics) {
         y -= RAISE;
-        graphics.text(font, name, x, y + TEXT_Y, 0xFFFFFFFF, true);
+        graphics.drawString(font, name, x, y + TEXT_Y, 0xFFFFFFFF, true);
         if (rarity == null || label == null) return;
         int color = ARGB.opaque(rarity.color());
         int x0 = x + font.width(name) + gap(font), x1 = x0 + badgeWidth(font), y0 = y, y1 = y + HEIGHT;
@@ -100,7 +101,7 @@ public final class TrophyTooltipLine implements ClientTooltipComponent {
         // The plate, darkening downwards.
         graphics.fillGradient(x0 + 2, y0 + 2, x1 - 2, y1 - 2, ARGB.color(245, ARGB.scaleRGB(color, 0.40F)), ARGB.color(245, ARGB.scaleRGB(color, 0.20F)));
         gem(graphics, x0 + GEM_X, y0 + (HEIGHT - GEM_SIZE) / 2, color);
-        graphics.text(font, label, x0 + LABEL_X, y0 + TEXT_Y, ARGB.srgbLerp(0.45F, color, 0xFFFFFFFF), false);
+        graphics.drawString(font, label, x0 + LABEL_X, y0 + TEXT_Y, ARGB.srgbLerp(0.45F, color, 0xFFFFFFFF), false);
     }
 
     // The gem: a diamond five pixels across, lit from the upper left. Each letter is a shade: H highlight, W its white
@@ -112,7 +113,7 @@ public final class TrophyTooltipLine implements ClientTooltipComponent {
             " LCD ",
             "  D  "};
 
-    private static void gem(GuiGraphicsExtractor graphics, int x, int y, int color) {
+    private static void gem(GuiGraphics graphics, int x, int y, int color) {
         for (int row = 0; row < GEM.length; row++) {
             for (int column = 0; column < GEM[row].length(); column++) {
                 int pixel = switch (GEM[row].charAt(column)) {

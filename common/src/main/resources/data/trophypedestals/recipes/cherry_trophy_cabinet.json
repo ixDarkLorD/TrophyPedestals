@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "group": "trophy_cabinet",
+  "key": {
+    "P": {
+      "item": "minecraft:cherry_planks"
+    },
+    "S": {
+      "item": "minecraft:cherry_slab"
+    },
+    "T": {
+      "item": "minecraft:stick"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    }
+  },
+  "pattern": [
+    "PSP",
+    "TGT",
+    "PSP"
+  ],
+  "result": {
+    "item": "trophypedestals:cherry_trophy_cabinet",
+    "count": 1
+  }
+}

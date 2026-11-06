@@ -1,0 +1,27 @@
+{
+  "type": "trophypedestals:crafting_shaped",
+  "category": "misc",
+  "group": "trophypedestals:pedestal",
+  "key": {
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "S": {
+      "item": "minecraft:amethyst_block"
+    }
+  },
+  "pattern": [
+    "SGS",
+    " S ",
+    "SSS"
+  ],
+  "result": {
+    "item": "trophypedestals:custom_pedestal",
+    "count": 1,
+    "nbt": {
+      "BlockEntityTag": {
+        "Material": "minecraft:amethyst_block"
+      }
+    }
+  }
+}

@@ -1,16 +1,14 @@
 package net.ixdarklord.trophypedestals.pedestal;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -30,7 +28,6 @@ import java.util.Locale;
  * half beside it; breaking either breaks both, and the cabinet drops once (from its left half), with its trophies.
  */
 public class TrophyCabinetBlock extends TrophyDisplayBlock {
-    public static final MapCodec<TrophyCabinetBlock> CODEC = simpleCodec(TrophyCabinetBlock::new);
     public static final EnumProperty<Part> PART = EnumProperty.create("part", Part.class);
     /** Whether it's joined to a cabinet's like half above it, or below it (stacked: their boards meet as one divider). */
     public static final BooleanProperty UP = BlockStateProperties.UP, DOWN = BlockStateProperties.DOWN;
@@ -52,12 +49,7 @@ public class TrophyCabinetBlock extends TrophyDisplayBlock {
     }
 
     @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+    public void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, PART, UP, DOWN, GOLD_TRIM);
     }
 
@@ -78,7 +70,7 @@ public class TrophyCabinetBlock extends TrophyDisplayBlock {
     }
 
     @Override
-    protected List<BlockPos> trimmedTogether(BlockState state, BlockPos pos) {
+    public List<BlockPos> trimmedTogether(BlockState state, BlockPos pos) {
         return List.of(pos, partner(pos, state));
     }
 
@@ -107,23 +99,23 @@ public class TrophyCabinetBlock extends TrophyDisplayBlock {
 
     // A half whose other half is gone goes too.
     @Override
-    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction direction,
-                                     BlockPos neighborPos, BlockState neighbor, RandomSource random) {
+    public BlockState updateShape(BlockState state, Direction direction, BlockState neighbor, LevelAccessor level, BlockPos pos,
+                                     BlockPos neighborPos) {
         if (neighborPos.equals(partner(pos, state))
                 && !(neighbor.is(this) && neighbor.getValue(FACING) == state.getValue(FACING) && neighbor.getValue(PART) != state.getValue(PART))) {
             return Blocks.AIR.defaultBlockState();
         }
         if (direction.getAxis().isVertical()) state = state.setValue(direction == Direction.UP ? UP : DOWN, joins(state, neighbor));
-        return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighbor, random);
+        return super.updateShape(state, direction, neighbor, level, pos, neighborPos);
     }
 
     // Broken at its right half, the left half (which drops the cabinet) breaks as if broken itself.
     @Override
-    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide() && state.getValue(PART) == Part.RIGHT) {
             BlockPos other = partner(pos, state);
             if (level.getBlockState(other).is(this)) level.destroyBlock(other, !player.isCreative(), player);
         }
-        return super.playerWillDestroy(level, pos, state, player);
+        super.playerWillDestroy(level, pos, state, player);
     }
 }

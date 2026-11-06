@@ -1,6 +1,7 @@
 package net.ixdarklord.trophypedestals.pedestal;
 
-import com.mojang.serialization.MapCodec;
+import java.util.function.Supplier;
+import net.ixdarklord.coolcatcore.api.network.codec.ByteBufCodecs;
 import net.ixdarklord.coolcatcore.api.registry.BlockEntityTypes;
 import net.ixdarklord.coolcatcore.api.registry.CreativeTabs;
 import net.ixdarklord.coolcatcore.api.registry.DeferredRegister;
@@ -9,13 +10,15 @@ import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.api.PedestalRarity;
 import net.ixdarklord.trophypedestals.api.TrophyKinds;
-import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.component.DataComponents;
+import net.ixdarklord.trophypedestals.compat.LootCodecs;
+import net.ixdarklord.trophypedestals.compat.component.Components;
+import net.ixdarklord.trophypedestals.compat.component.DataComponentRegister;
+import net.ixdarklord.trophypedestals.compat.component.DataComponentType;
+import net.ixdarklord.trophypedestals.compat.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.BlockItem;
@@ -27,7 +30,7 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
-import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -64,7 +67,7 @@ public final class Pedestals {
         DIORITE(MapColor.QUARTZ, SoundType.STONE, false),
         ANDESITE(MapColor.STONE, SoundType.STONE, false),
         COBBLED_DEEPSLATE(MapColor.DEEPSLATE, SoundType.DEEPSLATE_BRICKS, false),
-        TUFF(MapColor.TERRACOTTA_GRAY, SoundType.POLISHED_TUFF, false),
+        TUFF(MapColor.TERRACOTTA_GRAY, SoundType.TUFF, false),
         CALCITE(MapColor.TERRACOTTA_WHITE, SoundType.CALCITE, false),
         BASALT(MapColor.COLOR_BLACK, SoundType.BASALT, false),
         RED_SANDSTONE(MapColor.COLOR_ORANGE, SoundType.STONE, false),
@@ -76,7 +79,6 @@ public final class Pedestals {
         NETHER_BRICKS(MapColor.NETHER, SoundType.NETHER_BRICKS, false),
         RED_NETHER_BRICKS(MapColor.NETHER, SoundType.NETHER_BRICKS, false),
         MUD_BRICKS(MapColor.TERRACOTTA_LIGHT_GRAY, SoundType.MUD_BRICKS, false),
-        RESIN_BRICKS(MapColor.TERRACOTTA_ORANGE, SoundType.RESIN_BRICKS, false),
         OAK(MapColor.WOOD, SoundType.WOOD, true),
         SPRUCE(MapColor.PODZOL, SoundType.WOOD, true),
         BIRCH(MapColor.SAND, SoundType.WOOD, true),
@@ -85,7 +87,6 @@ public final class Pedestals {
         DARK_OAK(MapColor.COLOR_BROWN, SoundType.WOOD, true),
         MANGROVE(MapColor.COLOR_RED, SoundType.WOOD, true),
         CHERRY(MapColor.TERRACOTTA_WHITE, SoundType.CHERRY_WOOD, true),
-        PALE_OAK(MapColor.QUARTZ, SoundType.WOOD, true),
         BAMBOO(MapColor.COLOR_YELLOW, SoundType.BAMBOO_WOOD, true),
         CRIMSON(MapColor.CRIMSON_STEM, SoundType.NETHER_WOOD, true),
         WARPED(MapColor.WARPED_STEM, SoundType.NETHER_WOOD, true);
@@ -108,42 +109,41 @@ public final class Pedestals {
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.BLOCK);
     private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.ITEM);
     private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.BLOCK_ENTITY_TYPE);
-    private static final DeferredRegister<DataComponentType<?>> COMPONENTS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.DATA_COMPONENT_TYPE);
-    private static final DeferredRegister<MapCodec<? extends LootItemFunction>> LOOT_FUNCTIONS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.LOOT_FUNCTION_TYPE);
+    private static final DataComponentRegister COMPONENTS = DataComponentRegister.create(TrophyPedestalsMod.MOD_ID);
+    private static final DeferredRegister<LootItemFunctionType> LOOT_FUNCTIONS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.LOOT_FUNCTION_TYPE);
     private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.CREATIVE_MODE_TAB);
 
-    public static final RegistryEntry<DataComponentType<PedestalRecord>> RECORD = COMPONENTS.register("pedestal",
+    public static final Supplier<DataComponentType<PedestalRecord>> RECORD = COMPONENTS.register("pedestal",
             () -> DataComponentType.<PedestalRecord>builder().persistent(PedestalRecord.CODEC).networkSynchronized(PedestalRecord.STREAM_CODEC).build());
     /** The {@code trophypedestals:mob_trophy} data component: a mob trophy's record ({@link MobTrophies}). */
-    public static final RegistryEntry<DataComponentType<MobTrophyRecord>> MOB_TROPHY = COMPONENTS.register("mob_trophy",
+    public static final Supplier<DataComponentType<MobTrophyRecord>> MOB_TROPHY = COMPONENTS.register("mob_trophy",
             () -> DataComponentType.<MobTrophyRecord>builder().persistent(MobTrophyRecord.CODEC).networkSynchronized(MobTrophyRecord.STREAM_CODEC).build());
     /**
      * The {@code trophypedestals:pedestal_material} data component: the block a custom pedestal ({@link #CUSTOM}) is made of,
      * whose textures it's drawn with. A data pack's recipe or loot sets it; any mod's block will do.
      */
-    public static final RegistryEntry<DataComponentType<Identifier>> PEDESTAL_MATERIAL = COMPONENTS.register("pedestal_material",
-            () -> DataComponentType.<Identifier>builder().persistent(Identifier.CODEC).networkSynchronized(Identifier.STREAM_CODEC).build());
+    public static final Supplier<DataComponentType<ResourceLocation>> PEDESTAL_MATERIAL = COMPONENTS.register("pedestal_material",
+            () -> DataComponentType.<ResourceLocation>builder().persistent(ResourceLocation.CODEC).networkSynchronized(ByteBufCodecs.RESOURCE_LOCATION).build());
     /**
      * The {@code trophypedestals:trim_material} data component: the block a trophy cabinet's or shelf's trim is made of, in place
      * of its gold (drawn with that block's textures). Set by using a block on one; any mod's block will do.
      */
-    public static final RegistryEntry<DataComponentType<Identifier>> TRIM_MATERIAL = COMPONENTS.register("trim_material",
-            () -> DataComponentType.<Identifier>builder().persistent(Identifier.CODEC).networkSynchronized(Identifier.STREAM_CODEC).build());
+    public static final Supplier<DataComponentType<ResourceLocation>> TRIM_MATERIAL = COMPONENTS.register("trim_material",
+            () -> DataComponentType.<ResourceLocation>builder().persistent(ResourceLocation.CODEC).networkSynchronized(ByteBufCodecs.RESOURCE_LOCATION).build());
     public static final Map<Material, RegistryEntry<PedestalBlock>> BLOCKS_BY_STONE = new LinkedHashMap<>();
     public static final Map<Material, RegistryEntry<BlockItem>> ITEMS_BY_STONE = new LinkedHashMap<>();
 
     static {
         for (Material stone : Material.values()) {
             BlockBehaviour.Properties properties = BlockBehaviour.Properties.of().mapColor(stone.color).sound(stone.sound).noOcclusion()
-                    .lightLevel(PedestalBlock::light)
-                    .setId(ResourceKey.create(Registries.BLOCK, TrophyPedestalsMod.id(stone.id())));
+                    .lightLevel(PedestalBlock::light);
             // Wood like planks (an axe, no tool needed to drop it); stone like stone (a pickaxe, needed).
             if (stone.wood) properties.strength(2.0F, 3.0F);
             else properties.strength(2.0F, 6.0F).requiresCorrectToolForDrops();
             RegistryEntry<PedestalBlock> block = BLOCKS.register(stone.id(), () -> new PedestalBlock(properties));
             BLOCKS_BY_STONE.put(stone, block);
             ITEMS_BY_STONE.put(stone, ITEMS.register(stone.id(), () -> new PedestalItem(block.get(),
-                    new Item.Properties().useBlockDescriptionPrefix().setId(ResourceKey.create(Registries.ITEM, TrophyPedestalsMod.id(stone.id()))))));
+                    new Item.Properties())));
         }
     }
 
@@ -154,10 +154,9 @@ public final class Pedestals {
      */
     public static final RegistryEntry<PedestalBlock> CUSTOM = BLOCKS.register("custom_pedestal", () -> new PedestalBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.STONE).sound(SoundType.STONE).noOcclusion().strength(2.0F, 6.0F)
-            .lightLevel(PedestalBlock::light)
-            .setId(ResourceKey.create(Registries.BLOCK, TrophyPedestalsMod.id("custom_pedestal")))));
+            .lightLevel(PedestalBlock::light)));
     public static final RegistryEntry<BlockItem> CUSTOM_ITEM = ITEMS.register("custom_pedestal", () -> new CustomPedestalItem(CUSTOM.get(),
-            new Item.Properties().useBlockDescriptionPrefix().setId(ResourceKey.create(Registries.ITEM, TrophyPedestalsMod.id("custom_pedestal")))));
+            new Item.Properties()));
 
     /**
      * The trophy cabinets (a shelf two blocks wide holding four trophies, {@link TrophyCabinetBlock}) and trophy shelves
@@ -178,12 +177,11 @@ public final class Pedestals {
 
     // A wooden trophy display block and its item, in this wood's color and sound (the nether woods don't burn).
     private static <B extends Block> RegistryEntry<B> displayBlock(String id, Material wood, Function<BlockBehaviour.Properties, B> make) {
-        BlockBehaviour.Properties properties = BlockBehaviour.Properties.of().mapColor(wood.color).sound(wood.sound).noOcclusion().strength(2.0F, 3.0F)
-                .setId(ResourceKey.create(Registries.BLOCK, TrophyPedestalsMod.id(id)));
+        BlockBehaviour.Properties properties = BlockBehaviour.Properties.of().mapColor(wood.color).sound(wood.sound).noOcclusion().strength(2.0F, 3.0F);
         if (wood != Material.CRIMSON && wood != Material.WARPED) properties.ignitedByLava();
         RegistryEntry<B> block = BLOCKS.register(id, () -> make.apply(properties));
         DISPLAY_ITEMS.add(ITEMS.register(id, () -> new BlockItem(block.get(),
-                new Item.Properties().useBlockDescriptionPrefix().setId(ResourceKey.create(Registries.ITEM, TrophyPedestalsMod.id(id))))));
+                new Item.Properties())));
         return block;
     }
 
@@ -198,16 +196,16 @@ public final class Pedestals {
                     .map(RegistryEntry::get).toArray(Block[]::new)));
 
     /** The {@code trophypedestals:set_trophy} loot function. */
-    public static final RegistryEntry<MapCodec<? extends LootItemFunction>> SET_TROPHY = LOOT_FUNCTIONS.register("set_trophy", () -> SetTrophyFunction.MAP_CODEC);
+    public static final RegistryEntry<LootItemFunctionType> SET_TROPHY = LOOT_FUNCTIONS.register("set_trophy", () -> new LootItemFunctionType(LootCodecs.serializer(SetTrophyFunction.MAP_CODEC)));
     /** The {@code trophypedestals:set_mob_trophy} loot function. */
-    public static final RegistryEntry<MapCodec<? extends LootItemFunction>> SET_MOB_TROPHY = LOOT_FUNCTIONS.register("set_mob_trophy", () -> SetMobTrophyFunction.MAP_CODEC);
+    public static final RegistryEntry<LootItemFunctionType> SET_MOB_TROPHY = LOOT_FUNCTIONS.register("set_mob_trophy", () -> new LootItemFunctionType(LootCodecs.serializer(SetMobTrophyFunction.MAP_CODEC)));
 
     /**
      * The creative tabs: every kind of pedestal, then a trophy of every mob in the game (mods' included). NeoForge puts
      * tabs given no order by their ids, so the mob trophies' id starts with the pedestals' to come after it; Fabric keeps
      * the order they're registered in.
      */
-    public static final RegistryEntry<CreativeModeTab> PEDESTALS_TAB = TABS.register("pedestals", () -> CreativeTabs.builder((parameters, items) -> {
+    public static final RegistryEntry<CreativeModeTab> PEDESTALS_TAB = TABS.register("pedestals", () -> CreativeTabs.builder().displayItems((parameters, items) -> {
                 ITEMS_BY_STONE.values().forEach(item -> items.accept(new ItemStack(item.get())));
                 // (Not the custom pedestal: it's made of a data pack's material, and a bare one would show as stone.)
                 DISPLAY_ITEMS.forEach(item -> items.accept(new ItemStack(item.get())));
@@ -215,8 +213,8 @@ public final class Pedestals {
             .title(Component.translatable("itemGroup.trophypedestals.pedestals"))
             .icon(() -> new ItemStack(DEFAULT.get()))
             .build());
-    public static final RegistryEntry<CreativeModeTab> MOB_TROPHIES_TAB = TABS.register("pedestals_mob_trophies", () -> CreativeTabs.builder(
-                    (parameters, items) -> MobTrophies.creativeTrophies(parameters.enabledFeatures(), items))
+    public static final RegistryEntry<CreativeModeTab> MOB_TROPHIES_TAB = TABS.register("pedestals_mob_trophies", () -> CreativeTabs.builder().displayItems(
+                    (parameters, items) -> MobTrophies.creativeTrophies(parameters.enabledFeatures(), items::accept))
             .title(Component.translatable("itemGroup.trophypedestals.pedestals_mob_trophies"))
             .icon(() -> MobTrophies.trophy(DEFAULT.get(), EntityType.ZOMBIE, "", 0L, PedestalRarities.NONE))
             .build());
@@ -235,14 +233,14 @@ public final class Pedestals {
 
     /** Whether this item is a trophy of either kind (an achievement's, or a mob's). */
     public static boolean isTrophy(ItemStack stack) {
-        return stack.has(RECORD.get()) || stack.has(MOB_TROPHY.get());
+        return Components.has(stack, RECORD.get()) || Components.has(stack, MOB_TROPHY.get());
     }
 
     /** A trophy item's rarity id, or null for anything but a trophy. */
-    public static @Nullable Identifier rarity(ItemStack stack) {
-        PedestalRecord record = stack.get(RECORD.get());
+    public static @Nullable ResourceLocation rarity(ItemStack stack) {
+        PedestalRecord record = Components.get(stack, RECORD.get());
         if (record != null) return record.rarity();
-        MobTrophyRecord mob = stack.get(MOB_TROPHY.get());
+        MobTrophyRecord mob = Components.get(stack, MOB_TROPHY.get());
         return mob == null ? null : mob.rarity();
     }
 
@@ -250,7 +248,7 @@ public final class Pedestals {
      * A pedestal of this block and rarity recording an achievement: {@code subject}, of a mod's {@code kind}
      * ({@code TrophyKinds}), by {@code name} at {@code unlockedAt}.
      */
-    public static ItemStack trophy(Block pedestal, Identifier kind, Identifier subject, PedestalRecord.Unlocker unlocker, String name, long unlockedAt,
+    public static ItemStack trophy(Block pedestal, ResourceLocation kind, ResourceLocation subject, PedestalRecord.Unlocker unlocker, String name, long unlockedAt,
                                    PedestalRarity rarity) {
         ItemStack stack = new ItemStack(pedestal);
         record(stack, new PedestalRecord(kind, subject, unlocker, name, unlockedAt, rarity.id()));
@@ -262,9 +260,9 @@ public final class Pedestals {
      * color; the name stays with it when it's placed and broken.
      */
     public static void record(ItemStack stack, PedestalRecord record) {
-        stack.set(RECORD.get(), record);
-        stack.set(DataComponents.ITEM_NAME, Component.translatable("trophypedestals.pedestal.trophy_name", TrophyKinds.name(record, false))
-                .withColor(PedestalRarities.get(record.rarity()).color()));
+        Components.set(stack, RECORD.get(), record);
+        Components.set(stack, DataComponents.ITEM_NAME, Component.translatable("trophypedestals.pedestal.trophy_name", TrophyKinds.name(record, false))
+                .withStyle(style -> style.withColor(PedestalRarities.get(record.rarity()).color())));
     }
 
     /** Gives the player these trophies, dropping any that don't fit in their inventory. */
@@ -273,7 +271,7 @@ public final class Pedestals {
     }
 
     /** The pedestal block with this id, or null if there's none (or it isn't a pedestal). */
-    public static @Nullable PedestalBlock pedestal(Identifier id) {
+    public static @Nullable PedestalBlock pedestal(ResourceLocation id) {
         return BuiltInRegistries.BLOCK.getOptional(id).orElse(null) instanceof PedestalBlock pedestal ? pedestal : null;
     }
 }

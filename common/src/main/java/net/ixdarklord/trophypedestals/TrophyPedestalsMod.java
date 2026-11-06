@@ -4,10 +4,11 @@ import net.ixdarklord.coolcatcore.api.core.ModConstructor;
 import net.ixdarklord.coolcatcore.api.gametest.GameTests;
 import net.ixdarklord.coolcatcore.api.platform.Platform;
 import net.ixdarklord.trophypedestals.command.TrophyPedestalsCommands;
+import net.ixdarklord.trophypedestals.compat.ShapedNbtRecipe;
 import net.ixdarklord.trophypedestals.gametest.TrophyPedestalsGameTests;
 import net.ixdarklord.trophypedestals.network.TrophyPedestalsNetwork;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,10 +25,11 @@ public final class TrophyPedestalsMod implements ModConstructor {
 
     @Override
     public void onConstructMod() {
-        LOGGER.info("Loading {} on {}", MOD_NAME, Platform.isFabric() ? "Fabric" : "NeoForge");
+        LOGGER.info("Loading {} on {}", MOD_NAME, Platform.isFabric() ? "Fabric" : "Forge");
         TrophyPedestalsConfig.init();
         TrophyPedestalsNetwork.register();
         Pedestals.init();
+        ShapedNbtRecipe.init();
         TrophyPedestalsCommands.init();
 
         if (GameTests.isEnabled()) {
@@ -35,7 +37,7 @@ public final class TrophyPedestalsMod implements ModConstructor {
         }
     }
 
-    public static Identifier id(String path) {
-        return Identifier.fromNamespaceAndPath(MOD_ID, path.toLowerCase(Locale.ROOT));
+    public static ResourceLocation id(String path) {
+        return new ResourceLocation(MOD_ID, path.toLowerCase(Locale.ROOT));
     }
 }

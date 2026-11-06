@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "group": "trophy_cabinet",
+  "key": {
+    "P": {
+      "item": "minecraft:bamboo_planks"
+    },
+    "S": {
+      "item": "minecraft:bamboo_slab"
+    },
+    "T": {
+      "item": "minecraft:stick"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    }
+  },
+  "pattern": [
+    "PSP",
+    "TGT",
+    "PSP"
+  ],
+  "result": {
+    "item": "trophypedestals:bamboo_trophy_cabinet",
+    "count": 1
+  }
+}

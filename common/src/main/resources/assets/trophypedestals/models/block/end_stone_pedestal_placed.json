@@ -1,0 +1,11 @@
+{
+  "parent": "trophypedestals:block/pedestal_template_fluted_placed",
+  "textures": {
+    "side": "minecraft:block/end_stone_bricks",
+    "top": "minecraft:block/end_stone_bricks",
+    "bottom": "minecraft:block/end_stone_bricks",
+    "column": "minecraft:block/end_stone",
+    "gold": "trophypedestals:block/pedestal/gold_trim",
+    "well": "minecraft:block/end_stone_bricks"
+  }
+}

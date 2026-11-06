@@ -1,11 +1,12 @@
 package net.ixdarklord.trophypedestals.pedestal;
 
+import net.ixdarklord.trophypedestals.compat.ResolvableProfile;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.component.ResolvableProfile;
 
 /**
  * A player's statue on a pedestal: a mannequin (vanilla's player-shaped figure) wearing their skin, as the look of a
@@ -14,7 +15,7 @@ import net.minecraft.world.item.component.ResolvableProfile;
  */
 public final class Statues {
     /** The figure a statue is: vanilla's mannequin. */
-    public static final EntityType<?> FIGURE = EntityType.MANNEQUIN;
+    public static final EntityType<?> FIGURE = EntityType.PLAYER;
 
     private Statues() {}
 
@@ -26,7 +27,7 @@ public final class Statues {
     /** A statue of this player, wearing the skin they have now, named after them. */
     public static CompoundTag look(Player player) {
         CompoundTag look = look(ResolvableProfile.createResolved(player.getGameProfile()));
-        look.putString("CustomName", player.getName().getString());
+        look.putString("CustomName", Component.Serializer.toJson(Component.literal(player.getName().getString())));
         return look;
     }
 

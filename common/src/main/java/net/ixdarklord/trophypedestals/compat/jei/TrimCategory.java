@@ -8,16 +8,17 @@ import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.category.IRecipeCategory;
-import mezz.jei.api.recipe.types.IRecipeType;
+import mezz.jei.api.recipe.RecipeType;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
+import net.ixdarklord.trophypedestals.compat.component.Components;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.ixdarklord.trophypedestals.pedestal.TrophyDisplayBlock;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -32,7 +33,7 @@ import java.util.List;
  * them.
  */
 public final class TrimCategory implements IRecipeCategory<TrimCategory.Trim> {
-    public static final IRecipeType<Trim> TYPE = IRecipeType.create(TrophyPedestalsMod.id("trim"), Trim.class);
+    public static final RecipeType<Trim> TYPE = new RecipeType<>(TrophyPedestalsMod.id("trim"), Trim.class);
     private static final int WIDTH = 120, HEIGHT = 34, SLOT = 18, TEXT_Y = 24, LABEL = 0xFF404040;
     // What a display's page shows it trimmed with: a gold ingot (the gold trim), then any block (a few for the page).
     private static final List<Item> MATERIALS = List.of(Items.GOLD_INGOT, Items.STONE, Items.COBBLESTONE, Items.DEEPSLATE_BRICKS,
@@ -46,7 +47,7 @@ public final class TrimCategory implements IRecipeCategory<TrimCategory.Trim> {
         this.gui = gui;
         // A gold-trimmed shelf (the first wood's).
         ItemStack shelf = new ItemStack(Pedestals.SHELVES.values().iterator().next().get());
-        shelf.set(Pedestals.TRIM_MATERIAL.get(), TrophyDisplayBlock.GOLD);
+        Components.set(shelf, Pedestals.TRIM_MATERIAL.get(), TrophyDisplayBlock.GOLD);
         this.icon = gui.createDrawableItemStack(shelf);
     }
 
@@ -60,11 +61,11 @@ public final class TrimCategory implements IRecipeCategory<TrimCategory.Trim> {
             ItemStack display = new ItemStack(item.get());
             List<ItemStack> materials = new ArrayList<>(), trimmed = new ArrayList<>();
             for (Item material : MATERIALS) {
-                Identifier trim = material == Items.GOLD_INGOT ? TrophyDisplayBlock.GOLD
+                ResourceLocation trim = material == Items.GOLD_INGOT ? TrophyDisplayBlock.GOLD
                         : material instanceof BlockItem block ? BuiltInRegistries.BLOCK.getKey(block.getBlock()) : null;
                 if (trim == null) continue;
                 ItemStack result = display.copy();
-                result.set(Pedestals.TRIM_MATERIAL.get(), trim);
+                Components.set(result, Pedestals.TRIM_MATERIAL.get(), trim);
                 materials.add(new ItemStack(material));
                 trimmed.add(result);
             }
@@ -74,7 +75,7 @@ public final class TrimCategory implements IRecipeCategory<TrimCategory.Trim> {
     }
 
     @Override
-    public IRecipeType<Trim> getRecipeType() {
+    public RecipeType<Trim> getRecipeType() {
         return TYPE;
     }
 
@@ -101,7 +102,7 @@ public final class TrimCategory implements IRecipeCategory<TrimCategory.Trim> {
     // The display, plus a material, makes the display with that trim: the material and the result change together.
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, Trim trim, IFocusGroup focuses) {
-        builder.addSlot(RecipeIngredientRole.INPUT, 1, 1).add(trim.display());
+        builder.addSlot(RecipeIngredientRole.INPUT, 1, 1).addItemStack(trim.display());
         IRecipeSlotBuilder material = builder.addSlot(RecipeIngredientRole.INPUT, MATERIAL_X + 1, 1).addItemStacks(trim.materials());
         IRecipeSlotBuilder result = builder.addSlot(RecipeIngredientRole.OUTPUT, WIDTH - SLOT + 1, 1).addItemStacks(trim.trimmed());
         builder.createFocusLink(material, result);
@@ -111,13 +112,13 @@ public final class TrimCategory implements IRecipeCategory<TrimCategory.Trim> {
 
     // Its slots, a plus and an arrow between them, and under them how to take the trim off.
     @Override
-    public void draw(Trim trim, IRecipeSlotsView slots, GuiGraphicsExtractor graphics, double mouseX, double mouseY) {
+    public void draw(Trim trim, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
         gui.getSlotDrawable().draw(graphics, 0, 0);
         gui.getRecipePlusSign().draw(graphics, PLUS_X, 3);
         gui.getSlotDrawable().draw(graphics, MATERIAL_X, 0);
         gui.getRecipeArrow().draw(graphics, ARROW_X, 1);
         gui.getSlotDrawable().draw(graphics, WIDTH - SLOT, 0);
         Font font = Minecraft.getInstance().font;
-        graphics.text(font, Component.translatable("jei.trophypedestals.trim.remove"), 0, TEXT_Y, LABEL, false);
+        graphics.drawString(font, Component.translatable("jei.trophypedestals.trim.remove"), 0, TEXT_Y, LABEL, false);
     }
 }

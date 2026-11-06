@@ -3,20 +3,20 @@ package net.ixdarklord.trophypedestals.pedestal;
 import com.mojang.serialization.Codec;
 import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.api.PedestalTeams;
+import net.ixdarklord.trophypedestals.compat.ValueInput;
+import net.ixdarklord.trophypedestals.compat.ValueOutput;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.UUIDUtil;
-import net.minecraft.core.component.DataComponentGetter;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Mth;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.Containers;
@@ -27,8 +27,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
@@ -96,7 +94,7 @@ public class PedestalBlockEntity extends BlockEntity {
     private @Nullable PedestalRecord record;
     private @Nullable MobTrophyRecord mobTrophy;
     // A custom pedestal's material: the block it's drawn with.
-    private @Nullable Identifier material;
+    private @Nullable ResourceLocation material;
     private ItemStack display = ItemStack.EMPTY;
     private TextMode textMode = TextMode.LOOKING;
     private @Nullable UUID owner;
@@ -173,7 +171,7 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     /** A custom pedestal's material, the block whose textures it's drawn with; null for any other pedestal, or one with none. */
-    public @Nullable Identifier material() {
+    public @Nullable ResourceLocation material() {
         return material;
     }
 
@@ -192,7 +190,7 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     /** Its trophy's rarity id, or null if it isn't a trophy. */
-    public @Nullable Identifier rarity() {
+    public @Nullable ResourceLocation rarity() {
         return record != null ? record.rarity() : mobTrophy != null ? mobTrophy.rarity() : null;
     }
 
@@ -312,7 +310,7 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     private static boolean isOperator(Player player) {
-        return Commands.hasPermission(Commands.LEVEL_GAMEMASTERS).test(player::permissions);
+        return player.hasPermissions(Commands.LEVEL_GAMEMASTERS);
     }
 
     // Whether the player is on its owner's team (scoreboard teams, or another mod's: PedestalTeams).
@@ -614,18 +612,18 @@ public class PedestalBlockEntity extends BlockEntity {
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
 
-    @Override
+    /** As it's broken (on 1.20.1 its block's onRemove calls this). */
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
-        super.preRemoveSideEffects(pos, state);
         if (level != null && !display.isEmpty()) Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, display);
     }
 
     @Override
-    protected void saveAdditional(ValueOutput output) {
-        super.saveAdditional(output);
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
+        ValueOutput output = ValueOutput.of(tag);
         if (record != null) output.store(RECORD, PedestalRecord.CODEC, record);
         if (mobTrophy != null) output.store(MOB_TROPHY, MobTrophyRecord.CODEC, mobTrophy);
-        if (material != null) output.store(MATERIAL, Identifier.CODEC, material);
+        if (material != null) output.store(MATERIAL, ResourceLocation.CODEC, material);
         if (!display.isEmpty()) output.store(DISPLAY, ItemStack.CODEC, display);
         if (textMode != TextMode.LOOKING) output.store(TEXT_MODE, TextMode.CODEC, textMode);
         if (owner != null) {
@@ -641,7 +639,7 @@ public class PedestalBlockEntity extends BlockEntity {
         if (!animation.equals(IDLE)) output.putString(ANIMATION, animation);
         if (locked) {
             output.putBoolean(LOCKED, true);
-            if (refusal != null) output.store(REFUSAL, ComponentSerialization.CODEC, refusal);
+            if (refusal != null) output.store(REFUSAL, ExtraCodecs.COMPONENT, refusal);
         }
         if (textHeight != 0.0F) output.putFloat(TEXT_HEIGHT, textHeight);
         if (textScale != 1.0F) output.putFloat(TEXT_SCALE, textScale);
@@ -662,14 +660,15 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void loadAdditional(ValueInput input) {
-        super.loadAdditional(input);
+    public void load(CompoundTag tag) {
+        super.load(tag);
+        ValueInput input = ValueInput.of(tag);
         record = input.read(RECORD, PedestalRecord.CODEC).orElse(null);
         MobTrophyRecord shown = mobTrophy;
         mobTrophy = input.read(MOB_TROPHY, MobTrophyRecord.CODEC).orElse(null);
         // A different mob, or a different look: made again when next drawn.
         if (!Objects.equals(shown, mobTrophy)) shownMob = null;
-        material = input.read(MATERIAL, Identifier.CODEC).orElse(null);
+        material = input.read(MATERIAL, ResourceLocation.CODEC).orElse(null);
         display = input.read(DISPLAY, ItemStack.CODEC).orElse(ItemStack.EMPTY);
         owner = input.read(OWNER, UUIDUtil.CODEC).orElse(null);
         ownerName = input.getStringOr(OWNER_NAME, "");
@@ -681,7 +680,7 @@ public class PedestalBlockEntity extends BlockEntity {
         statuePose = input.read(STATUE_POSE, StatuePose.CODEC).orElse(StatuePose.STANDING);
         animation = animationId(input.getStringOr(ANIMATION, IDLE));
         locked = input.getBooleanOr(LOCKED, false);
-        refusal = locked ? input.read(REFUSAL, ComponentSerialization.CODEC).orElse(null) : null;
+        refusal = locked ? input.read(REFUSAL, ExtraCodecs.COMPONENT).orElse(null) : null;
         textHeight = Mth.clamp(input.getFloatOr(TEXT_HEIGHT, 0.0F), MIN_TEXT_HEIGHT, MAX_TEXT_HEIGHT);
         textScale = Mth.clamp(input.getFloatOr(TEXT_SCALE, 1.0F), MIN_TEXT_SCALE, MAX_TEXT_SCALE);
         crown = !input.getBooleanOr(NO_CROWN, false);
@@ -715,37 +714,13 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentGetter components) {
-        super.applyImplicitComponents(components);
-        record = components.get(Pedestals.RECORD.get());
-        mobTrophy = components.get(Pedestals.MOB_TROPHY.get());
-        material = components.get(Pedestals.PEDESTAL_MATERIAL.get());
-    }
-
-    @Override
-    protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        super.collectImplicitComponents(components);
-        if (record != null) components.set(Pedestals.RECORD.get(), record);
-        if (mobTrophy != null) components.set(Pedestals.MOB_TROPHY.get(), mobTrophy);
-        if (material != null) components.set(Pedestals.PEDESTAL_MATERIAL.get(), material);
-    }
-
-    @Override
-    public void removeComponentsFromTag(ValueOutput output) {
-        super.removeComponentsFromTag(output);
-        output.discard(RECORD);
-        output.discard(MOB_TROPHY);
-        output.discard(MATERIAL);
-    }
-
-    @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return this.saveWithoutMetadata(registries);
+    public CompoundTag getUpdateTag() {
+        return this.saveWithoutMetadata();
     }
 
     /** How a pedestal answers a redstone signal. */

@@ -5,13 +5,15 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.api.TrophyKinds;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.context.ContextKey;
+import net.ixdarklord.trophypedestals.compat.LootCodecs;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.functions.LootItemConditionalFunction;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParam;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 
@@ -31,23 +33,23 @@ import java.util.Set;
  * }</pre>
  */
 public class SetTrophyFunction extends LootItemConditionalFunction {
-    public static final MapCodec<SetTrophyFunction> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> commonFields(instance).and(instance.group(
-            Identifier.CODEC.fieldOf("kind").forGetter(function -> function.kind),
-            Identifier.CODEC.fieldOf("subject").forGetter(function -> function.subject),
+    public static final MapCodec<SetTrophyFunction> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> LootCodecs.commonFields(instance).and(instance.group(
+            ResourceLocation.CODEC.fieldOf("kind").forGetter(function -> function.kind),
+            ResourceLocation.CODEC.fieldOf("subject").forGetter(function -> function.subject),
             PedestalRecord.Unlocker.CODEC.optionalFieldOf("unlocker", PedestalRecord.Unlocker.PLAYER).forGetter(function -> function.unlocker),
             Codec.STRING.optionalFieldOf("name").forGetter(function -> function.name),
             PedestalRarities.ID_CODEC.optionalFieldOf("rarity").forGetter(function -> function.rarity)
     )).apply(instance, SetTrophyFunction::new));
 
-    private final Identifier kind;
-    private final Identifier subject;
+    private final ResourceLocation kind;
+    private final ResourceLocation subject;
     private final PedestalRecord.Unlocker unlocker;
     private final Optional<String> name;
-    private final Optional<Identifier> rarity;
+    private final Optional<ResourceLocation> rarity;
 
-    private SetTrophyFunction(List<LootItemCondition> predicates, Identifier kind, Identifier subject, PedestalRecord.Unlocker unlocker, Optional<String> name,
-                              Optional<Identifier> rarity) {
-        super(predicates);
+    private SetTrophyFunction(List<LootItemCondition> predicates, ResourceLocation kind, ResourceLocation subject, PedestalRecord.Unlocker unlocker, Optional<String> name,
+                              Optional<ResourceLocation> rarity) {
+        super(predicates.toArray(new LootItemCondition[0]));
         this.kind = kind;
         this.subject = subject;
         this.unlocker = unlocker;
@@ -56,12 +58,12 @@ public class SetTrophyFunction extends LootItemConditionalFunction {
     }
 
     @Override
-    public MapCodec<SetTrophyFunction> codec() {
-        return MAP_CODEC;
+    public LootItemFunctionType getType() {
+        return Pedestals.SET_TROPHY.get();
     }
 
     @Override
-    public Set<ContextKey<?>> getReferencedContextParams() {
+    public Set<LootContextParam<?>> getReferencedContextParams() {
         return Set.of(LootContextParams.THIS_ENTITY);
     }
 
@@ -69,10 +71,10 @@ public class SetTrophyFunction extends LootItemConditionalFunction {
     protected ItemStack run(ItemStack stack, LootContext context) {
         if (!(stack.getItem() instanceof BlockItem item) || !(item.getBlock() instanceof PedestalBlock)) return stack;
         String who = name.orElseGet(() -> {
-            Entity entity = context.getOptionalParameter(LootContextParams.THIS_ENTITY);
+            Entity entity = context.getParamOrNull(LootContextParams.THIS_ENTITY);
             return entity == null ? "" : entity.getName().getString();
         });
-        Identifier rank = rarity.orElseGet(() -> TrophyKinds.rarity(kind, subject).id());
+        ResourceLocation rank = rarity.orElseGet(() -> TrophyKinds.rarity(kind, subject).id());
         Pedestals.record(stack, new PedestalRecord(kind, subject, unlocker, who, System.currentTimeMillis(), rank));
         return stack;
     }

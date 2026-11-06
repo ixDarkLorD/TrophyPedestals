@@ -4,10 +4,10 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
+import net.ixdarklord.trophypedestals.compat.LootCodecs;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.context.ContextKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -16,6 +16,8 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.functions.LootItemConditionalFunction;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParam;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 
@@ -42,21 +44,21 @@ import java.util.Set;
  * }</pre>
  */
 public class SetMobTrophyFunction extends LootItemConditionalFunction {
-    public static final MapCodec<SetMobTrophyFunction> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> commonFields(instance).and(instance.group(
-            Identifier.CODEC.optionalFieldOf("entity").forGetter(function -> function.entity),
+    public static final MapCodec<SetMobTrophyFunction> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> LootCodecs.commonFields(instance).and(instance.group(
+            ResourceLocation.CODEC.optionalFieldOf("entity").forGetter(function -> function.entity),
             CompoundTag.CODEC.optionalFieldOf("look").forGetter(function -> function.look),
             Codec.STRING.optionalFieldOf("slayer").forGetter(function -> function.slayer),
             PedestalRarities.ID_CODEC.optionalFieldOf("rarity").forGetter(function -> function.rarity)
     )).apply(instance, SetMobTrophyFunction::new));
 
-    private final Optional<Identifier> entity;
+    private final Optional<ResourceLocation> entity;
     private final Optional<CompoundTag> look;
     private final Optional<String> slayer;
-    private final Optional<Identifier> rarity;
+    private final Optional<ResourceLocation> rarity;
 
-    private SetMobTrophyFunction(List<LootItemCondition> predicates, Optional<Identifier> entity, Optional<CompoundTag> look,
-                                 Optional<String> slayer, Optional<Identifier> rarity) {
-        super(predicates);
+    private SetMobTrophyFunction(List<LootItemCondition> predicates, Optional<ResourceLocation> entity, Optional<CompoundTag> look,
+                                 Optional<String> slayer, Optional<ResourceLocation> rarity) {
+        super(predicates.toArray(new LootItemCondition[0]));
         this.entity = entity;
         this.look = look;
         this.slayer = slayer;
@@ -64,19 +66,19 @@ public class SetMobTrophyFunction extends LootItemConditionalFunction {
     }
 
     @Override
-    public MapCodec<SetMobTrophyFunction> codec() {
-        return MAP_CODEC;
+    public LootItemFunctionType getType() {
+        return Pedestals.SET_MOB_TROPHY.get();
     }
 
     @Override
-    public Set<ContextKey<?>> getReferencedContextParams() {
+    public Set<LootContextParam<?>> getReferencedContextParams() {
         return Set.of(LootContextParams.THIS_ENTITY);
     }
 
     @Override
     protected ItemStack run(ItemStack stack, LootContext context) {
         if (!(stack.getItem() instanceof BlockItem item) || !(item.getBlock() instanceof PedestalBlock)) return stack;
-        Entity subject = context.getOptionalParameter(LootContextParams.THIS_ENTITY);
+        Entity subject = context.getParamOrNull(LootContextParams.THIS_ENTITY);
         // The mob the loot is for, if it's one that could have a trophy.
         LivingEntity mob = subject instanceof LivingEntity living && MobTrophies.droppable(living) ? living : null;
         EntityType<?> type;
@@ -87,11 +89,11 @@ public class SetMobTrophyFunction extends LootItemConditionalFunction {
         LivingEntity measured = mob != null && mob.getType() == type ? mob : null;
         CompoundTag shown = look.orElseGet(() -> measured == null ? new CompoundTag() : MobLooks.capture(measured));
         String who = slayer.orElseGet(() -> {
-            Player hurt = context.getOptionalParameter(LootContextParams.LAST_DAMAGE_PLAYER);
+            Player hurt = context.getParamOrNull(LootContextParams.LAST_DAMAGE_PLAYER);
             if (hurt != null) return hurt.getName().getString();
             return subject instanceof Player player ? player.getName().getString() : "";
         });
-        Identifier rank = rarity.orElseGet(() -> (measured != null ? MobTrophies.rarity(measured) : MobTrophies.rarity(type, context.getLevel())).id());
+        ResourceLocation rank = rarity.orElseGet(() -> (measured != null ? MobTrophies.rarity(measured) : MobTrophies.rarity(type, context.getLevel())).id());
         MobTrophies.record(stack, new MobTrophyRecord(BuiltInRegistries.ENTITY_TYPE.getKey(type), who, System.currentTimeMillis(), rank, shown));
         return stack;
     }
