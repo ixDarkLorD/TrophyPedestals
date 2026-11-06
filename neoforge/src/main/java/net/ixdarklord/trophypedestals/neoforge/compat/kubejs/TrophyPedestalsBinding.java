@@ -33,7 +33,7 @@ public final class TrophyPedestalsBinding {
     }
 
     /**
-     * A pedestal's settings, by name: textMode, scale, height, facing, spins, animates, effects, sounds, textHeight, textScale, crown,
+     * A pedestal's settings, by name: textMode, scale, height, yaw, pitch, roll, spins, animates, effects, sounds, textHeight, textScale, crown,
      * redstone, statue, statuePose, animation (and locked); empty if there's no pedestal.
      */
     public Map<String, Object> pedestalSettings(Level level, BlockPos pos) {
@@ -44,7 +44,9 @@ public final class TrophyPedestalsBinding {
         map.put("textMode", settings.textMode().getSerializedName());
         map.put("scale", settings.scale());
         map.put("height", settings.height());
-        map.put("facing", settings.facing());
+        map.put("yaw", settings.yaw());
+        map.put("pitch", settings.pitch());
+        map.put("roll", settings.roll());
         map.put("spins", settings.spins());
         map.put("animates", settings.animates());
         map.put("effects", settings.effects());
@@ -105,7 +107,9 @@ public final class TrophyPedestalsBinding {
                 case "textMode" -> builder.textMode(PedestalBlockEntity.TextMode.valueOf(upper(value)));
                 case "scale" -> builder.scale(number(value));
                 case "height" -> builder.height(number(value));
-                case "facing" -> builder.facing(number(value));
+                case "yaw" -> builder.yaw(number(value));
+                case "pitch" -> builder.pitch(number(value));
+                case "roll" -> builder.roll(number(value));
                 case "textHeight" -> builder.textHeight(number(value));
                 case "textScale" -> builder.textScale(number(value));
                 case "crown" -> builder.crown(bool(value));

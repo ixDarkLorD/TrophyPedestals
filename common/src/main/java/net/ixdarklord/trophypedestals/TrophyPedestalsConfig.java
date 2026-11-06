@@ -70,7 +70,7 @@ public final class TrophyPedestalsConfig {
      * leaves the screen and the server ignores its settings.
      */
     public static final ConfigValue<Boolean> PEDESTAL_DISPLAY_SETTINGS = BUILDER.bool("pedestal_display_settings", true)
-            .comment("Whether players can change a pedestal's Display settings on its screen (its size, height, facing and crown). Off, the tab is hidden and they stay as they are.")
+            .comment("Whether players can change a pedestal's Display settings on its screen (its size, height, yaw, pitch, roll and crown). Off, the tab is hidden and they stay as they are.")
             .build();
     public static final ConfigValue<Boolean> PEDESTAL_TEXT_SETTINGS = BUILDER.bool("pedestal_text_settings", true)
             .comment("Whether players can change a pedestal's Text settings on its screen (when its text shows, how high and how large). Off, the tab is hidden and they stay as they are.")

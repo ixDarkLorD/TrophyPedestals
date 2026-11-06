@@ -294,6 +294,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         if (mob == null || mob.getType() != type) {
             mob = type.create(pedestal.getLevel(), EntitySpawnReason.LOAD);
             if (mob == null) return null;
+            DrawnMobs.numbered(mob);
             MobLooks.apply(mob, look.get(), pedestal.getLevel().registryAccess());
             mob.setPos(Vec3.atBottomCenterOf(pedestal.getBlockPos()).add(0.0, MOB_FLOOR, 0.0));
             mob.setYRot(0.0F);
@@ -501,7 +502,8 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         Identifier frame = FRAMES.get(PedestalRarities.COMMON.id());
         @Nullable Identifier crest, pendant;
         int frameTint = 0xFFFFFFFF;
-        float turn, spin, bob, time, middle, flareX, flareY, flareZ, flareScale, faceX, faceZ, beamX, beamZ;
+        // Its yaw (with its spin) about the upright axis, then its pitch and roll about its middle, in degrees.
+        float turn, pitch, roll, spin, bob, time, middle, flareX, flareY, flareZ, flareScale, faceX, faceZ, beamX, beamZ;
         double distanceSq;
     }
 
@@ -646,8 +648,10 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         // A trophy turns and floats like a hologram; a showcased item turns slowly and floats less; one set still doesn't
         // turn (its flare still does).
         state.spin = time * (state.trophy ? 2.0F : 1.0F) % 360.0F;
-        // Turned to the pedestal's facing, then spinning from there if it spins.
-        state.turn = (pedestal.facing() + (pedestal.spins() ? state.spin : 0.0F)) % 360.0F;
+        // Turned to the pedestal's yaw, then spinning from there if it spins; tipped by its pitch and roll as it turns.
+        state.turn = (pedestal.yaw() + (pedestal.spins() ? state.spin : 0.0F)) % 360.0F;
+        state.pitch = pedestal.pitch();
+        state.roll = pedestal.roll();
         state.bob = Mth.sin(time / 12.0F) * (state.trophy ? 0.05F : 0.025F);
         state.time = time;
         // Moved by the pedestal's own text height, for a display too large for the usual place to suit.
@@ -731,6 +735,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         float scale = state.iconScale * state.rise;
         poseStack.translate(0.5F, state.iconY + state.bob - (1.0F - state.rise) * RISE_DROP, 0.5F);
         poseStack.mulPose(Axis.YP.rotationDegrees(state.turn));
+        tilt(state, poseStack, state.middle * state.rise);
         poseStack.scale(scale, scale, scale);
         state.icon.submit(poseStack, collector, FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
         poseStack.popPose();
@@ -739,7 +744,10 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             poseStack.pushPose();
             float mobScale = state.mobScale * state.rise * state.lieScale;
             poseStack.translate(0.5F, MOB_FLOOR + state.lift + state.bob - (1.0F - state.rise) * RISE_DROP, 0.5F);
-            poseStack.mulPose(Axis.YP.rotationDegrees(state.turn + modelTurn(state.mob)));
+            poseStack.mulPose(Axis.YP.rotationDegrees(state.turn));
+            // (About its middle: from its feet, as far up as the icon's middle is over the floor.)
+            tilt(state, poseStack, (ICON_Y + state.middle - MOB_FLOOR) * state.rise);
+            poseStack.mulPose(Axis.YP.rotationDegrees(modelTurn(state.mob)));
             poseStack.scale(mobScale, mobScale, mobScale);
             poseStack.translate(0.0F, -sink(state.mob), 0.0F);
             // (A lying statue, moved to lie on the middle: in its own units, so at any size.)
@@ -754,6 +762,16 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         if (state.rise < 1.0F) return;
         if (state.effects && state.effect != null) state.effect.submit(poseStack, collector, camera, state.rarity, state.time);
         submitText(state, poseStack, collector, camera);
+    }
+
+    // Tips what it shows by its pitch (about its own side to side) and then its roll (about the way it faces), round its
+    // middle, this far over where it's drawn from.
+    private static void tilt(State state, PoseStack poseStack, float middle) {
+        if (state.pitch == 0.0F && state.roll == 0.0F) return;
+        poseStack.translate(0.0F, middle, 0.0F);
+        if (state.pitch != 0.0F) poseStack.mulPose(Axis.XP.rotationDegrees(state.pitch));
+        if (state.roll != 0.0F) poseStack.mulPose(Axis.ZP.rotationDegrees(state.roll));
+        poseStack.translate(0.0F, -middle, 0.0F);
     }
 
     // The crown over its display: a square crown of voxels, each solid pixel of the crown art a little block on each of
@@ -1103,8 +1121,10 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             // (Over the lens's raised glass.)
             float up = GLASS_TOP + 0.002F;
             boolean withRings = rings && rarity.rings() > 0;
-            // (With the outlines, its faces are cut finer, so they sort true against the outlines' (see ItemSheet).)
-            PedestalLight.Glow light = PedestalLight.itemSheet(consumer, pose, white, withRings);
+            // (With the outlines, its faces are cut finer, so they sort true against the outlines' (see ItemSheet); in a
+            // slot, where rings is off, not at all.)
+            PedestalLight.Detail detail = withRings ? PedestalLight.Detail.FINE : rings ? PedestalLight.Detail.NORMAL : PedestalLight.Detail.WHOLE;
+            PedestalLight.Glow light = PedestalLight.itemSheet(consumer, pose, white, detail);
             light.lens(up, LENS_GLOW_RADIUS, glow, LENS_GLOW_SEGMENTS);
             showcase(light, up, rarity, 1.0F, 1.0F, time);
             if (withRings) itemRings(light, rarity, time, up, coneTop(up, rarity, 1.0F, 1.0F), Math.max(RING_TO, iconMiddle));

@@ -15,6 +15,7 @@ import net.ixdarklord.trophypedestals.api.TrophyKind;
 import net.ixdarklord.trophypedestals.api.TrophyKinds;
 import net.ixdarklord.trophypedestals.api.TrophyPedestals;
 import net.ixdarklord.trophypedestals.network.AdjustPedestalPayload;
+import net.ixdarklord.trophypedestals.pedestal.DisplayedTrophySettings;
 import net.ixdarklord.trophypedestals.pedestal.MobLooks;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophies;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophyRecord;
@@ -40,6 +41,7 @@ import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
@@ -56,6 +58,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
@@ -182,16 +185,17 @@ public final class TrophyPedestalsGameTests {
         helper.assertTrue(pedestal.textMode() == PedestalBlockEntity.TextMode.LOOKING && pedestal.scale() == 1.0F, "its text shows when looked at by default, at the usual size");
         // The adjustment screen's changes, as the server takes them: anyone may adjust a pedestal with no owner.
         player.setPos(pos.getCenter());
-        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.HIDDEN, 1.5F, 1.0F, false, -2.0F, 90.0F, false, PedestalBlockEntity.RedstoneMode.SHOW, false, false, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(player);
+        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.HIDDEN, 1.5F, 1.0F, false, -2.0F, 90.0F, 30.0F, -45.0F, false, PedestalBlockEntity.RedstoneMode.SHOW, false, false, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(player);
         helper.assertTrue(pedestal.textMode() == PedestalBlockEntity.TextMode.HIDDEN && pedestal.scale() == 1.5F && pedestal.height() == 1.0F
-                && !pedestal.spins() && pedestal.textHeight() == -2.0F && pedestal.facing() == 90.0F && !pedestal.effects()
+                && !pedestal.spins() && pedestal.textHeight() == -2.0F && pedestal.yaw() == 90.0F && pedestal.pitch() == 30.0F
+                && pedestal.roll() == -45.0F && !pedestal.effects()
                 && pedestal.redstone() == PedestalBlockEntity.RedstoneMode.SHOW && !pedestal.displayed() && !pedestal.sounds() && !pedestal.animates(),
                 "the screen hides its text, resizes it, raises it, stills it, freezes it, lowers its text and turns it");
         // A redstone signal shows it.
         helper.getLevel().setBlockAndUpdate(pos.north(), Blocks.REDSTONE_BLOCK.defaultBlockState());
         helper.assertTrue(pedestal.powered() && pedestal.displayed(), "a redstone signal shows a pedestal set to show while powered");
         helper.getLevel().setBlockAndUpdate(pos.north(), Blocks.AIR.defaultBlockState());
-        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.ALWAYS, 99.0F, 99.0F, true, 0.0F, 0.0F, true, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(player);
+        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.ALWAYS, 99.0F, 99.0F, true, 0.0F, 0.0F, 0.0F, 0.0F, true, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(player);
         helper.assertTrue(pedestal.textMode() == PedestalBlockEntity.TextMode.ALWAYS && pedestal.scale() == PedestalBlockEntity.MAX_SCALE
                 && pedestal.height() == PedestalBlockEntity.MAX_HEIGHT, "within its limits");
         // Owned by someone else, only they (and operators) may, unless the server lets anyone.
@@ -212,6 +216,18 @@ public final class TrophyPedestalsGameTests {
         ItemStack more = new ItemStack(Items.DIAMOND);
         state.useItemOn(more, helper.getLevel(), player, InteractionHand.MAIN_HAND, hit);
         helper.assertTrue(pedestal.display().isEmpty() && more.getCount() == 1, "a trophy takes no item");
+        // Saved before pitch and roll: the way it faced is its yaw, on a pedestal and on a display's spot.
+        CompoundTag saved = new CompoundTag();
+        saved.putFloat("Facing", 135.0F);
+        pedestal.loadCustomOnly(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), saved));
+        helper.assertTrue(pedestal.yaw() == 135.0F && pedestal.pitch() == 0.0F && pedestal.roll() == 0.0F, "an old pedestal's facing becomes its yaw");
+        CompoundTag spot = new CompoundTag();
+        spot.putFloat("facing", 45.0F);
+        DisplayedTrophySettings oldSpot = DisplayedTrophySettings.CODEC.parse(NbtOps.INSTANCE, spot).getOrThrow();
+        DisplayedTrophySettings tilted = new DisplayedTrophySettings(PedestalBlockEntity.TextMode.LOOKING, true, 10.0F, 20.0F, -30.0F, true,
+                PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, true, true);
+        helper.assertTrue(oldSpot.yaw() == 45.0F && tilted.equals(DisplayedTrophySettings.CODEC.parse(NbtOps.INSTANCE,
+                DisplayedTrophySettings.CODEC.encodeStart(NbtOps.INSTANCE, tilted).getOrThrow()).getOrThrow()), "and a spot's, which keeps its pitch and roll");
         helper.succeed();
     }
 
@@ -458,7 +474,7 @@ public final class TrophyPedestalsGameTests {
         pedestal.applyComponentsFromItemStack(TrophyPedestals.create(kind(), SUBJECT, PedestalRecord.Unlocker.PLAYER, victim.getName().getString()));
         helper.assertTrue(pedestal.canShowStatue() && !pedestal.statue(), "a player's achievement trophy can show their statue, and shows its icon by default");
         victim.setPos(pos.getCenter());
-        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.LOOKING, 1.0F, 0.0F, true, 0.0F, 0.0F, true, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, true, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(victim);
+        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.LOOKING, 1.0F, 0.0F, true, 0.0F, 0.0F, 0.0F, 0.0F, true, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, true, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(victim);
         helper.assertTrue(pedestal.statue() && pedestal.showsStatue(), "the screen sets it to show the statue");
         PedestalSettings.set(pedestal, PedestalSettings.get(pedestal).toBuilder().statuePose(PedestalBlockEntity.StatuePose.SLEEPING).build());
         PedestalBlockEntity read = (PedestalBlockEntity) BlockEntity.loadStatic(pos, pedestal.getBlockState(),
@@ -501,11 +517,12 @@ public final class TrophyPedestalsGameTests {
         helper.assertTrue(pedestal.canAdjust(player) && !PedestalSettings.isLocked(pedestal), "a pedestal with no owner starts open to anyone");
         // Forced: set and locked, with a message for anyone who tries.
         Component refusal = Component.literal("Hands off");
-        PedestalSettings.force(pedestal, PedestalSettings.Settings.builder().scale(2.0F).spins(false).facing(90.0F).build(), refusal);
-        helper.assertTrue(pedestal.scale() == 2.0F && !pedestal.spins() && pedestal.facing() == 90.0F && PedestalSettings.isLocked(pedestal)
+        PedestalSettings.force(pedestal, PedestalSettings.Settings.builder().scale(2.0F).spins(false).rotation(90.0F, 30.0F, -45.0F).build(), refusal);
+        helper.assertTrue(pedestal.scale() == 2.0F && !pedestal.spins() && pedestal.yaw() == 90.0F && pedestal.pitch() == 30.0F
+                && pedestal.roll() == -45.0F && PedestalSettings.isLocked(pedestal)
                 && !pedestal.canAdjust(player) && PedestalSettings.refusal(pedestal).orElseThrow().getString().equals("Hands off"),
                 "a mod sets its settings and locks them, with its message");
-        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.ALWAYS, 5.0F, 1.0F, true, 0.0F, 0.0F, true, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(player);
+        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.ALWAYS, 5.0F, 1.0F, true, 0.0F, 0.0F, 0.0F, 0.0F, true, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(player);
         helper.assertTrue(pedestal.scale() == 2.0F && !pedestal.spins() && pedestal.textMode() == PedestalBlockEntity.TextMode.LOOKING,
                 "and a player's screen can't change them");
         // Saved and read back, still locked with its message.

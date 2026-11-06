@@ -47,7 +47,7 @@ import java.util.function.Supplier;
  * A pedestal's adjustment screen, opened by sneaking and using it with an empty hand: a slate and gold panel with the
  * pedestal and its owner at the top. A trophy's settings are in tabs, one column each, so the screen stays small at every
  * GUI scale: Display (its size on a slider, from half to twenty times and finer at the small end, with quick 1x to 20x
- * choices; its height; which way it faces), Text (when it shows: when looked at, always or hidden; its height; its
+ * choices; its height; its rotation: yaw, pitch and roll), Text (when it shows: when looked at, always or hidden; its height; its
  * size), Behavior (spinning, flourishes and sounds as toggles; how it answers redstone) and, for a mob or statue, Pose
  * (moving or holding still, or icon or statue, with the statue's pose; and the animation it plays on loop, picked from
  * what it can). Each slider has a button putting it back; Reset and Done sit under every tab, and the last tab used
@@ -65,6 +65,10 @@ public final class PedestalScreen extends Screen {
     private static final Identifier TRACK_FILL = TrophyPedestalsMod.id("pedestal/track_fill");
     private static final Identifier HANDLE = TrophyPedestalsMod.id("pedestal/handle");
     private static final Identifier HANDLE_HOVER = TrophyPedestalsMod.id("pedestal/handle_hover");
+    // The mod logo's rarity gems, set into the middle of the panel's top and bottom edges (each in its edge's golds).
+    private static final Identifier GEMS_TOP = TrophyPedestalsMod.id("pedestal/gems_top");
+    private static final Identifier GEMS = TrophyPedestalsMod.id("pedestal/gems");
+    private static final int GEMS_WIDTH = 28, FRAME = 4;
     private static final int MARGIN = 12, RESET = 16;
     // A display pedestal's screen: when its text shows, how it answers redstone, its sounds and its showcase light, in one column.
     private static final int COMPACT_WIDTH = 186, COMPACT_HEIGHT = 230, COMPACT_ROW_2 = 84, COMPACT_ROW_3 = 122, COMPACT_ROW_4 = 160;
@@ -73,7 +77,9 @@ public final class PedestalScreen extends Screen {
     private static final Identifier INFO = TrophyPedestalsMod.id("pedestal/info");
     private static final Identifier INFO_HOVER = TrophyPedestalsMod.id("pedestal/info_hover");
     private static final int INFO_SIZE = 9, TOOLTIP_WIDTH = 180;
-    private static final int GOLD = 0xFFFFB52E, PALE_GOLD = 0xFFFFE6A0, LABEL = 0xFF9AA0B8, TEXT = 0xFFE8EAF0;
+    // The mod logo's colors: its golds, its stone grey for labels, and the dark navy inside the panel's gold frame for
+    // grooves and lists.
+    private static final int GOLD = 0xFFF2C94C, PALE_GOLD = 0xFFFFE08A, LABEL = 0xFF9DA2A7, TEXT = 0xFFDCDCE0;
     private static final float[] PRESETS = {1.0F, 2.0F, 5.0F, 10.0F, 20.0F};
     // The room kept clear on each side of a button's label, inside its gold trim.
     private static final int LABEL_PADDING = 4;
@@ -89,8 +95,9 @@ public final class PedestalScreen extends Screen {
     // The scroll bar: how wide it is and how far in from the panel's right edge; its thumb's least height. Its groove is
     // cut like the panel's dividers; its thumb is gold, lit along its top and left, shaded along its bottom and right,
     // with grip lines across its middle.
-    private static final int BAR_WIDTH = 4, BAR_INSET = 5, MIN_THUMB = 14;
-    private static final int GROOVE_DARK = 0xFF14151F, GROOVE = 0xFF1E2030, GROOVE_LIT = 0xFF42465A, GOLD_SHADE = 0xFFB0721A, GOLD_DEEP = 0xFF7A4E12;
+    private static final int BAR_WIDTH = 4, BAR_INSET = 6, MIN_THUMB = 14;
+    private static final int GROOVE_DARK = 0xFF07090E, GROOVE = 0xFF0E121A, GROOVE_LIT = 0xFF343B4E, GOLD_SHADE = 0xFFB8872B, GOLD_DEEP = 0xFF9A6A1A;
+    private static final int GOLD_FRAME = 0xFFE0AC3C, GOLD_TOP = 0xFFFFF0A8, GOLD_LIT = 0xFFFFC24A, LIST = 0xF00E121A, LIST_HOVER = 0xFF252C3C;
 
     /** A trophy screen's tabs; the last one used opens next time. */
     private enum Tab {
@@ -109,7 +116,7 @@ public final class PedestalScreen extends Screen {
     private final ItemStack icon;
     private final Component owner;
     private PedestalBlockEntity.TextMode textMode;
-    private float scale, lift, textLift, textScale, facing, crownScale, crownX, crownY;
+    private float scale, lift, textLift, textScale, yaw, pitch, roll, crownScale, crownX, crownY;
     private boolean spins, effects, sounds, animates, statue, crown, light;
     // Where the mouse is this frame, for the labels' "?" tooltips.
     private int mouseX, mouseY;
@@ -123,7 +130,7 @@ public final class PedestalScreen extends Screen {
     private HeightSlider heightSlider;
     private TextHeightSlider textSlider;
     private TextSizeSlider textSizeSlider;
-    private FacingSlider facingSlider;
+    private final List<AngleSlider> rotationSliders = new ArrayList<>();
     private final List<ValueSlider> crownSliders = new ArrayList<>();
     private int left, top;
     // Whether it's a trophy (every option), or a display pedestal (text and redstone only).
@@ -181,7 +188,9 @@ public final class PedestalScreen extends Screen {
         this.crownY = pedestal.crownY();
         this.light = pedestal.light();
         this.crowned = PedestalRenderer.hasCrown(pedestal.rarity());
-        this.facing = pedestal.facing();
+        this.yaw = pedestal.yaw();
+        this.pitch = pedestal.pitch();
+        this.roll = pedestal.roll();
         this.effects = pedestal.effects();
         this.sounds = pedestal.sounds();
         this.redstone = pedestal.redstone();
@@ -310,7 +319,7 @@ public final class PedestalScreen extends Screen {
         textSlider = null;
         textSizeSlider = null;
         heightSlider = null;
-        facingSlider = null;
+        rotationSliders.clear();
         crownSliders.clear();
         animationButton = null;
         listOpen = false;
@@ -386,8 +395,8 @@ public final class PedestalScreen extends Screen {
         int ty = thumbY(), th = thumbHeight();
         boolean lit = dragOffset >= 0 || (mouseX >= x && mouseX < x + BAR_WIDTH && mouseY >= ty && mouseY < ty + th);
         graphics.fill(x, ty, x + BAR_WIDTH, ty + th, GOLD_DEEP);
-        graphics.fill(x, ty, x + BAR_WIDTH - 1, ty + th - 1, lit ? PALE_GOLD : 0xFFFFD27A);
-        graphics.fill(x + 1, ty + 1, x + BAR_WIDTH - 1, ty + th - 1, lit ? 0xFFFFC94A : GOLD);
+        graphics.fill(x, ty, x + BAR_WIDTH - 1, ty + th - 1, lit ? GOLD_TOP : PALE_GOLD);
+        graphics.fill(x + 1, ty + 1, x + BAR_WIDTH - 1, ty + th - 1, lit ? GOLD_LIT : GOLD_FRAME);
         int mid = ty + th / 2;
         for (int line = -2; line <= 2; line += 2) {
             graphics.fill(x + 1, mid + line, x + BAR_WIDTH - 1, mid + line + 1, GOLD_SHADE);
@@ -398,17 +407,11 @@ public final class PedestalScreen extends Screen {
         return mouseY >= top + VIEW_TOP && mouseY < top + VIEW_BOTTOM;
     }
 
-    // Display: its size (with the quick choices), its height, which way it faces (only which way it faces, for a trophy on
-    // a display).
+    // Display: its size (with the quick choices), its height, its rotation (only its rotation, for a trophy on a display).
     private void initDisplay(int x, int column) {
         int slider = column - RESET - 4;
         if (fixedSize()) {
-            facingSlider = addRenderableWidget(new FacingSlider(x, top + section(0, false) + 14, slider));
-            addRenderableWidget(new ResetButton(x + column - RESET, top + section(0, false) + 12, () -> {
-                facing = 0.0F;
-                facingSlider.sync();
-                preview();
-            }));
+            initRotation(x, column, slider, section(0, false));
             return;
         }
         this.slider = addRenderableWidget(new SizeSlider(x, top + section(0, false) + 14, slider));
@@ -433,12 +436,7 @@ public final class PedestalScreen extends Screen {
             heightSlider.sync();
             preview();
         }));
-        facingSlider = addRenderableWidget(new FacingSlider(x, top + section(2, true) + 14, slider));
-        addRenderableWidget(new ResetButton(x + column - RESET, top + section(2, true) + 12, () -> {
-            facing = 0.0F;
-            facingSlider.sync();
-            preview();
-        }));
+        initRotation(x, column, slider, section(2, true));
         // A legendary trophy's crown: its size, and how far forward and up it's moved, side by side (each a third of the
         // row), with one reset for all three.
         if (crowned) {
@@ -457,6 +455,26 @@ public final class PedestalScreen extends Screen {
                 preview();
             }));
         }
+    }
+
+    // Its rotation, in the section whose label is at this height: yaw, pitch and roll side by side (each a third of the
+    // row, as the crown's are), with one reset for all three. Yaw goes round from 0 to 360 (where a spinning one starts
+    // from); pitch and roll tip it either way, up to half a turn.
+    private void initRotation(int x, int column, int slider, int label) {
+        int row = top + label + 14, gap = 6, third = (slider - 2 * gap) / 3;
+        rotationSliders.add(addRenderableWidget(new AngleSlider(x, row, third, 0.0F, 360.0F,
+                () -> yaw, value -> yaw = value, "trophypedestals.pedestal.screen.yaw_narration")));
+        rotationSliders.add(addRenderableWidget(new AngleSlider(x + third + gap, row, third, -PedestalBlockEntity.MAX_TILT,
+                PedestalBlockEntity.MAX_TILT, () -> pitch, value -> pitch = value, "trophypedestals.pedestal.screen.pitch_narration")));
+        rotationSliders.add(addRenderableWidget(new AngleSlider(x + 2 * (third + gap), row, slider - 2 * (third + gap), -PedestalBlockEntity.MAX_TILT,
+                PedestalBlockEntity.MAX_TILT, () -> roll, value -> roll = value, "trophypedestals.pedestal.screen.roll_narration")));
+        addRenderableWidget(new ResetButton(x + column - RESET, top + label + 12, () -> {
+            yaw = 0.0F;
+            pitch = 0.0F;
+            roll = 0.0F;
+            rotationSliders.forEach(AngleSlider::sync);
+            preview();
+        }));
     }
 
     // Text: when it shows, how high it floats, how large it is.
@@ -736,18 +754,18 @@ public final class PedestalScreen extends Screen {
             if (maxScroll > 0) scrollBar(graphics, mouseX, mouseY);
         }
         if (!listOpen || animationButton == null) return;
-        // Over everything else: a slate box with a gold edge, the chosen animation in pale gold, the one under the mouse lit.
+        // Over everything else: a dark navy box with a gold edge, the chosen animation in pale gold, the one under the mouse lit.
         graphics.nextStratum();
         int[] list = listBounds();
         int x = list[0], y = list[1], width = list[2], rows = list[3];
         graphics.fill(x - 1, y - 1, x + width + 1, y + rows * LIST_ROW + 3, GOLD);
-        graphics.fill(x, y, x + width, y + rows * LIST_ROW + 2, 0xF01A1C28);
+        graphics.fill(x, y, x + width, y + rows * LIST_ROW + 2, LIST);
         for (int row = 0; row < rows; row++) {
             int index = listScroll + row;
             MobAnimations.Animation entry = animations.get(index);
             int rowY = y + 1 + row * LIST_ROW;
             boolean hovered = mouseX >= x && mouseX < x + width && mouseY >= rowY && mouseY < rowY + LIST_ROW;
-            if (hovered) graphics.fill(x + 1, rowY, x + width - 1, rowY + LIST_ROW, 0xFF34384C);
+            if (hovered) graphics.fill(x + 1, rowY, x + width - 1, rowY + LIST_ROW, LIST_HOVER);
             int color = entry.id().equals(animation) ? PALE_GOLD : hovered ? 0xFFFFFFFF : TEXT;
             graphics.text(font, entry.name(), x + 2 + LABEL_PADDING, rowY + (LIST_ROW - 8) / 2, color);
         }
@@ -837,7 +855,9 @@ public final class PedestalScreen extends Screen {
         if (TrophyPedestalsConfig.PEDESTAL_DISPLAY_SETTINGS.get()) {
             scale = 1.0F;
             lift = 0.0F;
-            facing = 0.0F;
+            yaw = 0.0F;
+            pitch = 0.0F;
+            roll = 0.0F;
             crownScale = 1.0F;
             crownX = 0.0F;
             crownY = 0.0F;
@@ -864,7 +884,7 @@ public final class PedestalScreen extends Screen {
         // (Only the showing tab's sliders exist.)
         if (textSlider != null) textSlider.sync();
         if (textSizeSlider != null) textSizeSlider.sync();
-        if (facingSlider != null) facingSlider.sync();
+        rotationSliders.forEach(AngleSlider::sync);
         if (slider != null) slider.sync();
         if (heightSlider != null) heightSlider.sync();
         preview();
@@ -884,7 +904,7 @@ public final class PedestalScreen extends Screen {
             pedestal.setCrown(crown);
             pedestal.setCrownPlacement(crownScale, crownX, crownY);
             pedestal.setLight(light);
-            pedestal.setFacing(facing);
+            pedestal.setRotation(yaw, pitch, roll);
             pedestal.setEffects(effects);
             pedestal.setRedstone(redstone);
             pedestal.setSounds(sounds);
@@ -898,10 +918,10 @@ public final class PedestalScreen extends Screen {
     @Override
     public void removed() {
         if (fixedSize()) {
-            Network.sendToServer(new AdjustDisplayedTrophyPayload(pos, slot, textMode, spins, facing, effects, redstone, sounds, animates, statue, statuePose, animation, crown, light));
+            Network.sendToServer(new AdjustDisplayedTrophyPayload(pos, slot, textMode, spins, yaw, pitch, roll, effects, redstone, sounds, animates, statue, statuePose, animation, crown, light));
             return;
         }
-        Network.sendToServer(new AdjustPedestalPayload(pos, textMode, scale, lift, spins, textLift, facing, effects, redstone, sounds, animates, statue, statuePose, animation, textScale, crown, crownScale, crownX, crownY, light, access));
+        Network.sendToServer(new AdjustPedestalPayload(pos, textMode, scale, lift, spins, textLift, yaw, pitch, roll, effects, redstone, sounds, animates, statue, statuePose, animation, textScale, crown, crownScale, crownX, crownY, light, access));
     }
 
     // The panel, its header and its section labels (with their values, right-aligned before their reset buttons), under
@@ -912,12 +932,14 @@ public final class PedestalScreen extends Screen {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, PANEL, left, top, panelWidth(), panelHeight());
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, GEMS_TOP, left + (panelWidth() - GEMS_WIDTH) / 2, top, GEMS_WIDTH, FRAME);
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, GEMS, left + (panelWidth() - GEMS_WIDTH) / 2, top + panelHeight() - FRAME, GEMS_WIDTH, FRAME);
         // The header: the pedestal, the title in gold and its owner under it, over a groove.
         graphics.item(icon, left + MARGIN + 2, top + 12);
         graphics.text(font, title, left + MARGIN + 24, top + 12, GOLD);
         graphics.text(font, owner, left + MARGIN + 24, top + 23, LABEL);
-        graphics.fill(left + MARGIN, top + 36, left + panelWidth() - MARGIN, top + 37, 0xFF26283A);
-        graphics.fill(left + MARGIN, top + 37, left + panelWidth() - MARGIN, top + 38, 0xFF42465A);
+        graphics.fill(left + MARGIN, top + 36, left + panelWidth() - MARGIN, top + 37, GROOVE_DARK);
+        graphics.fill(left + MARGIN, top + 37, left + panelWidth() - MARGIN, top + 38, GROOVE_LIT);
         if (!trophy) {
             if (TrophyPedestalsConfig.PEDESTAL_TEXT_SETTINGS.get()) label(graphics, "trophypedestals.pedestal.screen.text", left + MARGIN, ROW_1, null, 0);
             label(graphics, "trophypedestals.pedestal.screen.redstone", left + MARGIN, COMPACT_ROW_2, null, 0);
@@ -927,8 +949,8 @@ public final class PedestalScreen extends Screen {
         }
         int column = TABBED_WIDTH - 2 * MARGIN, x = left + MARGIN, valueRight = column - RESET - 4;
         // A groove under the tabs, then the showing tab's section labels.
-        graphics.fill(x, top + TAB_ROW + 22, x + column, top + TAB_ROW + 23, 0xFF26283A);
-        graphics.fill(x, top + TAB_ROW + 23, x + column, top + TAB_ROW + 24, 0xFF42465A);
+        graphics.fill(x, top + TAB_ROW + 22, x + column, top + TAB_ROW + 23, GROOVE_DARK);
+        graphics.fill(x, top + TAB_ROW + 23, x + column, top + TAB_ROW + 24, GROOVE_LIT);
         graphics.enableScissor(left, top + VIEW_TOP, left + panelWidth(), top + VIEW_BOTTOM);
         tabLabels(graphics, x, valueRight);
         graphics.disableScissor();
@@ -938,13 +960,13 @@ public final class PedestalScreen extends Screen {
         switch (tab()) {
             case DISPLAY -> {
                 if (fixedSize()) {
-                    label(graphics, "trophypedestals.pedestal.screen.facing", x, section(0, false), Component.literal(Math.round(facing) + "\u00B0"), valueRight);
+                    rotationLabel(graphics, x, valueRight, section(0, false));
                     return;
                 }
                 label(graphics, "trophypedestals.pedestal.screen.size", x, section(0, false), Component.literal(size(scale)), valueRight);
                 label(graphics, "trophypedestals.pedestal.screen.height", x, section(1, true),
                         Component.translatable("trophypedestals.pedestal.screen.height_value", height(lift)), valueRight);
-                label(graphics, "trophypedestals.pedestal.screen.facing", x, section(2, true), Component.literal(Math.round(facing) + "\u00B0"), valueRight);
+                rotationLabel(graphics, x, valueRight, section(2, true));
                 if (crowned) {
                     label(graphics, "trophypedestals.pedestal.screen.crown", x, section(3, true),
                             Component.translatable("trophypedestals.pedestal.screen.crown_value", size(crownScale), height(crownX), height(crownY)), valueRight);
@@ -968,6 +990,12 @@ public final class PedestalScreen extends Screen {
                 if (!animations.isEmpty()) label(graphics, "trophypedestals.pedestal.screen.animation", x, section(1, false), null, 0);
             }
         }
+    }
+
+    // "Rotation", with its yaw, pitch and roll in whole degrees.
+    private void rotationLabel(GuiGraphicsExtractor graphics, int x, int valueRight, int row) {
+        label(graphics, "trophypedestals.pedestal.screen.rotation", x, row, Component.translatable("trophypedestals.pedestal.screen.rotation_value",
+                Math.round(yaw), Math.round(pitch), Math.round(roll)), valueRight);
     }
 
     // A section's label, a "?" after it that shows what the option does while hovered (from the key's ".tooltip"), and
@@ -1119,27 +1147,40 @@ public final class PedestalScreen extends Screen {
         }
     }
 
-    /** Which way it faces, in steps of 15 degrees. */
-    private final class FacingSlider extends GemSlider {
-        FacingSlider(int x, int y, int width) {
-            super(x, y, width, facing / 360.0F);
+    /**
+     * An angle from {@code min} to {@code max} degrees in steps of 15, read and set through the screen's own fields (its
+     * yaw, pitch or roll). Yaw goes up to 360 at the end (the same way as 0, but where the slider says it is).
+     */
+    private final class AngleSlider extends GemSlider {
+        private final float min, max;
+        private final Supplier<Float> getter;
+        private final Consumer<Float> setter;
+        private final String narration;
+
+        AngleSlider(int x, int y, int width, float min, float max, Supplier<Float> getter, Consumer<Float> setter, String narration) {
+            super(x, y, width, (getter.get() - min) / (max - min));
+            this.min = min;
+            this.max = max;
+            this.getter = getter;
+            this.setter = setter;
+            this.narration = narration;
             updateMessage();
         }
 
         void sync() {
-            value = facing / 360.0F;
+            value = (getter.get() - min) / (max - min);
             updateMessage();
         }
 
         @Override
         protected void updateMessage() {
-            setMessage(Component.translatable("trophypedestals.pedestal.screen.facing_narration", Math.round(facing)));
+            setMessage(Component.translatable(narration, Math.round(getter.get())));
         }
 
         @Override
         protected void applyValue() {
-            // Up to 360 at the end (facing the same way as 0, but where the slider says it is).
-            facing = Math.round(value * 24.0) * 15.0F;
+            float raw = Mth.lerp((float) value, min, max);
+            setter.accept(Mth.clamp(Math.round(raw / 15.0F) * 15.0F, min, max));
             preview();
         }
     }

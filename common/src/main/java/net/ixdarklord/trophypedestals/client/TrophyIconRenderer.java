@@ -152,6 +152,7 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
             if (mob == null || mob.level() != minecraft.level) {
                 mob = type.create(minecraft.level, EntitySpawnReason.LOAD);
                 if (mob == null) return false;
+                DrawnMobs.numbered(mob);
                 MobLooks.apply(mob, trophy.look(), minecraft.level.registryAccess());
                 MOBS.put(trophy, mob);
             }

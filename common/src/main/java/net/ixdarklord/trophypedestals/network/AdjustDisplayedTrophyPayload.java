@@ -13,8 +13,8 @@ import net.minecraft.server.level.ServerPlayer;
  * Sent when a player closes the adjust screen of a trophy on a trophy display: the settings for its spot that can be
  * changed there (none that change its size or place, which stay as a new pedestal has them).
  */
-public record AdjustDisplayedTrophyPayload(BlockPos pos, int slot, PedestalBlockEntity.TextMode textMode, boolean spins, float facing,
-                                           boolean effects, PedestalBlockEntity.RedstoneMode redstone, boolean sounds, boolean animates,
+public record AdjustDisplayedTrophyPayload(BlockPos pos, int slot, PedestalBlockEntity.TextMode textMode, boolean spins, float yaw,
+                                           float pitch, float roll, boolean effects, PedestalBlockEntity.RedstoneMode redstone, boolean sounds, boolean animates,
                                            boolean statue, PedestalBlockEntity.StatuePose statuePose, String animation, boolean crown,
                                            boolean light) implements CustomPacketPayload {
     public static final Type<AdjustDisplayedTrophyPayload> TYPE = new Type<>(TrophyPedestalsMod.id("adjust_displayed_trophy"));
@@ -35,7 +35,8 @@ public record AdjustDisplayedTrophyPayload(BlockPos pos, int slot, PedestalBlock
         // Each of the screen's tabs only if the server lets players change it (Behavior always).
         boolean shown = TrophyPedestalsConfig.PEDESTAL_DISPLAY_SETTINGS.get(), text = TrophyPedestalsConfig.PEDESTAL_TEXT_SETTINGS.get();
         boolean pose = TrophyPedestalsConfig.PEDESTAL_POSE_SETTINGS.get();
-        display.setSettings(slot, new DisplayedTrophySettings(text ? textMode : old.textMode(), spins, shown ? facing : old.facing(), effects,
+        display.setSettings(slot, new DisplayedTrophySettings(text ? textMode : old.textMode(), spins, shown ? yaw : old.yaw(), shown ? pitch : old.pitch(),
+                shown ? roll : old.roll(), effects,
                 redstone, sounds, pose ? animates : old.animates(), pose ? statue : old.statue(), pose ? statuePose : old.statuePose(),
                 pose ? animation : old.animation(), crown, light));
     }

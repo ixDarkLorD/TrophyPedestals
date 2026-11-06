@@ -11,7 +11,7 @@ import java.util.Optional;
  * no player can change them, its owner and operators included. A player who tries is refused with a message of the
  * mod's own (best a translatable one), or silently. Call these on the server; the change is saved and sent to clients.
  * <pre>{@code
- * PedestalSettings.force(pedestal, PedestalSettings.Settings.builder().scale(2.0F).spins(false).facing(90.0F).build(),
+ * PedestalSettings.force(pedestal, PedestalSettings.Settings.builder().scale(2.0F).spins(false).yaw(90.0F).build(),
  *         Component.translatable("mymod.pedestal.locked"));   // set and lock, telling players why
  * PedestalSettings.lock(pedestal);                             // lock as it is, with Trophy Pedestals's own message
  * PedestalSettings.lock(pedestal, null);                       // lock as it is, refusing silently
@@ -27,7 +27,7 @@ public final class PedestalSettings {
 
     /** Its settings as they are now. */
     public static Settings get(PedestalBlockEntity pedestal) {
-        return new Settings(pedestal.textMode(), pedestal.scale(), pedestal.height(), pedestal.facing(), pedestal.spins(), pedestal.animates(),
+        return new Settings(pedestal.textMode(), pedestal.scale(), pedestal.height(), pedestal.yaw(), pedestal.pitch(), pedestal.roll(), pedestal.spins(), pedestal.animates(),
                 pedestal.effects(), pedestal.sounds(), pedestal.textHeight(), pedestal.redstone(), pedestal.statue(), pedestal.statuePose(),
                 pedestal.animation(), pedestal.textScale(), pedestal.crown(), pedestal.light());
     }
@@ -37,7 +37,7 @@ public final class PedestalSettings {
         pedestal.setTextMode(settings.textMode());
         pedestal.setScale(settings.scale());
         pedestal.setHeight(settings.height());
-        pedestal.setFacing(settings.facing());
+        pedestal.setRotation(settings.yaw(), settings.pitch(), settings.roll());
         pedestal.setSpins(settings.spins());
         pedestal.setAnimates(settings.animates());
         pedestal.setEffects(settings.effects());
@@ -97,7 +97,9 @@ public final class PedestalSettings {
      * @param textMode   when its text shows: while looked at, always, or never
      * @param scale      how much larger or smaller than usual its item or mob is shown (half to twenty times)
      * @param height     how far it's moved up (or down), in blocks
-     * @param facing     which way it faces (where a spinning one starts from), in degrees
+     * @param yaw        which way what it shows faces, turned about its upright axis (where a spinning one starts from), 0 to 360 degrees
+     * @param pitch      how far what it shows is tipped forward (or back), -180 to 180 degrees
+     * @param roll       how far what it shows is rolled to its side, -180 to 180 degrees
      * @param spins      whether it turns
      * @param animates   whether a mob trophy's mob moves, or holds one pose
      * @param effects    whether its flourishes show (its rank's beam, halos, crowns, flares and particles)
@@ -112,12 +114,12 @@ public final class PedestalSettings {
      * @param crown      whether a legendary trophy wears its crown over what it shows
      * @param light      whether its showcase light shows (the lit lens, the cone of light out of the well, and its frame)
      */
-    public record Settings(PedestalBlockEntity.TextMode textMode, float scale, float height, float facing, boolean spins, boolean animates,
+    public record Settings(PedestalBlockEntity.TextMode textMode, float scale, float height, float yaw, float pitch, float roll, boolean spins, boolean animates,
                            boolean effects, boolean sounds, float textHeight, PedestalBlockEntity.RedstoneMode redstone, boolean statue,
                            PedestalBlockEntity.StatuePose statuePose, String animation,
                            float textScale, boolean crown, boolean light) {
         /** A new pedestal's settings. */
-        public static final Settings DEFAULT = new Settings(PedestalBlockEntity.TextMode.LOOKING, 1.0F, 0.0F, 0.0F, true, true, true, true, 0.0F,
+        public static final Settings DEFAULT = new Settings(PedestalBlockEntity.TextMode.LOOKING, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, true, true, true, true, 0.0F,
                 PedestalBlockEntity.RedstoneMode.IGNORE, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, true);
 
         /** Settings starting from a new pedestal's. */
@@ -134,7 +136,7 @@ public final class PedestalSettings {
     /** Builds {@link Settings}, each left as it started unless set. */
     public static final class Builder {
         private PedestalBlockEntity.TextMode textMode;
-        private float scale, height, facing, textHeight;
+        private float scale, height, yaw, pitch, roll, textHeight;
         private boolean spins, animates, effects, sounds, statue;
         private PedestalBlockEntity.RedstoneMode redstone;
         private PedestalBlockEntity.StatuePose statuePose;
@@ -146,7 +148,9 @@ public final class PedestalSettings {
             textMode = from.textMode();
             scale = from.scale();
             height = from.height();
-            facing = from.facing();
+            yaw = from.yaw();
+            pitch = from.pitch();
+            roll = from.roll();
             spins = from.spins();
             animates = from.animates();
             effects = from.effects();
@@ -176,8 +180,26 @@ public final class PedestalSettings {
             return this;
         }
 
-        public Builder facing(float facing) {
-            this.facing = facing;
+        public Builder yaw(float yaw) {
+            this.yaw = yaw;
+            return this;
+        }
+
+        public Builder pitch(float pitch) {
+            this.pitch = pitch;
+            return this;
+        }
+
+        public Builder roll(float roll) {
+            this.roll = roll;
+            return this;
+        }
+
+        /** Its yaw, pitch and roll at once. */
+        public Builder rotation(float yaw, float pitch, float roll) {
+            this.yaw = yaw;
+            this.pitch = pitch;
+            this.roll = roll;
             return this;
         }
 
@@ -242,7 +264,7 @@ public final class PedestalSettings {
         }
 
         public Settings build() {
-            return new Settings(textMode, scale, height, facing, spins, animates, effects, sounds, textHeight, redstone, statue, statuePose, animation, textScale, crown, light);
+            return new Settings(textMode, scale, height, yaw, pitch, roll, spins, animates, effects, sounds, textHeight, redstone, statue, statuePose, animation, textScale, crown, light);
         }
     }
 }

@@ -74,7 +74,11 @@ public class PedestalBlockEntity extends BlockEntity {
     /** How small and large a legendary trophy's crown can be made, and how far it can be moved each way (in blocks at the usual display size). */
     public static final float MIN_CROWN_SCALE = 0.5F, MAX_CROWN_SCALE = 2.0F, MAX_CROWN_OFFSET = 0.5F;
     private static final String NO_LIGHT = "NoLight";
-    private static final String FACING = "Facing";
+    private static final String YAW = "Yaw", PITCH = "Pitch", ROLL = "Roll";
+    // (What Yaw was saved as before pitch and roll.)
+    private static final String OLD_FACING = "Facing";
+    /** How far what it shows can be pitched or rolled each way, in degrees. */
+    public static final float MAX_TILT = 180.0F;
     private static final String NO_EFFECTS = "NoEffects";
     private static final String MUTED = "Muted";
     private static final String REDSTONE = "Redstone";
@@ -114,7 +118,7 @@ public class PedestalBlockEntity extends BlockEntity {
     private Access access = Access.PRIVATE;
     private float crownScale = 1.0F, crownX, crownY;
     private boolean light = true;
-    private float facing;
+    private float yaw, pitch, roll;
     private boolean effects = true;
     private boolean sounds = true;
     private RedstoneMode redstone = RedstoneMode.IGNORE;
@@ -476,13 +480,45 @@ public class PedestalBlockEntity extends BlockEntity {
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
 
-    /** The way its item or mob faces (where a spinning one starts from), in degrees from 0 to 360 (the same way as 0). */
-    public float facing() {
-        return facing;
+    /** The way what it shows faces, turned about its upright axis (where a spinning one starts from), in degrees from 0 to 360 (the same way as 0). */
+    public float yaw() {
+        return yaw;
     }
 
-    public void setFacing(float degrees) {
-        facing = Mth.clamp(degrees, 0.0F, 360.0F);
+    public void setYaw(float degrees) {
+        yaw = Mth.clamp(degrees, 0.0F, 360.0F);
+        changedRotation();
+    }
+
+    /** How far what it shows is tipped forward (or, below 0, back), in degrees from -180 to 180. */
+    public float pitch() {
+        return pitch;
+    }
+
+    public void setPitch(float degrees) {
+        pitch = Mth.clamp(degrees, -MAX_TILT, MAX_TILT);
+        changedRotation();
+    }
+
+    /** How far what it shows is rolled to its side about the way it faces, in degrees from -180 to 180. */
+    public float roll() {
+        return roll;
+    }
+
+    public void setRoll(float degrees) {
+        roll = Mth.clamp(degrees, -MAX_TILT, MAX_TILT);
+        changedRotation();
+    }
+
+    /** Sets its yaw, pitch and roll together, sending one update. */
+    public void setRotation(float yaw, float pitch, float roll) {
+        this.yaw = Mth.clamp(yaw, 0.0F, 360.0F);
+        this.pitch = Mth.clamp(pitch, -MAX_TILT, MAX_TILT);
+        this.roll = Mth.clamp(roll, -MAX_TILT, MAX_TILT);
+        changedRotation();
+    }
+
+    private void changedRotation() {
         setChanged();
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
@@ -615,7 +651,9 @@ public class PedestalBlockEntity extends BlockEntity {
         if (crownX != 0.0F) output.putFloat(CROWN_X, crownX);
         if (crownY != 0.0F) output.putFloat(CROWN_Y, crownY);
         if (!light) output.putBoolean(NO_LIGHT, true);
-        if (facing != 0.0F) output.putFloat(FACING, facing);
+        if (yaw != 0.0F) output.putFloat(YAW, yaw);
+        if (pitch != 0.0F) output.putFloat(PITCH, pitch);
+        if (roll != 0.0F) output.putFloat(ROLL, roll);
         if (!effects) output.putBoolean(NO_EFFECTS, true);
         if (!sounds) output.putBoolean(MUTED, true);
         if (redstone != RedstoneMode.IGNORE) output.store(REDSTONE, RedstoneMode.CODEC, redstone);
@@ -652,7 +690,10 @@ public class PedestalBlockEntity extends BlockEntity {
         crownX = Mth.clamp(input.getFloatOr(CROWN_X, 0.0F), -MAX_CROWN_OFFSET, MAX_CROWN_OFFSET);
         crownY = Mth.clamp(input.getFloatOr(CROWN_Y, 0.0F), -MAX_CROWN_OFFSET, MAX_CROWN_OFFSET);
         light = !input.getBooleanOr(NO_LIGHT, false);
-        facing = Mth.clamp(input.getFloatOr(FACING, 0.0F), 0.0F, 360.0F);
+        // (One saved before pitch and roll keeps the way it faced as its yaw.)
+        yaw = Mth.clamp(input.getFloatOr(YAW, input.getFloatOr(OLD_FACING, 0.0F)), 0.0F, 360.0F);
+        pitch = Mth.clamp(input.getFloatOr(PITCH, 0.0F), -MAX_TILT, MAX_TILT);
+        roll = Mth.clamp(input.getFloatOr(ROLL, 0.0F), -MAX_TILT, MAX_TILT);
         effects = !input.getBooleanOr(NO_EFFECTS, false);
         sounds = !input.getBooleanOr(MUTED, false);
         redstone = input.read(REDSTONE, RedstoneMode.CODEC).orElse(RedstoneMode.IGNORE);

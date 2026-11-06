@@ -4,8 +4,21 @@
     "property": "minecraft:has_component",
     "component": "trophypedestals:trim_material",
     "on_true": {
-      "type": "minecraft:model",
-      "model": "trophypedestals:item/acacia_trophy_cabinet"
+      "type": "minecraft:composite",
+      "models": [
+        {
+          "type": "minecraft:model",
+          "model": "trophypedestals:item/acacia_trophy_cabinet_bare"
+        },
+        {
+          "type": "minecraft:special",
+          "base": "trophypedestals:item/acacia_trophy_cabinet_bare",
+          "model": {
+            "type": "trophypedestals:display_trim",
+            "model": "trophypedestals:models/item/trophy_cabinet.json"
+          }
+        }
+      ]
     },
     "on_false": {
       "type": "minecraft:model",

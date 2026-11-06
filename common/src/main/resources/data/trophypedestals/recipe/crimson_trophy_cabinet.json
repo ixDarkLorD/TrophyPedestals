@@ -4,13 +4,14 @@
   "group": "trophy_cabinet",
   "key": {
     "P": "minecraft:crimson_planks",
-    "G": "minecraft:gold_ingot",
-    "S": "minecraft:crimson_slab"
+    "S": "minecraft:crimson_slab",
+    "T": "minecraft:stick",
+    "G": "minecraft:glass_pane"
   },
   "pattern": [
-    "PPP",
-    "GSG",
-    "PPP"
+    "PSP",
+    "TGT",
+    "PSP"
   ],
   "result": {
     "count": 1,

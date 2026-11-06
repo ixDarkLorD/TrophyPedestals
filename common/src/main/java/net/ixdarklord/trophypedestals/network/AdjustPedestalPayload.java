@@ -9,13 +9,13 @@ import net.minecraft.server.level.ServerPlayer;
 
 /**
  * From a client's adjustment screen: when the pedestal at {@code pos} shows its text, how large its item or mob is, how
- * far it's moved up, whether it turns, how far its text is moved up, which way it faces, whether its flourishes show, how
+ * far it's moved up, whether it turns, how far its text is moved up, its yaw, pitch and roll, whether its flourishes show, how
  * it answers redstone, whether it makes its sounds, whether a mob trophy's mob moves, and whether an achievement trophy shows
  * its unlocker's statue, the pose a statue takes, and the animation its mob or statue plays, how large its text is, whether a legendary one wears its crown (and its crown's size and place), whether its
  * showcase light shows, and who else may adjust it.
  */
 public record AdjustPedestalPayload(BlockPos pos, PedestalBlockEntity.TextMode textMode, float scale, float height, boolean spins, float textHeight,
-                                    float facing, boolean effects, PedestalBlockEntity.RedstoneMode redstone, boolean sounds,
+                                    float yaw, float pitch, float roll, boolean effects, PedestalBlockEntity.RedstoneMode redstone, boolean sounds,
                                     boolean animates, boolean statue, PedestalBlockEntity.StatuePose statuePose,
                                     String animation, float textScale, boolean crown, float crownScale, float crownX, float crownY,
                                     boolean light, PedestalBlockEntity.Access access)
@@ -37,7 +37,7 @@ public record AdjustPedestalPayload(BlockPos pos, PedestalBlockEntity.TextMode t
         if (TrophyPedestalsConfig.PEDESTAL_DISPLAY_SETTINGS.get()) {
             pedestal.setScale(scale);
             pedestal.setHeight(height);
-            pedestal.setFacing(facing);
+            pedestal.setRotation(yaw, pitch, roll);
             pedestal.setCrownPlacement(crownScale, crownX, crownY);
         }
         if (TrophyPedestalsConfig.PEDESTAL_TEXT_SETTINGS.get()) {
