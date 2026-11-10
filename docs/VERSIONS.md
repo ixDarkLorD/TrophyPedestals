@@ -10,7 +10,7 @@ Every version Trophy Pedestals' 1.21.1 build pins, and where each was checked (2
 | Fabric Loader / Fabric API | 0.17.2 / 0.116.5+1.21.1 (min API 0.116.5) | catalog; the minimum is Tierwise 1.21.1's |
 | Gradle / Architectury Loom (remap) | 9.4.0 / 1.17.493 | wrapper; catalog |
 | Java | 21 | catalog |
-| CoolCatLib | `8.2.0+1.21.1` (unreleased; Maven Local), min 8.2.0 | built from `../CoolCatLib-1.21` (branch `1.21-1.21.1` with `pending-hooks-1.21` merged, 3d8b254, for `LivingEvents.DEATH`), with the `BlockEntityRendererRegistry` backport (below) |
+| CoolCatLib | `8.2.0+1.21.1`, min 8.2.0 | from the ModResources Maven (branch `1.21-1.21.1`, f95ae3b: `LivingEvents.DEATH`, `BlockEntityRendererRegistry`, `BlockRenderLayers`) |
 | JEI (optional, compile-only) | 19.22.1.316 (`jei-1.21.1-common-api`) | catalog (`libs.jei`), resolved by the build |
 | KubeJS + Rhino (optional, NeoForge, compile-only) | `2101.7.2-build.381` / `2101.2.8-build.91+Rhino-1.21` | Modrinth API (`kubejs`, `rhino` versions for 1.21.1); the plugin compiles against them unchanged |
 | spark (dev runs, `-Ptest_spark=true`) | `1.10.124-neoforge-1.21.1` | Modrinth API (newest NeoForge 1.21.1 file) |

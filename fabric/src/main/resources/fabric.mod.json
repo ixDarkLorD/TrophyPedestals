@@ -27,6 +27,12 @@
     ],
     "jei_mod_plugin": [
       "net.ixdarklord.trophypedestals.compat.jei.TrophyPedestalsJeiPlugin"
+    ],
+    "rei_client": [
+      "net.ixdarklord.trophypedestals.compat.rei.TrophyPedestalsReiPlugin"
+    ],
+    "jade": [
+      "net.ixdarklord.trophypedestals.compat.jade.TrophyPedestalsJadePlugin"
     ]
   },
 

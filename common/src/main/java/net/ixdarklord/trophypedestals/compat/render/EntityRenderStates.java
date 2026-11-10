@@ -10,6 +10,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.WalkAnimationState;
+import net.minecraft.world.entity.animal.Squid;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.monster.Monster;
@@ -37,6 +38,7 @@ public final class EntityRenderStates {
         if (entity instanceof Player) state = new AvatarRenderState(entity);
         else if (entity instanceof EnderDragon) state = new EnderDragonRenderState(entity);
         else if (entity instanceof WitherBoss) state = new WitherRenderState(entity);
+        else if (entity instanceof Squid) state = new SquidRenderState(entity);
         else if (entity instanceof Monster) state = new HumanoidRenderState(entity);
         else if (entity instanceof LivingEntity) state = new ArmedEntityRenderState(entity);
         else state = new EntityRenderState(entity);
@@ -64,11 +66,15 @@ public final class EntityRenderStates {
     }
 
     // What's set on the state, put on the mob.
-    private static void apply(EntityRenderState state) {
+    public static void apply(EntityRenderState state) {
         if (state instanceof EnderDragonRenderState dragon && dragon.flapTime >= 0.0F && state.entity instanceof EnderDragon entity) {
             entity.oFlapTime = entity.flapTime = dragon.flapTime;
         }
         if (!(state instanceof LivingEntityRenderState living) || !(state.entity instanceof LivingEntity entity)) return;
+        if (state instanceof SquidRenderState squid && entity instanceof Squid swimmer) {
+            if (!Float.isNaN(squid.xBodyRot)) swimmer.xBodyRotO = swimmer.xBodyRot = squid.xBodyRot;
+            if (!Float.isNaN(squid.zBodyRot)) swimmer.zBodyRotO = swimmer.zBodyRot = squid.zBodyRot;
+        }
         if (living.pose != null) entity.setPose(living.pose);
         if (living.walkAnimationSpeed >= 0.0F) walk(entity.walkAnimation, living.walkAnimationPos, living.walkAnimationSpeed);
         if (state instanceof ArmedEntityRenderState armed && armed.attackTime >= 0.0F) entity.oAttackAnim = entity.attackAnim = armed.attackTime;

@@ -6,6 +6,13 @@ dependencies {
 
     // Optional recipe viewer: tells mob trophies apart (compat/jei)
     modCompileOnly libs.jei.api.common
+    // Optional REI: mob trophy pages (compat/rei).
+    modCompileOnly libs.rei.api.common
+    // Optional Jade: what a looked-at pedestal holds (compat/jade). Its API classes are the same in both loaders' jars.
+    modCompileOnly("maven.modrinth:jade:${jade_version}+fabric") { transitive = false }
+    // Optional FTB Quests: a reward that gives a trophy (compat/ftb). Its API uses FTB Library's types.
+    modCompileOnly("dev.ftb.mods:ftb-library:${ftb_library_version}") { transitive = false }
+    modCompileOnly("dev.ftb.mods:ftb-quests:${ftb_quests_version}") { transitive = false }
 }
 
 // The shared main.gradle publishes every subproject's shadowJar. For common it must be a plain jar of this

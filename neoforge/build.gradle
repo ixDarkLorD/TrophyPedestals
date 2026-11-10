@@ -15,6 +15,13 @@ dependencies {
     modCompileOnly("maven.modrinth:kubejs:${kubejs_version}") { transitive = false }
     modCompileOnly("maven.modrinth:rhino:${rhino_version}") { transitive = false }
 
+    // Optional REI's plugin annotation and The One Probe's API (registered through NeoForge's inter-mod messages).
+    modCompileOnly("me.shedaniel:RoughlyEnoughItems-api-neoforge:16.0.799") { transitive = false }
+    modCompileOnly("mcjty.theoneprobe:theoneprobe:${top_neoforge_version}:api") { transitive = false }
+    // REI and Jade in a dev run only when asked (-Ptest_rei=true, -Ptest_jade=true).
+    if (project.findProperty("test_rei") == "true") modLocalRuntime libs.rei.neoforge
+    if (project.findProperty("test_jade") == "true") modLocalRuntime("maven.modrinth:jade:${jade_version}+neoforge") { transitive = false }
+
     // spark in a dev run only when asked (-Ptest_spark=true).
     if (project.findProperty("test_spark") == "true") modLocalRuntime "maven.modrinth:spark:${spark_version}"
 }

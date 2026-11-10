@@ -6,6 +6,8 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -36,6 +38,7 @@ import java.util.Set;
  *   loot is for (one opening a chest, or earning an advancement).</li>
  *   <li>{@code "rarity"}: its rank ({@code "epic"}, a mod's {@code namespace:path}, or {@code "none"}). Without it, by
  *   the mob's toughness, as mob trophies are ranked by strength.</li>
+ *   <li>{@code "title"}: the name it goes by in place of its mob's (a text component), if given.</li>
  * </ul>
  * It's recorded as slain now. Anything but a pedestal is left as it is.
  * <pre>{@code
@@ -47,21 +50,24 @@ public class SetMobTrophyFunction extends LootItemConditionalFunction {
             ResourceLocation.CODEC.optionalFieldOf("entity").forGetter(function -> function.entity),
             CompoundTag.CODEC.optionalFieldOf("look").forGetter(function -> function.look),
             Codec.STRING.optionalFieldOf("slayer").forGetter(function -> function.slayer),
-            PedestalRarities.ID_CODEC.optionalFieldOf("rarity").forGetter(function -> function.rarity)
+            PedestalRarities.ID_CODEC.optionalFieldOf("rarity").forGetter(function -> function.rarity),
+            ComponentSerialization.CODEC.optionalFieldOf("title").forGetter(function -> function.title)
     )).apply(instance, SetMobTrophyFunction::new));
 
     private final Optional<ResourceLocation> entity;
     private final Optional<CompoundTag> look;
     private final Optional<String> slayer;
     private final Optional<ResourceLocation> rarity;
+    private final Optional<Component> title;
 
     private SetMobTrophyFunction(List<LootItemCondition> predicates, Optional<ResourceLocation> entity, Optional<CompoundTag> look,
-                                 Optional<String> slayer, Optional<ResourceLocation> rarity) {
+                                 Optional<String> slayer, Optional<ResourceLocation> rarity, Optional<Component> title) {
         super(predicates);
         this.entity = entity;
         this.look = look;
         this.slayer = slayer;
         this.rarity = rarity;
+        this.title = title;
     }
 
     @Override
@@ -94,7 +100,7 @@ public class SetMobTrophyFunction extends LootItemConditionalFunction {
             return subject instanceof Player player ? player.getName().getString() : "";
         });
         ResourceLocation rank = rarity.orElseGet(() -> (measured != null ? MobTrophies.rarity(measured) : MobTrophies.rarity(type, context.getLevel())).id());
-        MobTrophies.record(stack, new MobTrophyRecord(BuiltInRegistries.ENTITY_TYPE.getKey(type), who, System.currentTimeMillis(), rank, shown));
+        MobTrophies.record(stack, new MobTrophyRecord(BuiltInRegistries.ENTITY_TYPE.getKey(type), who, System.currentTimeMillis(), rank, shown, title));
         return stack;
     }
 }

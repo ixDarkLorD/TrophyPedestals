@@ -4,6 +4,7 @@ import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.compat.render.EntityRenderStates;
 import net.ixdarklord.trophypedestals.network.AdjustDisplayedTrophyPayload;
+import net.ixdarklord.trophypedestals.network.AdjustMannequinPayload;
 import net.ixdarklord.trophypedestals.network.AdjustPedestalPayload;
 import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
 import net.ixdarklord.trophypedestals.pedestal.Statues;
@@ -14,6 +15,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -21,9 +23,12 @@ import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MobSpawnType;
@@ -48,8 +53,9 @@ import java.util.function.Supplier;
  * size), Behavior (spinning, flourishes and sounds as toggles; how it answers redstone) and, for a mob or statue, Pose
  * (moving or holding still, or icon or statue, with the statue's pose; and the animation it plays on loop, picked from
  * what it can). Each slider has a button putting it back; Reset and Done sit under every tab, and the last tab used
- * opens next time. A display pedestal's (one showing a player's item, or empty) has only its text, redstone and sounds
- * choices, on one page.
+ * opens next time. A display pedestal's (one showing a player's item, or empty) has its text, redstone, sounds and
+ * light choices on one page, unless the server gives it a Display or Text tab (pedestals.display_pedestal_settings):
+ * then it's in tabs too, Display, Text and Behavior.
  * Changes show on the pedestal at once and are sent to the server as the screen closes, which keeps them only for a
  * player allowed to adjust it. Its sprites are in {@code textures/gui/sprites/pedestal/}.
  */
@@ -68,7 +74,7 @@ public final class PedestalScreen extends Screen {
     private static final int GEMS_WIDTH = 28, FRAME = 4;
     private static final int MARGIN = 12, RESET = 16;
     // A display pedestal's screen: when its text shows, how it answers redstone, its sounds and its showcase light, in one column.
-    private static final int COMPACT_WIDTH = 186, COMPACT_HEIGHT = 230, COMPACT_ROW_2 = 84, COMPACT_ROW_3 = 122, COMPACT_ROW_4 = 160;
+    private static final int COMPACT_WIDTH = 220, COMPACT_HEIGHT = 230, COMPACT_ROW_2 = 84, COMPACT_ROW_3 = 122, COMPACT_ROW_4 = 160;
     private static final ResourceLocation RESET_ICON = TrophyPedestalsMod.id("pedestal/reset");
     // The "?" after each label, and how wide its tooltip's lines wrap.
     private static final ResourceLocation INFO = TrophyPedestalsMod.id("pedestal/info");
@@ -88,17 +94,24 @@ public final class PedestalScreen extends Screen {
     private static final int TABBED_WIDTH = 248, TABBED_HEIGHT = 246, TAB_ROW = 44, CONTENT = 74, SECTION = 38, PRESET_ROW = 16;
     // The part of a trophy's screen a tab's sections scroll in: under the tabs' groove, over Reset and Done. A tab whose
     // sections run past its bottom scrolls (SCROLL_STEP a wheel notch), with a bar in the panel's right margin.
-    private static final int VIEW_TOP = TAB_ROW + 26, VIEW_BOTTOM = TABBED_HEIGHT - 34, SCROLL_STEP = 14;
+    private static final int VIEW_TOP = TAB_ROW + 26, VIEW_BELOW = 34, SCROLL_STEP = 14;
+    // How short a tabbed screen gets in a small window (its tab scrolls in the room left), and the room kept around a
+    // panel at the window's edges.
+    private static final int MIN_TABBED_HEIGHT = VIEW_TOP + VIEW_BELOW + 40, EDGE = 4;
     // The scroll bar: how wide it is and how far in from the panel's right edge; its thumb's least height. Its groove is
     // cut like the panel's dividers; its thumb is gold, lit along its top and left, shaded along its bottom and right,
     // with grip lines across its middle.
-    private static final int BAR_WIDTH = 4, BAR_INSET = 6, MIN_THUMB = 14;
+    // (Inset so its groove's rim stops just inside the panel's gold inline, rather than covering it.)
+    private static final int BAR_WIDTH = 4, BAR_INSET = 7, MIN_THUMB = 14;
+    // How much narrower a tab's sections are than the tabs, so they keep clear of the scroll bar (on every tab alike,
+    // scrolling or not).
+    private static final int BAR_GAP = 6;
     private static final int GROOVE_DARK = 0xFF07090E, GROOVE = 0xFF0E121A, GROOVE_LIT = 0xFF343B4E, GOLD_SHADE = 0xFFB8872B, GOLD_DEEP = 0xFF9A6A1A;
     private static final int GOLD_FRAME = 0xFFE0AC3C, GOLD_TOP = 0xFFFFF0A8, GOLD_LIT = 0xFFFFC24A, LIST = 0xF00E121A, LIST_HOVER = 0xFF252C3C;
 
     /** A trophy screen's tabs; the last one used opens next time. */
     private enum Tab {
-        DISPLAY, TEXT, POSE, BEHAVIOR;
+        DISPLAY, TEXT, POSE, MODEL, STAND_POSE, BEHAVIOR;
 
         Component label() {
             return Component.translatable("trophypedestals.pedestal.screen.tab." + name().toLowerCase(Locale.ROOT));
@@ -128,10 +141,23 @@ public final class PedestalScreen extends Screen {
     private TextHeightSlider textSlider;
     private TextSizeSlider textSizeSlider;
     private final List<AngleSlider> rotationSliders = new ArrayList<>();
+    // A mannequin pedestal's (one with an armor stand installed): whether it shows as a player instead of the armor
+    // stand, the armor stand's pose (each part's x, y and z), and the Pose tab's sliders for it.
+    private final boolean mannequin;
+    // Whether it's under a glass case (where a mannequin can't be posed).
+    private final boolean cased;
+    private boolean playerModel;
+    private final float[] standPose = new float[PedestalBlockEntity.DEFAULT_STAND_POSE.size()];
+    private final List<AngleSlider> boneSliders = new ArrayList<>();
     private final List<ValueSlider> crownSliders = new ArrayList<>();
     private int left, top;
-    // Whether it's a trophy (every option), or a display pedestal (text and redstone only).
+    // Where the header's title and owner must end: before the access button, if it has one.
+    private int headerRight;
+    // Whether it's a trophy (every option), or a display pedestal (fewer).
     private final boolean trophy;
+    // Whether its settings are in tabs: a trophy's always, a display pedestal's when the server gives it a Display or
+    // Text tab (else they're on one page).
+    private final boolean tabbed;
     // Whether it's a mob trophy, whose mob can be set to hold still.
     private final boolean mob;
     // Whether it's an achievement trophy earned by a player, which can show their statue.
@@ -195,6 +221,12 @@ public final class PedestalScreen extends Screen {
         Minecraft minecraft = Minecraft.getInstance();
         this.accessible = slot < 0 && minecraft.player != null && pedestal.canChangeAccess(minecraft.player);
         this.trophy = pedestal.isTrophy();
+        this.mannequin = slot < 0 && pedestal.mannequin();
+        this.cased = pedestal.glass();
+        this.playerModel = pedestal.playerModel();
+        for (int i = 0; i < standPose.length; i++) standPose[i] = pedestal.standPose().get(i);
+        // (A mannequin pedestal's has tabs for its Model and Pose.)
+        this.tabbed = trophy || mannequin || TrophyPedestalsConfig.tabbedDisplayPedestals();
         this.mob = pedestal.mobTrophy() != null;
         this.statueable = pedestal.canShowStatue();
         this.playerTrophy = pedestal.mobTrophy() != null && pedestal.mobTrophy().type() == Statues.FIGURE;
@@ -238,16 +270,17 @@ public final class PedestalScreen extends Screen {
     }
 
     private int panelWidth() {
-        return trophy ? TABBED_WIDTH : COMPACT_WIDTH;
+        return tabbed ? TABBED_WIDTH : COMPACT_WIDTH;
     }
 
-    // (A trophy's is the same height on every tab; a tab with more than fits scrolls.)
+    // (A tabbed one is the same height on every tab; a tab with more than fits scrolls.)
     private int panelHeight() {
-        return trophy ? TABBED_HEIGHT : COMPACT_HEIGHT;
+        return tabbed ? tabbedHeight() : COMPACT_HEIGHT;
     }
 
+    // As tall as it's made, or shorter in a small window, so all of it shows.
     private int tabbedHeight() {
-        return TABBED_HEIGHT;
+        return Mth.clamp(height - 2 * EDGE, MIN_TABBED_HEIGHT, TABBED_HEIGHT);
     }
 
     // Whether it has the Pose tab: a mob's or statue's pose, and the animation it plays.
@@ -256,12 +289,19 @@ public final class PedestalScreen extends Screen {
     }
 
     // The tabs it shows, Behavior last: Pose only for a mob or statue, and Display, Text and Pose only as the server lets
-    // players change them (Behavior always).
+    // players change them, a trophy's or a display pedestal's (Behavior always; a display pedestal's Text tab always,
+    // for when its text shows).
     private List<Tab> tabs() {
         List<Tab> tabs = new ArrayList<>();
-        if (TrophyPedestalsConfig.PEDESTAL_DISPLAY_SETTINGS.get()) tabs.add(Tab.DISPLAY);
-        if (TrophyPedestalsConfig.PEDESTAL_TEXT_SETTINGS.get()) tabs.add(Tab.TEXT);
-        if (posed() && TrophyPedestalsConfig.PEDESTAL_POSE_SETTINGS.get()) tabs.add(Tab.POSE);
+        if (TrophyPedestalsConfig.displaySettings(trophy)) tabs.add(Tab.DISPLAY);
+        if (TrophyPedestalsConfig.textModeSettings(trophy)) tabs.add(Tab.TEXT);
+        if (posed() && TrophyPedestalsConfig.poseSettings(trophy)) tabs.add(Tab.POSE);
+        // A mannequin's model, and its armor stand's pose (while it shows as the armor stand, and isn't under glass: there
+        // it stands as an armor stand does, so it always fits the case).
+        if (mannequin) {
+            tabs.add(Tab.MODEL);
+            if (!playerModel && !cased) tabs.add(Tab.STAND_POSE);
+        }
         tabs.add(Tab.BEHAVIOR);
         return tabs;
     }
@@ -280,21 +320,24 @@ public final class PedestalScreen extends Screen {
 
     @Override
     protected void init() {
-        left = (width - panelWidth()) / 2;
-        top = (height - panelHeight()) / 2;
+        // Centred, or kept on screen from its top left in a window too small for it.
+        left = Math.max(EDGE, (width - panelWidth()) / 2);
+        top = Math.max(EDGE, (height - panelHeight()) / 2);
+        headerRight = left + panelWidth() - MARGIN;
         // Who else may adjust it, at the header's right, for its owner: cycling Private, Team, Everyone.
         if (accessible) {
             int wide = 0;
             for (PedestalBlockEntity.Access each : PedestalBlockEntity.Access.values()) wide = Math.max(wide, font.width(accessLabel(each)));
             wide += 2 * LABEL_PADDING;
             Choice button = addRenderableWidget(new Choice(left + panelWidth() - MARGIN - wide, top + 12, wide, 18, accessLabel(access), () -> false, () -> {}));
+            headerRight = button.getX() - 4;
             button.action = () -> {
                 access = access.next();
                 button.setMessage(accessLabel(access));
             };
             tip(button, "trophypedestals.pedestal.screen.access");
         }
-        if (!trophy) {
+        if (!tabbed) {
             initCompact();
             return;
         }
@@ -317,21 +360,25 @@ public final class PedestalScreen extends Screen {
         textSizeSlider = null;
         heightSlider = null;
         rotationSliders.clear();
+        boneSliders.clear();
         crownSliders.clear();
         animationButton = null;
         listOpen = false;
         scrolled.clear();
         addingScrolled = true;
+        int sections = column - BAR_GAP;
         switch (tab()) {
-            case DISPLAY -> initDisplay(x, column);
-            case TEXT -> initText(x, column);
-            case BEHAVIOR -> initBehavior(x, column);
-            case POSE -> initPose(x, column);
+            case DISPLAY -> initDisplay(x, sections);
+            case TEXT -> initText(x, sections);
+            case BEHAVIOR -> initBehavior(x, sections);
+            case POSE -> initPose(x, sections);
+            case MODEL -> initModel(x, sections);
+            case STAND_POSE -> initStandPose(x, sections);
         }
         addingScrolled = false;
         int bottom = top + VIEW_TOP;
         for (AbstractWidget widget : scrolled.keySet()) bottom = Math.max(bottom, widget.getBottom());
-        maxScroll = Math.max(0, bottom + 6 - (top + VIEW_BOTTOM));
+        maxScroll = Math.max(0, bottom + 6 - (top + viewBottom()));
         applyScroll();
         // Reset puts everything back as a new pedestal has it (on every tab); Done closes.
         int half = (column - 4) / 2;
@@ -354,8 +401,13 @@ public final class PedestalScreen extends Screen {
         scroll = Mth.clamp(scroll, 0, maxScroll);
         scrolled.forEach((widget, y) -> {
             widget.setY(y - scroll);
-            widget.visible = widget.getBottom() > top + VIEW_TOP && widget.getY() < top + VIEW_BOTTOM;
+            widget.visible = widget.getBottom() > top + VIEW_TOP && widget.getY() < top + viewBottom();
         });
+    }
+
+    // Where the part a tab's sections scroll in ends, down from the panel's top: over Reset and Done.
+    private int viewBottom() {
+        return tabbedHeight() - VIEW_BELOW;
     }
 
     private int barX() {
@@ -363,12 +415,12 @@ public final class PedestalScreen extends Screen {
     }
 
     private int thumbHeight() {
-        int track = VIEW_BOTTOM - VIEW_TOP - 2;
+        int track = viewBottom() - VIEW_TOP - 2;
         return Math.max(MIN_THUMB, track * track / (track + maxScroll));
     }
 
     private int thumbY() {
-        return top + VIEW_TOP + 1 + (VIEW_BOTTOM - VIEW_TOP - 2 - thumbHeight()) * scroll / maxScroll;
+        return top + VIEW_TOP + 1 + (viewBottom() - VIEW_TOP - 2 - thumbHeight()) * scroll / maxScroll;
     }
 
     private boolean overBar(double mouseX, double mouseY) {
@@ -377,7 +429,7 @@ public final class PedestalScreen extends Screen {
 
     // Scrolls so the thumb's top is at this height (the mouse's, less where on the thumb it was taken).
     private void dragThumb(double mouseY) {
-        int travel = VIEW_BOTTOM - VIEW_TOP - 2 - thumbHeight();
+        int travel = viewBottom() - VIEW_TOP - 2 - thumbHeight();
         scroll = travel <= 0 ? 0 : (int) Math.round((mouseY - dragOffset - (top + VIEW_TOP + 1)) * maxScroll / travel);
         applyScroll();
     }
@@ -385,7 +437,7 @@ public final class PedestalScreen extends Screen {
     // The groove (a dark rim, lit along its bottom and right like the dividers) and the thumb in it: gold with a bevel,
     // brighter while hovered or held, and three grip lines across its middle.
     private void scrollBar(GuiGraphics graphics, int mouseX, int mouseY) {
-        int x = barX(), y0 = top + VIEW_TOP, y1 = top + VIEW_BOTTOM;
+        int x = barX(), y0 = top + VIEW_TOP, y1 = top + viewBottom();
         graphics.fill(x - 1, y0 - 1, x + BAR_WIDTH + 1, y1 + 1, GROOVE_LIT);
         graphics.fill(x - 1, y0 - 1, x + BAR_WIDTH, y1, GROOVE_DARK);
         graphics.fill(x, y0, x + BAR_WIDTH, y1, GROOVE);
@@ -401,7 +453,7 @@ public final class PedestalScreen extends Screen {
     }
 
     private boolean inView(double mouseY) {
-        return mouseY >= top + VIEW_TOP && mouseY < top + VIEW_BOTTOM;
+        return mouseY >= top + VIEW_TOP && mouseY < top + viewBottom();
     }
 
     // Display: its size (with the quick choices), its height, its rotation (only its rotation, for a trophy on a display).
@@ -474,6 +526,114 @@ public final class PedestalScreen extends Screen {
         }));
     }
 
+    // Model: a mannequin shows as its armor stand, or as a player in its owner's skin (wearing the same outfit).
+    private void initModel(int x, int column) {
+        Component stand = Component.translatable("trophypedestals.pedestal.screen.model.armor_stand");
+        Component player = Component.translatable("trophypedestals.pedestal.screen.model.player");
+        int[][] spans = split(x, column, stand, player);
+        int row = top + section(0, false) + 12;
+        addRenderableWidget(new Choice(spans[0][0], row, spans[0][1], 18, stand, () -> !playerModel, () -> setPlayerModel(false)));
+        addRenderableWidget(new Choice(spans[1][0], row, spans[1][1], 18, player, () -> playerModel, () -> setPlayerModel(true)));
+    }
+
+    // (The Pose tab comes and goes with the armor stand.)
+    private void setPlayerModel(boolean player) {
+        if (playerModel == player) return;
+        playerModel = player;
+        preview();
+        rebuildWidgets();
+    }
+
+    // The armor stand poses to pick from on the Pose tab, by name (each part's x, y and z, as STAND_PARTS): standing as
+    // the game stands one, walking, waving, pointing ahead and sitting.
+    private static final Map<String, List<Float>> STAND_PRESETS = new LinkedHashMap<>();
+
+    static {
+        STAND_PRESETS.put("standing", PedestalBlockEntity.DEFAULT_STAND_POSE);
+        STAND_PRESETS.put("walking", List.of(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 25.0F, 0.0F, -5.0F, -25.0F, 0.0F, 5.0F, -25.0F, 0.0F, 0.0F, 25.0F, 0.0F, 0.0F));
+        STAND_PRESETS.put("waving", List.of(0.0F, 0.0F, 5.0F, 0.0F, 0.0F, 0.0F, -10.0F, 0.0F, -10.0F, -20.0F, 0.0F, 140.0F, -1.0F, 0.0F, -1.0F, 1.0F, 0.0F, 1.0F));
+        STAND_PRESETS.put("pointing", List.of(0.0F, -15.0F, 0.0F, 0.0F, 10.0F, 0.0F, -10.0F, 0.0F, -10.0F, -90.0F, 15.0F, 0.0F, -1.0F, 0.0F, -1.0F, 1.0F, 0.0F, 1.0F));
+        STAND_PRESETS.put("sitting", List.of(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, -40.0F, 0.0F, -10.0F, -40.0F, 0.0F, 10.0F, -90.0F, -10.0F, 0.0F, -90.0F, 10.0F, 0.0F));
+    }
+
+    // The saved poses' section: its label, down from the panel's top (after the presets and the six parts), and how
+    // far apart its rows are.
+    private static final int SAVED_SECTION = 7, SAVED_ROW = 20;
+    // The name typed for the next pose saved (kept as the tab is rebuilt).
+    private String poseName = "";
+
+    // Pose: the presets (two rows of choices, gold while the pose is one), each of the armor stand's parts (head, body,
+    // arms, legs) turned about x, y and z side by side (each a third of the row) in steps of 5 degrees with a reset to
+    // the armor stand's own pose for each part, then the player's own saved poses: a name and Save, and each saved one
+    // to pick, with a button deleting it.
+    private void initStandPose(int x, int column) {
+        List<String> presets = new ArrayList<>(STAND_PRESETS.keySet());
+        for (int line = 0; line < 2; line++) {
+            List<String> names = presets.subList(line == 0 ? 0 : 3, line == 0 ? 3 : presets.size());
+            Component[] labels = names.stream().map(name -> Component.translatable("trophypedestals.pedestal.screen.stand_preset." + name)).toArray(Component[]::new);
+            int[][] spans = split(x, column, labels);
+            for (int i = 0; i < names.size(); i++) {
+                List<Float> preset = STAND_PRESETS.get(names.get(i));
+                tip(addRenderableWidget(new Choice(spans[i][0], top + section(0, false) + 12 + line * 20, spans[i][1], 18, labels[i],
+                        () -> standPose().equals(preset), () -> applyStandPose(preset))), "trophypedestals.pedestal.screen.stand_preset." + names.get(i));
+            }
+        }
+        int slider = column - RESET - 4, gap = 6, third = (slider - 2 * gap) / 3;
+        for (int part = 0; part < PedestalBlockEntity.STAND_PARTS.size(); part++) {
+            int label = section(part + 1, true), row = top + label + 14, first = part * 3;
+            List<AngleSlider> sliders = new ArrayList<>();
+            for (int axis = 0; axis < 3; axis++) {
+                int index = first + axis, at = x + axis * (third + gap);
+                AngleSlider each = addRenderableWidget(new AngleSlider(at, row, axis == 2 ? slider - 2 * (third + gap) : third, -180.0F, 180.0F, 5.0F,
+                        () -> standPose[index], value -> standPose[index] = value, "trophypedestals.pedestal.screen.bone_" + "xyz".charAt(axis) + "_narration"));
+                sliders.add(each);
+                boneSliders.add(each);
+            }
+            addRenderableWidget(new ResetButton(x + column - RESET, top + label + 12, () -> {
+                for (int axis = 0; axis < 3; axis++) standPose[first + axis] = PedestalBlockEntity.DEFAULT_STAND_POSE.get(first + axis);
+                sliders.forEach(AngleSlider::sync);
+                preview();
+            }));
+        }
+        // The player's own poses: a name for this one and Save (a name already used is saved over), then each saved one.
+        int saved = top + section(SAVED_SECTION, true) + 12;
+        Component saveLabel = Component.translatable("trophypedestals.pedestal.screen.saved_poses.save");
+        int saveWidth = font.width(saveLabel) + 2 * LABEL_PADDING;
+        EditBox name = addRenderableWidget(new EditBox(font, x, saved + 1, column - saveWidth - 4, 16, Component.translatable("trophypedestals.pedestal.screen.saved_poses.name")));
+        name.setMaxLength(SavedPoses.MAX_NAME);
+        name.setHint(Component.translatable("trophypedestals.pedestal.screen.saved_poses.name"));
+        name.setValue(poseName);
+        name.setResponder(text -> poseName = text);
+        tip(addRenderableWidget(new Choice(x + column - saveWidth, saved, saveWidth, 18, saveLabel, () -> false, () -> {
+            List<SavedPoses.Pose> all = SavedPoses.all();
+            String named = poseName.isBlank() ? Component.translatable("trophypedestals.pedestal.screen.saved_poses.default_name", all.size() + 1).getString() : poseName;
+            if (SavedPoses.save(named, standPose())) {
+                poseName = "";
+                rebuildWidgets();
+            } else if (minecraft != null && minecraft.player != null) {
+                minecraft.player.displayClientMessage(Component.translatable("trophypedestals.pedestal.screen.saved_poses.full", SavedPoses.MAX_POSES), true);
+            }
+        })), "trophypedestals.pedestal.screen.saved_poses.save");
+        Component deleteLabel = Component.translatable("trophypedestals.pedestal.screen.saved_poses.delete");
+        List<SavedPoses.Pose> poses = SavedPoses.all();
+        for (int i = 0; i < poses.size(); i++) {
+            SavedPoses.Pose pose = poses.get(i);
+            int row = saved + 22 + i * SAVED_ROW;
+            addRenderableWidget(new Choice(x, row, column - 22, 18, Component.literal(pose.name()), () -> standPose().equals(pose.angles()), () -> applyStandPose(pose.angles())));
+            tip(addRenderableWidget(new Choice(x + column - 18, row, 18, 18, deleteLabel, () -> false, () -> {
+                SavedPoses.delete(pose.name());
+                rebuildWidgets();
+            })), "trophypedestals.pedestal.screen.saved_poses.delete");
+        }
+    }
+
+    // Puts the armor stand in this pose (a preset's, or a saved one's).
+    private void applyStandPose(List<Float> pose) {
+        for (int i = 0; i < standPose.length; i++) standPose[i] = pose.get(i);
+        boneSliders.forEach(AngleSlider::sync);
+        preview();
+    }
+
     // Text: when it shows, how high it floats, how large it is.
     private void initText(int x, int column) {
         int slider = column - RESET - 4;
@@ -488,8 +648,8 @@ public final class PedestalScreen extends Screen {
                 preview();
             }));
         }
-        // (For a trophy on a display, only when it shows.)
-        if (fixedSize()) return;
+        // (Only when it shows for a trophy on a display, or when the server doesn't let players change the rest.)
+        if (fixedSize() || !TrophyPedestalsConfig.textSettings(trophy)) return;
         textSlider = addRenderableWidget(new TextHeightSlider(x, top + section(1, false) + 14, slider));
         addRenderableWidget(new ResetButton(x + column - RESET, top + section(1, false) + 12, () -> {
             textLift = 0.0F;
@@ -504,31 +664,26 @@ public final class PedestalScreen extends Screen {
         }));
     }
 
-    // Behavior: spinning, flourishes and sounds (each a toggle, gold while on), and how it answers redstone.
+    // A toggle on the Behavior tab: its key (its label's and "?"'s), whether it's on, and what turns it over.
+    private record Toggle(String key, BooleanSupplier on, Runnable flip) {}
+
+    // Behavior: spinning, a trophy's flourishes, sounds and a legendary trophy's crown (each a toggle, gold while on), its
+    // showcase light, and how it answers redstone.
     private void initBehavior(int x, int column) {
-        Component spin = Component.translatable("trophypedestals.pedestal.screen.toggle.spin");
-        Component flourishes = Component.translatable("trophypedestals.pedestal.screen.toggle.flourishes");
-        Component soundsLabel = Component.translatable("trophypedestals.pedestal.screen.toggle.sounds");
-        Component crownLabel = Component.translatable("trophypedestals.pedestal.screen.toggle.crown");
-        int[][] spans = crowned ? split(x, column, spin, flourishes, soundsLabel, crownLabel) : split(x, column, spin, flourishes, soundsLabel);
-        tip(addRenderableWidget(new Choice(spans[0][0], top + section(0, false) + 12, spans[0][1], 18, spin, () -> spins, () -> {
-            spins = !spins;
-            preview();
-        })), "trophypedestals.pedestal.screen.toggle.spin");
-        tip(addRenderableWidget(new Choice(spans[1][0], top + section(0, false) + 12, spans[1][1], 18, flourishes, () -> effects, () -> {
-            effects = !effects;
-            preview();
-        })), "trophypedestals.pedestal.screen.toggle.flourishes");
-        tip(addRenderableWidget(new Choice(spans[2][0], top + section(0, false) + 12, spans[2][1], 18, soundsLabel, () -> sounds, () -> {
-            sounds = !sounds;
-            preview();
-        })), "trophypedestals.pedestal.screen.toggle.sounds");
-        // A legendary trophy's crown over what it shows.
-        if (crowned) {
-            tip(addRenderableWidget(new Choice(spans[3][0], top + section(0, false) + 12, spans[3][1], 18, crownLabel, () -> crown, () -> {
-                crown = !crown;
+        List<Toggle> toggles = new ArrayList<>();
+        toggles.add(new Toggle("spin", () -> spins, () -> spins = !spins));
+        if (trophy) toggles.add(new Toggle("flourishes", () -> effects, () -> effects = !effects));
+        toggles.add(new Toggle("sounds", () -> sounds, () -> sounds = !sounds));
+        if (crowned) toggles.add(new Toggle("crown", () -> crown, () -> crown = !crown));
+        Component[] labels = new Component[toggles.size()];
+        for (int i = 0; i < labels.length; i++) labels[i] = Component.translatable("trophypedestals.pedestal.screen.toggle." + toggles.get(i).key());
+        int[][] spans = split(x, column, labels);
+        for (int i = 0; i < labels.length; i++) {
+            Toggle toggle = toggles.get(i);
+            tip(addRenderableWidget(new Choice(spans[i][0], top + section(0, false) + 12, spans[i][1], 18, labels[i], toggle.on(), () -> {
+                toggle.flip().run();
                 preview();
-            })), "trophypedestals.pedestal.screen.toggle.crown");
+            })), "trophypedestals.pedestal.screen.toggle." + toggle.key());
         }
         lightChoices(x, column, top + section(1, false) + 12);
         PedestalBlockEntity.RedstoneMode[] redstoneModes = PedestalBlockEntity.RedstoneMode.values();
@@ -589,8 +744,7 @@ public final class PedestalScreen extends Screen {
     private void initCompact() {
         int column = COMPACT_WIDTH - 2 * MARGIN, x = left + MARGIN;
         int[][] spans;
-        // (When its text shows only if the server lets players change Text settings.)
-        if (TrophyPedestalsConfig.PEDESTAL_TEXT_SETTINGS.get()) {
+        if (TrophyPedestalsConfig.textModeSettings(trophy)) {
             PedestalBlockEntity.TextMode[] modes = PedestalBlockEntity.TextMode.values();
             Component[] modeLabels = new Component[modes.length];
             for (int i = 0; i < modes.length; i++) modeLabels[i] = Component.translatable("trophypedestals.pedestal.screen.text." + modes[i].getSerializedName());
@@ -628,7 +782,7 @@ public final class PedestalScreen extends Screen {
         lightChoices(x, column, top + COMPACT_ROW_4 + 12);
         half = (column - 4) / 2;
         addRenderableWidget(new Choice(x, top + COMPACT_HEIGHT - 28, half, 18, Component.translatable("trophypedestals.pedestal.screen.reset"), () -> false, () -> {
-            if (TrophyPedestalsConfig.PEDESTAL_TEXT_SETTINGS.get()) textMode = PedestalBlockEntity.TextMode.LOOKING;
+            if (TrophyPedestalsConfig.textModeSettings(trophy)) textMode = PedestalBlockEntity.TextMode.LOOKING;
             redstone = PedestalBlockEntity.RedstoneMode.IGNORE;
             sounds = true;
             light = true;
@@ -743,7 +897,7 @@ public final class PedestalScreen extends Screen {
         // The tab's widgets, clipped to the scrolling part (and not lit by a mouse outside it), and its scroll bar.
         if (!scrolled.isEmpty()) {
             boolean in = inView(mouseY);
-            graphics.enableScissor(left, top + VIEW_TOP, left + panelWidth(), top + VIEW_BOTTOM);
+            graphics.enableScissor(left, top + VIEW_TOP, left + panelWidth(), top + viewBottom());
             for (AbstractWidget widget : scrolled.keySet()) {
                 if (widget.visible) widget.render(graphics, in ? mouseX : -1, in ? mouseY : -1, partialTick);
             }
@@ -851,7 +1005,7 @@ public final class PedestalScreen extends Screen {
 
     // (Only the settings the server lets players change.)
     private void reset() {
-        if (TrophyPedestalsConfig.PEDESTAL_DISPLAY_SETTINGS.get()) {
+        if (TrophyPedestalsConfig.displaySettings(trophy)) {
             scale = 1.0F;
             lift = 0.0F;
             yaw = 0.0F;
@@ -862,17 +1016,24 @@ public final class PedestalScreen extends Screen {
             crownY = 0.0F;
             crownSliders.forEach(ValueSlider::sync);
         }
-        if (TrophyPedestalsConfig.PEDESTAL_TEXT_SETTINGS.get()) {
-            textMode = PedestalBlockEntity.TextMode.LOOKING;
+        if (TrophyPedestalsConfig.textModeSettings(trophy)) textMode = PedestalBlockEntity.TextMode.LOOKING;
+        if (TrophyPedestalsConfig.textSettings(trophy)) {
             textLift = 0.0F;
             textScale = 1.0F;
         }
-        if (TrophyPedestalsConfig.PEDESTAL_POSE_SETTINGS.get()) {
+        if (TrophyPedestalsConfig.poseSettings(trophy)) {
             animates = true;
             statue = false;
             statuePose = PedestalBlockEntity.StatuePose.STANDING;
             animation = PedestalBlockEntity.IDLE;
             if (animationButton != null) animationButton.setMessage(animationLabel());
+        }
+        boolean wasPlayer = playerModel;
+        if (mannequin) {
+            playerModel = false;
+            // (Its pose, kept under glass, only when it can be posed.)
+            if (!cased) for (int i = 0; i < standPose.length; i++) standPose[i] = PedestalBlockEntity.DEFAULT_STAND_POSE.get(i);
+            boneSliders.forEach(AngleSlider::sync);
         }
         spins = true;
         effects = true;
@@ -887,6 +1048,8 @@ public final class PedestalScreen extends Screen {
         if (slider != null) slider.sync();
         if (heightSlider != null) heightSlider.sync();
         preview();
+        // (The armor stand's Pose tab is back.)
+        if (wasPlayer) rebuildWidgets();
     }
 
     // Shows the change on the pedestal right away; the server's word comes back when the screen closes.
@@ -911,7 +1074,14 @@ public final class PedestalScreen extends Screen {
             pedestal.setStatue(statue);
             pedestal.setStatuePose(statuePose);
             pedestal.setAnimation(animation);
+            if (mannequin) pedestal.setMannequinLook(playerModel, standPose());
         }
+    }
+
+    private List<Float> standPose() {
+        List<Float> pose = new ArrayList<>(standPose.length);
+        for (float angle : standPose) pose.add(angle);
+        return pose;
     }
 
     @Override
@@ -920,6 +1090,7 @@ public final class PedestalScreen extends Screen {
             Network.sendToServer(new AdjustDisplayedTrophyPayload(pos, slot, textMode, spins, yaw, pitch, roll, effects, redstone, sounds, animates, statue, statuePose, animation, crown, light));
             return;
         }
+        if (mannequin) Network.sendToServer(new AdjustMannequinPayload(pos, playerModel, standPose()));
         Network.sendToServer(new AdjustPedestalPayload(pos, textMode, scale, lift, spins, textLift, yaw, pitch, roll, effects, redstone, sounds, animates, statue, statuePose, animation, textScale, crown, crownScale, crownX, crownY, light, access));
     }
 
@@ -935,22 +1106,23 @@ public final class PedestalScreen extends Screen {
         graphics.blitSprite(GEMS, left + (panelWidth() - GEMS_WIDTH) / 2, top + panelHeight() - FRAME, GEMS_WIDTH, FRAME);
         // The header: the pedestal, the title in gold and its owner under it, over a groove.
         graphics.renderItem(icon, left + MARGIN + 2, top + 12);
-        graphics.drawString(font, title, left + MARGIN + 24, top + 12, GOLD);
-        graphics.drawString(font, owner, left + MARGIN + 24, top + 23, LABEL);
+        int headerX = left + MARGIN + 24;
+        graphics.drawString(font, fit(title, headerRight - headerX), headerX, top + 12, GOLD);
+        graphics.drawString(font, fit(owner, headerRight - headerX), headerX, top + 23, LABEL);
         graphics.fill(left + MARGIN, top + 36, left + panelWidth() - MARGIN, top + 37, GROOVE_DARK);
         graphics.fill(left + MARGIN, top + 37, left + panelWidth() - MARGIN, top + 38, GROOVE_LIT);
-        if (!trophy) {
-            if (TrophyPedestalsConfig.PEDESTAL_TEXT_SETTINGS.get()) label(graphics, "trophypedestals.pedestal.screen.text", left + MARGIN, ROW_1, null, 0);
+        if (!tabbed) {
+            if (TrophyPedestalsConfig.textModeSettings(trophy)) label(graphics, "trophypedestals.pedestal.screen.text", left + MARGIN, ROW_1, null, 0);
             label(graphics, "trophypedestals.pedestal.screen.redstone", left + MARGIN, COMPACT_ROW_2, null, 0);
             label(graphics, "trophypedestals.pedestal.screen.sounds", left + MARGIN, COMPACT_ROW_3, null, 0);
             label(graphics, "trophypedestals.pedestal.screen.light", left + MARGIN, COMPACT_ROW_4, null, 0);
             return;
         }
-        int column = TABBED_WIDTH - 2 * MARGIN, x = left + MARGIN, valueRight = column - RESET - 4;
+        int column = TABBED_WIDTH - 2 * MARGIN, x = left + MARGIN, valueRight = column - BAR_GAP - RESET - 4;
         // A groove under the tabs, then the showing tab's section labels.
         graphics.fill(x, top + TAB_ROW + 22, x + column, top + TAB_ROW + 23, GROOVE_DARK);
         graphics.fill(x, top + TAB_ROW + 23, x + column, top + TAB_ROW + 24, GROOVE_LIT);
-        graphics.enableScissor(left, top + VIEW_TOP, left + panelWidth(), top + VIEW_BOTTOM);
+        graphics.enableScissor(left, top + VIEW_TOP, left + panelWidth(), top + viewBottom());
         tabLabels(graphics, x, valueRight);
         graphics.disableScissor();
     }
@@ -973,7 +1145,7 @@ public final class PedestalScreen extends Screen {
             }
             case TEXT -> {
                 label(graphics, "trophypedestals.pedestal.screen.text", x, section(0, false), null, 0);
-                if (fixedSize()) return;
+                if (fixedSize() || !TrophyPedestalsConfig.textSettings(trophy)) return;
                 label(graphics, "trophypedestals.pedestal.screen.text_height", x, section(1, false),
                         Component.translatable("trophypedestals.pedestal.screen.height_value", height(textLift)), valueRight);
                 label(graphics, "trophypedestals.pedestal.screen.text_size", x, section(2, false), Component.literal(size(textScale)), valueRight);
@@ -982,6 +1154,16 @@ public final class PedestalScreen extends Screen {
                 label(graphics, "trophypedestals.pedestal.screen.toggles", x, section(0, false), null, 0);
                 label(graphics, "trophypedestals.pedestal.screen.light", x, section(1, false), null, 0);
                 label(graphics, "trophypedestals.pedestal.screen.redstone", x, section(2, false), null, 0);
+            }
+            case MODEL -> label(graphics, "trophypedestals.pedestal.screen.model", x, section(0, false), null, 0);
+            case STAND_POSE -> {
+                label(graphics, "trophypedestals.pedestal.screen.stand_presets", x, section(0, false), null, 0);
+                label(graphics, "trophypedestals.pedestal.screen.saved_poses", x, section(SAVED_SECTION, true), null, 0);
+                for (int part = 0; part < PedestalBlockEntity.STAND_PARTS.size(); part++) {
+                    label(graphics, "trophypedestals.pedestal.screen.stand_pose." + PedestalBlockEntity.STAND_PARTS.get(part), x, section(part + 1, true),
+                            Component.translatable("trophypedestals.pedestal.screen.rotation_value", Math.round(standPose[part * 3]),
+                                    Math.round(standPose[part * 3 + 1]), Math.round(standPose[part * 3 + 2])), valueRight);
+                }
             }
             case POSE -> {
                 if (mob) label(graphics, "trophypedestals.pedestal.screen.pose", x, section(0, false), null, 0);
@@ -997,15 +1179,22 @@ public final class PedestalScreen extends Screen {
                 Math.round(yaw), Math.round(pitch), Math.round(roll)), valueRight);
     }
 
+    // The text cut to fit this many pixels, ending in "..." when it's cut (a long owner's name before the access button).
+    private FormattedCharSequence fit(Component text, int room) {
+        if (font.width(text) <= room) return text.getVisualOrderText();
+        FormattedText cut = font.substrByWidth(text, Math.max(0, room - font.width(CommonComponents.ELLIPSIS)));
+        return Language.getInstance().getVisualOrder(FormattedText.composite(cut, CommonComponents.ELLIPSIS));
+    }
+
     // A section's label, a "?" after it that shows what the option does while hovered (from the key's ".tooltip"), and
     // its value right-aligned at {@code valueRight} from the label's left.
     private void label(GuiGraphics graphics, String key, int x, int row, @Nullable Component value, int valueRight) {
         Component text = Component.translatable(key).withStyle(ChatFormatting.BOLD);
-        // (A trophy's labels scroll with their tab.)
-        if (trophy) row -= scroll;
+        // (A tabbed screen's labels scroll with their tab.)
+        if (tabbed) row -= scroll;
         graphics.drawString(font, text, x, top + row, LABEL);
         int iconX = x + font.width(text) + 3, iconY = top + row - 1;
-        boolean hovered = (!trophy || inView(mouseY)) && mouseX >= iconX && mouseX < iconX + INFO_SIZE && mouseY >= iconY && mouseY < iconY + INFO_SIZE;
+        boolean hovered = (!tabbed || inView(mouseY)) && mouseX >= iconX && mouseX < iconX + INFO_SIZE && mouseY >= iconY && mouseY < iconY + INFO_SIZE;
         graphics.blitSprite(hovered ? INFO_HOVER : INFO, iconX, iconY, INFO_SIZE, INFO_SIZE);
         if (hovered) setTooltipForNextRenderPass(font.split(Component.translatable(key + ".tooltip"), TOOLTIP_WIDTH));
         if (value != null) graphics.drawString(font, value, x + valueRight - font.width(value), top + row, PALE_GOLD);
@@ -1147,19 +1336,24 @@ public final class PedestalScreen extends Screen {
     }
 
     /**
-     * An angle from {@code min} to {@code max} degrees in steps of 15, read and set through the screen's own fields (its
+     * An angle from {@code min} to {@code max} degrees in steps of 15 (or as given), read and set through the screen's own fields (its
      * yaw, pitch or roll). Yaw goes up to 360 at the end (the same way as 0, but where the slider says it is).
      */
     private final class AngleSlider extends GemSlider {
-        private final float min, max;
+        private final float min, max, step;
         private final Supplier<Float> getter;
         private final Consumer<Float> setter;
         private final String narration;
 
         AngleSlider(int x, int y, int width, float min, float max, Supplier<Float> getter, Consumer<Float> setter, String narration) {
+            this(x, y, width, min, max, 15.0F, getter, setter, narration);
+        }
+
+        AngleSlider(int x, int y, int width, float min, float max, float step, Supplier<Float> getter, Consumer<Float> setter, String narration) {
             super(x, y, width, (getter.get() - min) / (max - min));
             this.min = min;
             this.max = max;
+            this.step = step;
             this.getter = getter;
             this.setter = setter;
             this.narration = narration;
@@ -1179,7 +1373,7 @@ public final class PedestalScreen extends Screen {
         @Override
         protected void applyValue() {
             float raw = Mth.lerp((float) value, min, max);
-            setter.accept(Mth.clamp(Math.round(raw / 15.0F) * 15.0F, min, max));
+            setter.accept(Mth.clamp(Math.round(raw / step) * step, min, max));
             preview();
         }
     }

@@ -1,0 +1,8 @@
+{
+  "trigger": {
+    "type": "first_kill",
+    "entity": "minecraft:elder_guardian",
+    "scope": "server"
+  },
+  "rank": "epic"
+}

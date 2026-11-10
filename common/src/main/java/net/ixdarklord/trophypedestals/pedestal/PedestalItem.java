@@ -8,8 +8,7 @@ import net.minecraft.world.level.block.Block;
 import java.util.Optional;
 
 /**
- * A pedestal's item. A trophy's tooltip has a line of its own under its name ({@link TrophyTooltip}): what it's for (the
- * achievement, or the mob) followed by its rank as a badge.
+ * A pedestal's item. A ranked trophy's tooltip shows its rank as a badge after its name ({@link TrophyTooltip}).
  */
 public class PedestalItem extends BlockItem {
     public PedestalItem(Block block, Properties properties) {
