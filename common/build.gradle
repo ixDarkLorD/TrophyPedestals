@@ -6,6 +6,11 @@ dependencies {
 
     // Optional recipe viewer: tells mob trophies apart (compat/jei)
     compileOnly "mezz.jei:jei-26.2-common-api:${jei_version}"
+    // Optional REI: mob trophy pages (compat/rei). Not transitive: its POM would bring the Architectury API mod.
+    compileOnly("me.shedaniel:RoughlyEnoughItems-api:${rei_version}") { transitive = false }
+    compileOnly "me.shedaniel.cloth:basic-math:${basic_math_version}"
+    // Optional Jade: what a looked-at pedestal holds (compat/jade). It has no API artifact; the mod has snownee.jade.api.
+    compileOnly("maven.modrinth:jade:${jade_neoforge_version}") { transitive = false }
 }
 
 // The shared main.gradle publishes every subproject's shadowJar. For common it must be a plain jar of this

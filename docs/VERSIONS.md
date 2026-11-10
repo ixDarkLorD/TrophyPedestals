@@ -10,7 +10,7 @@ Every version Trophy Pedestals' 26.2 build pins, and where each was checked (202
 | Fabric Loader / Fabric API | 0.19.5 / 0.161.0+26.2 (min API 0.159.0) | catalog; the minimum is Tierwise 26.2's |
 | Gradle / Architectury Loom (no-remap) | 9.4.0 / 1.17.493 | wrapper; catalog |
 | Java | 25 | catalog |
-| CoolCatLib | `8.1.0+26.2` (unreleased; Maven Local) | built from `../CoolCatLib-26.2` |
+| CoolCatLib | `8.2.0+26.2`, min 8.2.0 | from the ModResources Maven (branch `26.2`, 4deb3ab) |
 | JEI (optional, compile-only) | 30.48.0.244 (`jei-26.2-common-api`, `-neoforge`, `-fabric`) | https://maven.blamejared.com/mezz/jei/ (as Tierwise 26.2 pins it; the catalog has 30.39.0.232) |
 | spark (dev runs, `-Ptest_spark=true`) | 1.10.187 | Modrinth API: `1.10.187-neoforge` lists 26.2 |
 | MCP Bridge (dev runs only) | 1.0.0+26.2 | Maven Local |
