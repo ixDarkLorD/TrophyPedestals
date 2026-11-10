@@ -33,19 +33,21 @@ public record AdjustPedestalPayload(BlockPos pos, PedestalBlockEntity.TextMode t
     public void apply(ServerPlayer player) {
         if (!player.level().isLoaded(pos) || player.distanceToSqr(pos.getCenter()) > REACH * REACH) return;
         if (!(player.level().getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) || !pedestal.canAdjust(player)) return;
-        // Each of the screen's tabs only if the server lets players change it (Behavior always).
-        if (TrophyPedestalsConfig.PEDESTAL_DISPLAY_SETTINGS.get()) {
+        // Each of the screen's tabs only if the server lets players change it, a trophy's or a display pedestal's
+        // (Behavior always).
+        boolean trophy = pedestal.isTrophy();
+        if (TrophyPedestalsConfig.displaySettings(trophy)) {
             pedestal.setScale(scale);
             pedestal.setHeight(height);
             pedestal.setRotation(yaw, pitch, roll);
             pedestal.setCrownPlacement(crownScale, crownX, crownY);
         }
-        if (TrophyPedestalsConfig.PEDESTAL_TEXT_SETTINGS.get()) {
-            pedestal.setTextMode(textMode);
+        if (TrophyPedestalsConfig.textModeSettings(trophy)) pedestal.setTextMode(textMode);
+        if (TrophyPedestalsConfig.textSettings(trophy)) {
             pedestal.setTextHeight(textHeight);
             pedestal.setTextScale(textScale);
         }
-        if (TrophyPedestalsConfig.PEDESTAL_POSE_SETTINGS.get()) {
+        if (TrophyPedestalsConfig.poseSettings(trophy)) {
             pedestal.setAnimates(animates);
             pedestal.setStatue(statue);
             pedestal.setStatuePose(statuePose);

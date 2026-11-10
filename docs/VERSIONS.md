@@ -9,7 +9,7 @@ and libraries as Tierwise's 26.1.2 folder (`../Tierwise-26.1.2/docs/VERSIONS.md`
 | NeoForge | 26.1.2.112 (min 26.1.0.19-beta) | catalog |
 | Fabric Loader / Fabric API | 0.19.3 / 0.155.3+26.1.2 (min API 0.145.1) | catalog |
 | Gradle / Architectury Loom (no-remap) | 9.4.0 / 1.17.493 | wrapper; catalog |
-| CoolCatLib | `8.1.0+26.1.2` (unreleased; Maven Local, the same local build Tierwise uses) | `net.ixdarklord.coolcatlib:coolcatlib-<common|neoforge|fabric>` |
+| CoolCatLib | `8.2.0+26.1.2`, min 8.2.0 | `net.ixdarklord.coolcatlib:coolcatlib-<common|neoforge|fabric>`, from the ModResources Maven (branch `26.1.2`, d491eb8) |
 | JEI (optional, compile-only) | 29.47.0.111 | `mezz.jei:jei-26.1.2-common-api` |
 | KubeJS + Rhino (optional, NeoForge, compile-only) | 8.0.7 / 2101.2.8-build.91 | `maven.modrinth:kubejs:26.1.2-8.0.7+neoforge`, `maven.modrinth:rhino:2101.2.8-build.91+Rhino-1.21` |
 | spark (dev runs, `-Ptest_spark=true`) | 1.10.187 | `maven.modrinth:spark` |

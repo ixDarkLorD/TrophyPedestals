@@ -2,9 +2,10 @@ package net.ixdarklord.trophypedestals.pedestal;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
@@ -15,6 +16,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * What a trophy pedestal records: what was achieved (its {@code kind}, a {@link net.ixdarklord.trophypedestals.api.TrophyKind}
@@ -25,8 +27,12 @@ import java.util.Locale;
  * @param name       the player's or team's name when it was unlocked (empty for the server)
  * @param unlockedAt when, in milliseconds since the epoch
  * @param rarity     its rarity's id ({@link PedestalRarities}); trophies from before rarities are common
+ * @param title      the name it shows in place of its kind's name for its subject (a data pack's trophy, an
+ *                   advancement's title, an engraved name), if it has one
+ * @param icon       the item it shows turning over it in place of its kind's icon, if it has one
  */
-public record PedestalRecord(Identifier kind, Identifier subject, Unlocker unlocker, String name, long unlockedAt, Identifier rarity) {
+public record PedestalRecord(Identifier kind, Identifier subject, Unlocker unlocker, String name, long unlockedAt, Identifier rarity,
+                             Optional<Component> title, Optional<Identifier> icon) {
     public enum Unlocker implements StringRepresentable {
         PLAYER, TEAM, SERVER;
 
@@ -44,17 +50,31 @@ public record PedestalRecord(Identifier kind, Identifier subject, Unlocker unloc
             Unlocker.CODEC.fieldOf("unlocker").forGetter(PedestalRecord::unlocker),
             Codec.STRING.optionalFieldOf("name", "").forGetter(PedestalRecord::name),
             Codec.LONG.fieldOf("unlocked_at").forGetter(PedestalRecord::unlockedAt),
-            PedestalRarities.ID_CODEC.optionalFieldOf("rarity", PedestalRarities.COMMON.id()).forGetter(PedestalRecord::rarity)
+            PedestalRarities.ID_CODEC.optionalFieldOf("rarity", PedestalRarities.COMMON.id()).forGetter(PedestalRecord::rarity),
+            ComponentSerialization.CODEC.optionalFieldOf("title").forGetter(PedestalRecord::title),
+            Identifier.CODEC.optionalFieldOf("icon").forGetter(PedestalRecord::icon)
     ).apply(instance, PedestalRecord::new));
 
-    public static final StreamCodec<ByteBuf, PedestalRecord> STREAM_CODEC = StreamCodec.composite(
+    public static final StreamCodec<RegistryFriendlyByteBuf, PedestalRecord> STREAM_CODEC = StreamCodec.composite(
             Identifier.STREAM_CODEC, PedestalRecord::kind,
             Identifier.STREAM_CODEC, PedestalRecord::subject,
             ByteBufCodecs.VAR_INT.map(index -> Unlocker.values()[index], Unlocker::ordinal), PedestalRecord::unlocker,
             ByteBufCodecs.STRING_UTF8, PedestalRecord::name,
             ByteBufCodecs.VAR_LONG, PedestalRecord::unlockedAt,
             Identifier.STREAM_CODEC, PedestalRecord::rarity,
+            ComponentSerialization.OPTIONAL_STREAM_CODEC, PedestalRecord::title,
+            ByteBufCodecs.optional(Identifier.STREAM_CODEC), PedestalRecord::icon,
             PedestalRecord::new);
+
+    /** A record with its kind's own name and icon for its subject. */
+    public PedestalRecord(Identifier kind, Identifier subject, Unlocker unlocker, String name, long unlockedAt, Identifier rarity) {
+        this(kind, subject, unlocker, name, unlockedAt, rarity, Optional.empty(), Optional.empty());
+    }
+
+    /** The same record with this title (or none: its kind's name). */
+    public PedestalRecord withTitle(Optional<Component> title) {
+        return new PedestalRecord(kind, subject, unlocker, name, unlockedAt, rarity, title, icon);
+    }
 
     /** "Unlocked by Steve", "Unlocked by Team Red", or "Unlocked by the whole server". */
     public Component unlockedBy() {

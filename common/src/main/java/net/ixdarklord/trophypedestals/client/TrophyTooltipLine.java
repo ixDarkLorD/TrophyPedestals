@@ -10,69 +10,61 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
 /**
- * A trophy's tooltip line: what it records (nothing for a mob trophy, whose name says its mob), then its rank as a badge in the rank's color, bevelled like
+ * A ranked trophy's rank, as a badge after its name on the tooltip's first line, in the rank's color and bevelled like
  * the mod's panels: a dark outer rim with its corners cut, a lit top and left edge, a shaded bottom and right edge, a
- * plate darkening downwards, and on it a small faceted gem and the rank's name in capitals, a pixel clear of the edges.
+ * plate darkening downwards, and on it a small faceted gem and the rank's name in capitals.
  * <pre>
- *  Stone Age  ╭─────────────╮
- *             │ ◆ UNCOMMON  │
- *             ╰─────────────╯
+ *  Iron Age Trophy ╭─────────╮
+ *                  │ ◆ RARE  │
+ *                  ╰─────────╯
  * </pre>
+ * The game puts it under the name, so it takes no height there: it's drawn back up onto the name's line, and widens the
+ * tooltip to fit it there.
  */
 public final class TrophyTooltipLine implements ClientTooltipComponent {
     // The badge: its height, the gap between the name and it, where its gem sits from its left edge (and how wide it
     // is), where its text starts, and the room after its text.
-    private static final int HEIGHT = 13, GAP = 4, GEM_X = 3, GEM_SIZE = 5, LABEL_X = GEM_X + GEM_SIZE + 2, PADDING = 3;
-    // How far the line's text sits down: the badge's capitals (left plain, without a shadow) have a pixel of plate above
-    // and below them, inside its bevel; the name lines up with them.
-    private static final int TEXT_Y = 3;
-    // How far the line is drawn up into the gap the tooltip leaves under its title, and kept clear under it, so it sits
-    // close and even between the lines over and under it.
-    private static final int RAISE = 2, BELOW = 1;
+    private static final int HEIGHT = 11, GAP = 4, GEM_X = 3, GEM_SIZE = 5, LABEL_X = GEM_X + GEM_SIZE + 2, PADDING = 3;
+    // How far the badge's capitals (plain, without a shadow) sit down inside it, just under its lit edge.
+    private static final int TEXT_Y = 2;
+    // How far up the name's line is: the name's own height and the gap the game leaves under it.
+    private static final int NAME_LINE = 10 + 2;
+    // How far the badge's top sits above the name's: a pixel, clear of the tooltip's frame, so its capitals sit a pixel
+    // under the name's and line up with it and its shadow.
+    private static final int ABOVE_NAME = 1;
 
     private final Component name;
     private final @Nullable PedestalRarity rarity;
     private final @Nullable FormattedCharSequence label;
 
     public TrophyTooltipLine(TrophyTooltip tooltip) {
-        PedestalRecord record = tooltip.stack().get(Pedestals.RECORD.get());
-        MobTrophyRecord mob = tooltip.stack().get(Pedestals.MOB_TROPHY.get());
-        if (record != null) {
-            name = PedestalRenderer.name(record);
-            rarity = PedestalRarities.isNone(record.rarity()) ? null : PedestalRarities.get(record.rarity());
-        } else if (mob != null) {
-            // (Its name is the mob's already: "Stray Trophy". Only its rank shows here.)
-            name = Component.empty();
-            rarity = PedestalRarities.isNone(mob.rarity()) ? null : PedestalRarities.get(mob.rarity());
-        } else {
-            name = Component.empty();
-            rarity = null;
-        }
+        ItemStack stack = tooltip.stack();
+        PedestalRecord record = stack.get(Pedestals.RECORD.get());
+        MobTrophyRecord mob = stack.get(Pedestals.MOB_TROPHY.get());
+        // (The name as the game shows it on the first line.)
+        name = stack.getStyledHoverName();
+        Identifier id = record != null ? record.rarity() : mob != null ? mob.rarity() : null;
+        rarity = id == null || PedestalRarities.isNone(id) ? null : PedestalRarities.get(id);
         label = rarity == null ? null : Component.literal(rarity.displayName().getString().toUpperCase(Locale.ROOT)).getVisualOrderText();
     }
 
     @Override
     public int getHeight(Font font) {
-        // (Nothing to show: an unranked mob trophy.)
-        return label == null && name.getString().isEmpty() ? 0 : HEIGHT - RAISE + BELOW;
+        return 0;
     }
 
     @Override
     public int getWidth(Font font) {
-        int width = font.width(name);
-        return label == null ? width : width + gap(font) + badgeWidth(font);
-    }
-
-    // The room between the name and the badge: none when there's no name before it.
-    private int gap(Font font) {
-        return font.width(name) == 0 ? 0 : GAP;
+        return label == null ? 0 : font.width(name) + GAP + badgeWidth(font);
     }
 
     private int badgeWidth(Font font) {
@@ -81,11 +73,9 @@ public final class TrophyTooltipLine implements ClientTooltipComponent {
 
     @Override
     public void extractImage(Font font, int x, int y, int width, int height, GuiGraphicsExtractor graphics) {
-        y -= RAISE;
-        graphics.text(font, name, x, y + TEXT_Y, 0xFFFFFFFF, true);
         if (rarity == null || label == null) return;
         int color = ARGB.opaque(rarity.color());
-        int x0 = x + font.width(name) + gap(font), x1 = x0 + badgeWidth(font), y0 = y, y1 = y + HEIGHT;
+        int x0 = x + font.width(name) + GAP, x1 = x0 + badgeWidth(font), y0 = y - NAME_LINE - ABOVE_NAME, y1 = y0 + HEIGHT;
         int rim = ARGB.scaleRGB(color, 0.22F), lit = ARGB.scaleRGB(color, 0.62F), shade = ARGB.scaleRGB(color, 0.34F);
         // The outer rim, its corners left out.
         graphics.fill(x0 + 1, y0, x1 - 1, y0 + 1, rim);

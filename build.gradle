@@ -13,4 +13,19 @@ subprojects {
     tasks.withType(Jar).configureEach {
         from(rootProject.file("LICENSE"))
     }
+
+    // FTB Quests and Library (an optional integration) are published only to FTB's own Maven.
+    repositories {
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = "FTB"
+                    url = "https://maven.ftb.dev/releases"
+                }
+            }
+            filter {
+                includeGroup "dev.ftb.mods"
+            }
+        }
+    }
 }
