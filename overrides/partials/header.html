@@ -1,0 +1,51 @@
+{#- (The sections list is marked as the theme's tabs, so instant navigation swaps it and the open section stays lit.)
+    The top bar: a full-width gallery bar, pinned to the top. A thin strip of the five ranks' colours along its top
+    edge, the framed logo and the name on the left, the sections as small capitals with a gold rule under the open
+    one, and the theme, search and repository on the right; a gold double rule along its foot. On narrow screens the
+    sections go to the drawer. The theme's own tab row is left out (main.html), its sections being here. -#}
+{% import "partials/tabs-item.html" as item with context %}
+<header class="md-header tp-bar" data-md-component="header">
+  <span class="tp-bar__ranks" aria-hidden="true"></span>
+  <nav class="md-header__inner md-grid" aria-label="{{ lang.t('header') }}">
+    <label class="md-header__button md-icon tp-bar__menu" for="__drawer">
+      {% set icon = config.theme.icon.menu or "material/menu" %}
+      {% include ".icons/" ~ icon ~ ".svg" %}
+      <span class="md-visually-hidden">{{ lang.t('nav') }}</span>
+    </label>
+    <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-header__button md-logo tp-bar__brand" aria-label="{{ config.site_name }}" data-md-component="logo">
+      {% include "partials/logo.html" %}
+      <span class="tp-bar__name"><b>Trophy</b> Pedestals</span>
+    </a>
+    <ul class="md-tabs__list tp-bar__tabs" aria-label="{{ lang.t('tabs') }}" data-md-component="tabs">
+      {% for nav_item in nav.items %}
+        {{ item.render(nav_item) }}
+      {% endfor %}
+    </ul>
+    <div class="tp-bar__tools">
+      {% if config.theme.palette %}
+        {% if not config.theme.palette is mapping %}
+          {% include "partials/palette.html" %}
+        {% endif %}
+      {% endif %}
+      {% if not config.theme.palette is mapping %}
+        {% include "partials/javascripts/palette.html" %}
+      {% endif %}
+      {% if "search" in config.plugins %}
+        {% set search = config.plugins["search"] | attr("config") %}
+        {% if search.enabled %}
+          <label class="md-header__button md-icon" for="__search">
+            {% set icon = config.theme.icon.search or "material/magnify" %}
+            {% include ".icons/" ~ icon ~ ".svg" %}
+            <span class="md-visually-hidden">{{ lang.t('search') }}</span>
+          </label>
+          {% include "partials/search.html" %}
+        {% endif %}
+      {% endif %}
+      {% if config.repo_url %}
+        <a href="{{ config.repo_url }}" class="md-header__button md-icon tp-bar__repo" title="{{ config.repo_name | e }}" aria-label="{{ config.repo_name | e }}">
+          {% include ".icons/fontawesome/brands/github.svg" %}
+        </a>
+      {% endif %}
+    </div>
+  </nav>
+</header>

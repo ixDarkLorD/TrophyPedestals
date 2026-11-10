@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{#- Every page: the heading faces (DM Serif Display for titles, Pixelify Sans for the small pixel labels) and the
+    browser's bar in the gallery wall's colour. The top bar is a full-width gallery bar of its own
+    (partials/header.html). -#}
+{% block extrahead %}
+  {{ super() }}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Pixelify+Sans:wght@500;700&display=swap">
+  <meta name="theme-color" content="#0a161d">
+  <meta property="og:title" content="{{ page.meta.title if page.meta and page.meta.title else page.title }} · {{ config.site_name }}">
+  <meta property="og:description" content="{{ page.meta.description if page.meta and page.meta.description else config.site_description }}">
+  <meta property="og:image" content="{{ config.site_url }}assets/logo.png">
+{% endblock %}
+
+{#- The sections are in the top bar's pill (partials/header.html), so the theme's tab row is left out. -#}
+{% block tabs %}{% endblock %}
+
+{% block footer %}
+  {% include "partials/footer.html" %}
+{% endblock %}
