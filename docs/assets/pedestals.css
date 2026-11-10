@@ -384,6 +384,10 @@ body { background: var(--tp-bg); }
 .tp-plaques span { display: block; font-family: var(--tp-title); font-size: 2.6rem; line-height: 1; color: var(--tp-accent); margin-bottom: 0.6rem; }
 .tp-plaques b { display: block; font-family: var(--tp-title); font-weight: 400; font-size: 1.25rem; color: var(--tp-text); margin-bottom: 0.3rem; }
 .tp-plaques p { color: var(--tp-dim); font-size: 0.8rem; line-height: 1.6; }
+/* More features: eight plaques, four to a row, an icon over each name. */
+.md-typeset .tp-plaques--features { grid-template-columns: repeat(4, 1fr); }
+.tp-plaques--features span { font-size: 1.8rem; }
+@media (max-width: 76.25em) { .md-typeset .tp-plaques--features { grid-template-columns: repeat(2, 1fr); } }
 
 
 /* The adjust screen: its tabs in a strip with dots, the words beside them. */
