@@ -7,6 +7,8 @@ import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.api.PedestalRarity;
 import net.ixdarklord.trophypedestals.compat.component.Components;
 import net.ixdarklord.trophypedestals.compat.component.DataComponents;
+import net.ixdarklord.trophypedestals.feat.TrophyLedger;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -14,6 +16,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
@@ -28,7 +33,9 @@ import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -40,7 +47,7 @@ import java.util.function.Consumer;
 
 /**
  * Mob trophies: a mob a player kills now and then drops a trophy pedestal showing it, if the server's config allows
- * ({@code mob_trophies}) and at its chance ({@code mob_trophy_chance}). Its rank ({@code mob_trophy_rarity}) is by how
+ * ({@code mob_trophies.enabled}) and at its chance ({@code mob_trophies.chance}). Its rank ({@code mob_trophies.rank}) is by how
  * tough the mob is, or none at all (shown as a display pedestal is). By toughness: a mob in the
  * {@code trophypedestals:legendary_mob_trophies} entity type tag (the ender dragon and the wither) gives a legendary one, in
  * {@code trophypedestals:epic_mob_trophies} (the warden and the elder guardian) an epic one, and any other one by its strength,
@@ -61,7 +68,11 @@ public final class MobTrophies {
         LivingEvents.DEATH.register((entity, source) -> {
             if (entity.level() instanceof ServerLevel level) {
                 ItemStack trophy = roll(entity, source, level.getRandom());
-                if (trophy != null) entity.spawnAtLocation(trophy);
+                if (trophy != null) {
+                    MobTrophyRecord record = Components.get(trophy, Pedestals.MOB_TROPHY.get());
+                    if (record != null && source.getEntity() instanceof ServerPlayer slayer) TrophyLedger.collect(slayer, record);
+                    entity.spawnAtLocation(trophy);
+                }
             }
             return EventResult.pass();
         });
@@ -77,12 +88,13 @@ public final class MobTrophies {
         if (!TrophyPedestalsConfig.MOB_TROPHIES.get() || !droppable(entity) || !(source.getEntity() instanceof ServerPlayer player)) return null;
         if (random.nextDouble() >= TrophyPedestalsConfig.MOB_TROPHY_CHANCE.get()) return null;
         ResourceLocation rank = rank(entity, player);
-        return trophy(Pedestals.DEFAULT.get(), entity, player.getName().getString(), System.currentTimeMillis(), rank);
+        ItemStack trophy = trophy(Pedestals.DEFAULT.get(), entity, player.getName().getString(), System.currentTimeMillis(), rank);
+        return random.nextDouble() < TrophyPedestalsConfig.GILDED_CHANCE.get() ? gild(trophy) : trophy;
     }
 
     /**
      * The trophy a player killed by another player drops, or null: only while the server's config turns player trophies
-     * on ({@code player_trophies}, off by default), at the mob trophy chance. It shows the player's statue in their skin
+     * on ({@code mob_trophies.player_trophies}, off by default), at the mob trophy chance. It shows the player's statue in their skin
      * ({@link Statues}), slain by their killer, ranked as mob trophies are.
      */
     public static @Nullable ItemStack rollPlayer(ServerPlayer victim, DamageSource source, RandomSource random) {
@@ -98,6 +110,14 @@ public final class MobTrophies {
      * pedestal, ranked by its toughness, and slain by no one.
      */
     public static void creativeTrophies(FeatureFlagSet features, Consumer<ItemStack> output) {
+        for (EntityType<?> type : collectable(features)) output.accept(trophy(Pedestals.DEFAULT.get(), type, "", 0L, rarity(type)));
+    }
+
+    /**
+     * Every mob that can be a trophy (mods' included) but a player or an armor stand, or any tagged to drop none, by rank
+     * (common first, legendary last) and then by name: the creative tab's order, and the Mob Trophies Ledger's.
+     */
+    public static List<EntityType<?>> collectable(FeatureFlagSet features) {
         record Ranked(EntityType<?> type, PedestalRarity rarity, String name) {}
         List<Ranked> mobs = new ArrayList<>();
         for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
@@ -106,7 +126,7 @@ public final class MobTrophies {
             if (rarity != null) mobs.add(new Ranked(type, rarity, type.getDescription().getString()));
         }
         mobs.sort(Comparator.comparingInt((Ranked mob) -> mob.rarity().rank()).thenComparing(Ranked::name, String.CASE_INSENSITIVE_ORDER));
-        for (Ranked mob : mobs) output.accept(trophy(Pedestals.DEFAULT.get(), mob.type(), "", 0L, mob.rarity()));
+        return mobs.stream().<EntityType<?>>map(Ranked::type).toList();
     }
 
     /** Whether this can drop a trophy at all: any living thing but a player or an armor stand, unless tagged not to. */
@@ -114,7 +134,7 @@ public final class MobTrophies {
         return !(entity instanceof Player) && !(entity instanceof ArmorStand) && !entity.getType().builtInRegistryHolder().is(NONE);
     }
 
-    /** The rank a trophy of this mob dropped for this player has, by the server's {@code mob_trophy_rarity}. */
+    /** The rank a trophy of this mob dropped for this player has, by the server's {@code mob_trophies.rank}. */
     public static ResourceLocation rank(LivingEntity victim, ServerPlayer killer) {
         return switch (TrophyPedestalsConfig.MOB_TROPHY_RARITY.get()) {
             case NONE -> PedestalRarities.NONE;
@@ -123,7 +143,7 @@ public final class MobTrophies {
         };
     }
 
-    /** The rank for this many kills of a mob, by the server's {@code mob_trophy_kills_*} counts (the mob's own, if it has some). */
+    /** The rank for this many kills of a mob, by the server's {@code mob_trophies.kills} counts (the mob's own, if it has some). */
     public static PedestalRarity byKills(EntityType<?> type, int kills) {
         int[] counts = killCounts(type);
         if (kills >= counts[3]) return PedestalRarities.LEGENDARY;
@@ -134,8 +154,8 @@ public final class MobTrophies {
     }
 
     /**
-     * The kills a mob's trophy needs to be uncommon, rare, epic and legendary: the first {@code mob_trophy_kills_overrides}
-     * entry naming it by id, else the first naming one of its tags, else the {@code mob_trophy_kills_*} counts. An entry
+     * The kills a mob's trophy needs to be uncommon, rare, epic and legendary: the first {@code mob_trophies.kills.overrides}
+     * entry naming it by id, else the first naming one of its tags, else the {@code mob_trophies.kills} counts. An entry
      * that can't be read is logged and skipped.
      */
     public static int[] killCounts(EntityType<?> type) {
@@ -146,7 +166,7 @@ public final class MobTrophies {
             int[] counts = split < 0 ? null : counts(entry.substring(split + 1));
             String target = split < 0 ? "" : entry.substring(0, split).trim();
             if (counts == null || target.isEmpty()) {
-                if (WARNED_OVERRIDES.add(entry)) TrophyPedestalsMod.LOGGER.warn("Can't read the mob_trophy_kills_overrides entry \"{}\"; it needs \"<mob id or #tag> = uncommon, rare, epic, legendary\"", entry);
+                if (WARNED_OVERRIDES.add(entry)) TrophyPedestalsMod.LOGGER.warn("Can't read the mob_trophies.kills.overrides entry \"{}\"; it needs \"<mob id or #tag> = uncommon, rare, epic, legendary\"", entry);
                 continue;
             }
             if (target.startsWith("#")) {
@@ -254,10 +274,86 @@ public final class MobTrophies {
         return stack;
     }
 
+    // The least time between a mob trophy's sounds, in ticks.
+    private static final int SOUND_COOLDOWN = 20;
+
+    /**
+     * A mob trophy's mob's sound, as it makes it: its ambient sound ({@code entity.<mob>.ambient}, as vanilla's and most
+     * mods' mobs name theirs), else its hurt sound, at the pedestal; not more than once a second. Nothing for a mob with
+     * neither, or a statue.
+     */
+    public static void playSound(Level level, BlockPos pos, PedestalBlockEntity pedestal) {
+        MobTrophyRecord record = pedestal.mobTrophy();
+        if (record == null || record.type() == Statues.FIGURE || level.getGameTime() - pedestal.lastSound() < SOUND_COOLDOWN) return;
+        ResourceLocation id = record.entity();
+        SoundEvent sound = BuiltInRegistries.SOUND_EVENT.getOptional(new ResourceLocation(id.getNamespace(), "entity." + id.getPath() + ".ambient"))
+                .or(() -> BuiltInRegistries.SOUND_EVENT.getOptional(new ResourceLocation(id.getNamespace(), "entity." + id.getPath() + ".hurt")))
+                .orElse(null);
+        if (sound == null) return;
+        pedestal.markSound(level.getGameTime());
+        // (Softer under glass.)
+        level.playSound(null, pos, sound, SoundSource.BLOCKS, pedestal.glass() ? 0.4F : 0.8F, 0.9F + level.getRandom().nextFloat() * 0.2F);
+    }
+
+    // How often a placed mob trophy counts its slayer's kills, in ticks (each pedestal on its own beat).
+    private static final int GROW_CHECK = 200;
+
+    /**
+     * A placed mob trophy counting its slayer's kills of its mob (the game's own kill statistic, while they're online),
+     * shown on it as "152 slain"; with the server's {@code mob_trophies.rank} {@code KILLS}, a ranked one goes up a rank as
+     * the count reaches the next ({@link #byKills}), never down. Each pedestal counts every {@link #GROW_CHECK} ticks.
+     */
+    public static void grow(Level level, BlockPos pos, PedestalBlockEntity pedestal) {
+        if ((level.getGameTime() + pos.asLong()) % GROW_CHECK != 0 || !(level instanceof ServerLevel server)) return;
+        count(server, pos, pedestal);
+    }
+
+    /** A placed mob trophy counting its slayer's kills now, and going up a rank if it should (see {@link #grow}). */
+    public static void count(ServerLevel server, BlockPos pos, PedestalBlockEntity pedestal) {
+        MobTrophyRecord record = pedestal.mobTrophy();
+        if (record == null || !record.slain()) return;
+        ServerPlayer slayer = server.getServer().getPlayerList().getPlayerByName(record.slayer());
+        if (slayer != null) count(server, pos, pedestal, slayer);
+    }
+
+    /** The same, counting this player's kills (its slayer's). */
+    public static void count(ServerLevel server, BlockPos pos, PedestalBlockEntity pedestal, ServerPlayer slayer) {
+        if (!TrophyPedestalsConfig.GROWING_TROPHIES.get()) return;
+        Level level = server;
+        MobTrophyRecord record = pedestal.mobTrophy();
+        if (record == null || !record.slain()) return;
+        EntityType<?> type = record.type();
+        if (type == null) return;
+        int kills = slayer.getStats().getValue(Stats.ENTITY_KILLED, type);
+        if (kills == record.kills()) return;
+        ResourceLocation rank = record.rarity();
+        if (TrophyPedestalsConfig.MOB_TROPHY_RARITY.get() == TrophyPedestalsConfig.MobTrophyRarity.KILLS && !PedestalRarities.isNone(rank)) {
+            PedestalRarity grown = byKills(type, kills);
+            if (grown.rank() > PedestalRarities.get(rank).rank()) {
+                rank = grown.id();
+                level.playSound(null, pos, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 0.6F, 1.2F);
+            }
+        }
+        pedestal.updateMobTrophy(record.withKills(kills, rank));
+    }
+
+    /**
+     * A gilded mob trophy: the same, on a gold pedestal (a custom one, of gold blocks), named "Gilded Zombie". A rare
+     * drop, at the server's {@code mob_trophies.gilded_chance}.
+     */
+    public static ItemStack gild(ItemStack trophy) {
+        MobTrophyRecord record = Components.get(trophy, Pedestals.MOB_TROPHY.get());
+        if (record == null) return trophy;
+        ItemStack gilded = new ItemStack(Pedestals.CUSTOM_ITEM.get());
+        Components.set(gilded, Pedestals.PEDESTAL_MATERIAL.get(), BuiltInRegistries.BLOCK.getKey(Blocks.GOLD_BLOCK));
+        record(gilded, record.withGilded(true));
+        return gilded;
+    }
+
     /** Makes a pedestal item a mob trophy with this record, named after the mob ("Zombie Trophy") in its rank's color. */
     public static void record(ItemStack stack, MobTrophyRecord record) {
         Components.set(stack, Pedestals.MOB_TROPHY.get(), record);
         int color = PedestalRarities.isNone(record.rarity()) ? 0xFFFFFF : PedestalRarities.get(record.rarity()).color();
-        Components.set(stack, DataComponents.ITEM_NAME, Component.translatable("trophypedestals.pedestal.trophy_name", record.mobName()).withStyle(style -> style.withColor(color)));
+        Components.set(stack, DataComponents.ITEM_NAME, Component.translatable("trophypedestals.pedestal.trophy_name", record.displayName()).withStyle(style -> style.withColor(color)));
     }
 }

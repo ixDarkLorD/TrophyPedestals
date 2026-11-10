@@ -10,7 +10,11 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -42,6 +46,9 @@ public final class StatueFigure extends RemotePlayer {
         } catch (RuntimeException ignored) {
             // (A look is a mannequin's or a statue's, not a player's save: what a player's save has is left as it is.)
         }
+        // What it wears and holds, as a mannequin's look gives them (a player's own save keeps them in its inventory).
+        wear(tag, "ArmorItems", new EquipmentSlot[] {EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD});
+        wear(tag, "HandItems", new EquipmentSlot[] {EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND});
         ValueInput.of(tag).read("profile", ResolvableProfile.CODEC).ifPresent(profile -> {
             skinOf = profile.gameProfile();
             profile.resolve().thenAccept(resolved -> skinOf = resolved.gameProfile());
@@ -60,6 +67,12 @@ public final class StatueFigure extends RemotePlayer {
         MinecraftProfileTexture skin = Minecraft.getInstance().getSkinManager().getInsecureSkinInformation(skinOf).get(MinecraftProfileTexture.Type.SKIN);
         String model = skin == null ? null : skin.getMetadata("model");
         return model == null ? "default" : model;
+    }
+
+    private void wear(CompoundTag tag, String key, EquipmentSlot[] slots) {
+        if (!tag.contains(key, Tag.TAG_LIST)) return;
+        ListTag list = tag.getList(key, Tag.TAG_COMPOUND);
+        for (int i = 0; i < slots.length && i < list.size(); i++) setItemSlot(slots[i], ItemStack.of(list.getCompound(i)));
     }
 
     @Override

@@ -45,6 +45,10 @@ public final class ValueInput {
         return Optional.of(Component.literal(saved));
     }
 
+    public Optional<String> getString(String key) {
+        return tag.contains(key, Tag.TAG_STRING) ? Optional.of(tag.getString(key)) : Optional.empty();
+    }
+
     public String getStringOr(String key, String fallback) {
         return tag.contains(key, Tag.TAG_STRING) ? tag.getString(key) : fallback;
     }

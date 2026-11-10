@@ -11,7 +11,7 @@ folder's `docs/VERSIONS.md` has the 26.1.2 pins.
 | Fabric Loader / Fabric API | 0.17.2 / 0.92.6+1.20.1 (min API 0.92.6) | catalog; the minimum is Tierwise 1.20.1's |
 | Gradle / Architectury Loom (remap) | 9.4.0 / 1.17.493 | wrapper; catalog |
 | Java | 17 | catalog |
-| CoolCatLib | `8.2.0+1.20.1` (unreleased; Maven Local), min 8.2.0 | built from `../CoolCatLib-1.20.1` (branch `1.20.1` with `pending-hooks-1.20.1` merged, b1656d0, for `LivingEvents.DEATH`), with the `BlockEntityRendererRegistry` backport (below) |
+| CoolCatLib | `8.2.0+1.20.1`, min 8.2.0 | from the ModResources Maven (branch `1.20.1`, df2dddc: `LivingEvents.DEATH`, `BlockEntityRendererRegistry`, `BlockRenderLayers`) |
 | JEI (optional, compile-only) | 15.20.0.112 (`jei-1.20.1-common-api`) | catalog (`libs.jei`), resolved by the build |
 | MCP Bridge (dev runs only) | 1.0.0+1.20.1 | Maven Local |
 

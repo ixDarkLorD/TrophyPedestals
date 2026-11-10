@@ -1,0 +1,8 @@
+{
+  "trigger": {
+    "type": "first_kill",
+    "entity": "minecraft:wither",
+    "scope": "server"
+  },
+  "rank": "legendary"
+}

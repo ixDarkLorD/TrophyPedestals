@@ -10,6 +10,16 @@ dependencies {
 
     // JEI in a dev run only when asked (-Ptest_jei=true).
     if (project.findProperty("test_jei") == "true") modLocalRuntime libs.jei.forge
+
+    // Optional REI's plugin annotation and The One Probe's API (registered through Forge's inter-mod messages).
+    modCompileOnly("me.shedaniel:RoughlyEnoughItems-api-forge:12.1.785") { transitive = false }
+    modCompileOnly("mcjty.theoneprobe:theoneprobe:${top_forge_version}:api") { transitive = false }
+    // Optional KubeJS (its API exposes Rhino types): pedestal bindings (forge/compat/kubejs).
+    modCompileOnly("maven.modrinth:kubejs:${kubejs_version}") { transitive = false }
+    modCompileOnly("maven.modrinth:rhino:${rhino_version}") { transitive = false }
+    // REI and Jade in a dev run only when asked (-Ptest_rei=true, -Ptest_jade=true).
+    if (project.findProperty("test_rei") == "true") modLocalRuntime libs.rei.forge
+    if (project.findProperty("test_jade") == "true") modLocalRuntime("maven.modrinth:jade:${jade_version}+forge") { transitive = false }
 }
 
 loom {

@@ -5,8 +5,11 @@ import net.ixdarklord.coolcatcore.api.gametest.GameTests;
 import net.ixdarklord.coolcatcore.api.platform.Platform;
 import net.ixdarklord.trophypedestals.command.TrophyPedestalsCommands;
 import net.ixdarklord.trophypedestals.compat.ShapedNbtRecipe;
+import net.ixdarklord.trophypedestals.compat.ftb.TrophyReward;
+import net.ixdarklord.trophypedestals.feat.Feats;
 import net.ixdarklord.trophypedestals.gametest.TrophyPedestalsGameTests;
 import net.ixdarklord.trophypedestals.network.TrophyPedestalsNetwork;
+import net.ixdarklord.trophypedestals.pedestal.Leaderboards;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
@@ -30,7 +33,11 @@ public final class TrophyPedestalsMod implements ModConstructor {
         TrophyPedestalsNetwork.register();
         Pedestals.init();
         ShapedNbtRecipe.init();
+        Feats.init();
+        Leaderboards.init();
         TrophyPedestalsCommands.init();
+        // Optional FTB Quests: a reward that gives a trophy (compat/ftb).
+        if (Platform.isModLoaded("ftbquests")) TrophyReward.register();
 
         if (GameTests.isEnabled()) {
             LOGGER.info("Registered game tests {}", GameTests.register(MOD_ID, TrophyPedestalsGameTests.class));
