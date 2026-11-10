@@ -61,7 +61,8 @@ public class TrophyCabinetBlock extends TrophyDisplayBlock {
     }
 
     // Where the other half is.
-    private static BlockPos partner(BlockPos pos, BlockState state) {
+    /** Where the other half of this cabinet is. */
+    public static BlockPos partner(BlockPos pos, BlockState state) {
         Direction right = right(state.getValue(FACING));
         return state.getValue(PART) == Part.LEFT ? pos.relative(right) : pos.relative(right.getOpposite());
     }

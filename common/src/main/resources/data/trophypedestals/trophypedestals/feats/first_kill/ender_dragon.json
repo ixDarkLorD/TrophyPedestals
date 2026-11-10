@@ -1,0 +1,8 @@
+{
+  "trigger": {
+    "type": "first_kill",
+    "entity": "minecraft:ender_dragon",
+    "scope": "server"
+  },
+  "rank": "legendary"
+}

@@ -2,6 +2,7 @@ package net.ixdarklord.trophypedestals.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
+import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.compat.render.BlockEntityRenderState;
 import net.ixdarklord.trophypedestals.compat.render.CameraRenderState;
 import net.ixdarklord.trophypedestals.compat.render.ItemModelResolver;
@@ -13,16 +14,20 @@ import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.ixdarklord.trophypedestals.pedestal.TrophyCabinetBlock;
 import net.ixdarklord.trophypedestals.pedestal.TrophyCabinetBlockEntity;
 import net.ixdarklord.trophypedestals.pedestal.TrophyDisplayBlock;
+import net.ixdarklord.trophypedestals.pedestal.TrophySets;
 import net.ixdarklord.trophypedestals.pedestal.TrophyShelfBlock;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
@@ -51,6 +56,8 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
     // A trophy's text frame: how large, against one on a placed pedestal; how far out from the model's front (over the
     // display's own front, so its frame never hides it) and how far over the trophy's top it floats.
     private static final float TEXT_SIZE = 0.6F, TEXT_DEPTH = 0.3F, TEXT_GAP = 0.2F;
+    // Where a completed set's name floats: just over the cabinet's top.
+    private static final float SET_Y = 1.08F;
 
     private final ItemModelResolver items;
     private final PedestalRenderer pedestals;
@@ -77,6 +84,10 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
         final boolean[] shown = new boolean[TrophyCabinetBlockEntity.SLOTS];
         float turn;
         boolean wallShelf;
+        // The name of the set its trophies make, in a gold frame over the cabinet's middle (drawn by its left half), or none.
+        final PedestalRenderer.State set = new PedestalRenderer.State();
+        boolean showsSet;
+        float setX, setY, setZ;
         // Its trim's material when it isn't gold, and the model whose gold faces it's drawn on.
         @Nullable ResourceLocation trim;
         @Nullable ResourceLocation trimModel;
@@ -109,6 +120,7 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
         state.top = state.wallShelf ? WALL_SHELF_TOP : SHELF_TOP;
         float depth = state.wallShelf ? WALL_SHELF_DEPTH : DEPTH;
         Vector3f spot = new Vector3f();
+        extractSet(cabinet, block, state);
         for (int i = 0; i < TrophyCabinetBlockEntity.SLOTS; i++) {
             ItemStack trophy = cabinet.item(i);
             PedestalBlockEntity pedestal = cabinet.shownPedestal(i);
@@ -147,6 +159,25 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
         }
     }
 
+    // A cabinet whose four trophies make a set: its name over the middle of its top, out in front, from its left half.
+    private static void extractSet(TrophyCabinetBlockEntity cabinet, BlockState block, State state) {
+        state.showsSet = false;
+        if (!(block.getBlock() instanceof TrophyCabinetBlock) || block.getValue(TrophyCabinetBlock.PART) != TrophyCabinetBlock.Part.LEFT
+                || cabinet.getLevel() == null) return;
+        TagKey<EntityType<?>> set = TrophySets.complete(cabinet.getLevel(), cabinet);
+        if (set == null) return;
+        BlockPos other = TrophyCabinetBlock.partner(cabinet.getBlockPos(), block);
+        state.showsSet = true;
+        Arrays.fill(state.set.lines, null);
+        state.set.lines[1] = TrophySets.name(set).copy().withColor(0xFFC24A);
+        state.set.rarity = PedestalRarities.LEGENDARY;
+        state.set.textScale = TEXT_SIZE;
+        Vector3f front = new Vector3f(0.0F, 0.0F, TEXT_DEPTH - 0.5F).rotateY(state.turn * Mth.DEG_TO_RAD);
+        state.setX = (other.getX() - cabinet.getBlockPos().getX()) / 2.0F + 0.5F + front.x;
+        state.setZ = (other.getZ() - cabinet.getBlockPos().getZ()) / 2.0F + 0.5F + front.z;
+        state.setY = SET_Y;
+    }
+
     // Whether the player is looking at this spot of the block.
     private static boolean lookedAt(TrophyCabinetBlockEntity cabinet, int slot) {
         return Minecraft.getInstance().hitResult instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK
@@ -164,7 +195,12 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
         return TrophyPedestalsMod.id("models/block/trophy_cabinet_" + block.getValue(TrophyCabinetBlock.PART).getSerializedName() + join + ".json");
     }
 
+    // How far toward the camera its trophies' text frames are drawn, in blocks: in front of its set's banner, so theirs are
+    // drawn over it where they meet (the banner stays where it is, in front of the cabinet).
+    private static final float TEXT_FORWARD = 0.4F;
+
     public void submit(State state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+        if (state.showsSet) PedestalRenderer.submitTextAt(state.set, poseStack, collector, camera, state.setX, state.setY, state.setZ);
         // A trim of another block: the model's gold, in that block's textures, turned as the model is.
         if (state.trim != null && state.trimModel != null) {
             poseStack.pushPose();
@@ -194,7 +230,7 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
             poseStack.popPose();
             PedestalRenderer.State show = state.shows[i];
             System.arraycopy(state.text[i], 0, show.lines, 0, show.lines.length);
-            PedestalRenderer.submitTextAt(show, poseStack, collector, camera, state.textX[i], state.textY[i], state.textZ[i]);
+            PedestalRenderer.submitTextAt(show, poseStack, collector, camera, state.textX[i], state.textY[i], state.textZ[i], -TEXT_FORWARD);
             Arrays.fill(show.lines, null);
         }
     }

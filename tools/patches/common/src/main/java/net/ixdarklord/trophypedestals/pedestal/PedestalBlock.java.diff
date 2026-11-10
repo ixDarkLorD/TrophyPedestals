@@ -1,0 +1,25 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalBlock.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalBlock.java
+@@ -26,10 +26,10 @@
+ import net.minecraft.world.entity.LivingEntity;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.BlockItem;
++import net.minecraft.world.item.Equipable;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.Items;
+ import net.minecraft.world.item.context.BlockPlaceContext;
+-import net.minecraft.world.item.equipment.Equippable;
+ import net.minecraft.world.level.BlockGetter;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.BaseEntityBlock;
+@@ -282,8 +282,8 @@
+     // shield, and what goes in an off hand, to that); null on a pedestal with no armor stand (it goes on display as usual).
+     private static @Nullable EquipmentSlot mannequinSlot(ItemStack stack, PedestalBlockEntity pedestal) {
+         if (!pedestal.mannequin()) return null;
+-        Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
+-        EquipmentSlot slot = equippable == null ? null : equippable.slot();
++        Equipable equippable = Equipable.get(stack);
++        EquipmentSlot slot = equippable == null ? null : equippable.getEquipmentSlot();
+         if (slot != null && slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) return slot;
+         return slot == EquipmentSlot.OFFHAND || stack.is(Items.SHIELD) ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND;
+     }

@@ -1,0 +1,20 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalRecord.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalRecord.java
+@@ -55,16 +55,7 @@
+             ResourceLocation.CODEC.optionalFieldOf("icon").forGetter(PedestalRecord::icon)
+     ).apply(instance, PedestalRecord::new));
+ 
+-    public static final StreamCodec<RegistryFriendlyByteBuf, PedestalRecord> STREAM_CODEC = StreamCodec.composite(
+-            ResourceLocation.STREAM_CODEC, PedestalRecord::kind,
+-            ResourceLocation.STREAM_CODEC, PedestalRecord::subject,
+-            ByteBufCodecs.VAR_INT.map(index -> Unlocker.values()[index], Unlocker::ordinal), PedestalRecord::unlocker,
+-            ByteBufCodecs.STRING_UTF8, PedestalRecord::name,
+-            ByteBufCodecs.VAR_LONG, PedestalRecord::unlockedAt,
+-            ResourceLocation.STREAM_CODEC, PedestalRecord::rarity,
+-            ComponentSerialization.OPTIONAL_STREAM_CODEC, PedestalRecord::title,
+-            ByteBufCodecs.optional(ResourceLocation.STREAM_CODEC), PedestalRecord::icon,
+-            PedestalRecord::new);
++    public static final StreamCodec<RegistryFriendlyByteBuf, PedestalRecord> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC);
+ 
+     /** A record with its kind's own name and icon for its subject. */
+     public PedestalRecord(ResourceLocation kind, ResourceLocation subject, Unlocker unlocker, String name, long unlockedAt, ResourceLocation rarity) {
