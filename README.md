@@ -10,11 +10,13 @@
 </p>
 
 <p align="center">
-  <a href="https://modrinth.com/mod/trophypedestals"><img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/trophypedestals/modrinth.svg" alt="Modrinth" height="26"></a>
-  <a href="https://www.curseforge.com/minecraft/mc-mods/trophy-pedestals"><img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/trophypedestals/curseforge.svg" alt="CurseForge" height="26"></a>
+  <a href="https://modrinth.com/mod/trophypedestals"><img src="https://ixdarklord.github.io/ModResources/badges/trophypedestals/modrinth-downloads.svg" alt="Modrinth downloads" height="26"></a>
+  <a href="https://www.curseforge.com/minecraft/mc-mods/trophy-pedestals"><img src="https://ixdarklord.github.io/ModResources/badges/trophypedestals/curseforge-downloads.svg" alt="CurseForge downloads" height="26"></a>
   <a href="https://discord.gg/ZapGEPqm2V"><img src="https://img.shields.io/discord/1173075408556654592?style=flat&logo=discord&logoColor=white&label=&labelColor=e0ac3c&color=3A3F58" alt="Discord" width="110" height="26"></a>
 </p>
 <p align="center">
+  <img src="https://ixdarklord.github.io/ModResources/badges/trophypedestals/version.svg" alt="Version" height="26">
+  <img src="https://ixdarklord.github.io/ModResources/badges/trophypedestals/minecraft.svg" alt="Minecraft versions" height="26">
   <img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/trophypedestals/fabric.svg" alt="Fabric" height="26">
   <img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/trophypedestals/neoforge.svg" alt="NeoForge" height="26">
   <img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/trophypedestals/forge.svg" alt="Forge" height="26">
