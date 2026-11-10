@@ -14,6 +14,8 @@ public class BlockEntityRenderState {
     public BlockPos blockPos = BlockPos.ZERO;
     public BlockState blockState = Blocks.AIR.defaultBlockState();
     public int lightCoords;
+    /** How far the block is broken: none here (the game draws a block entity's cracks itself). */
+    public ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress;
 
     public static void extractBase(BlockEntity blockEntity, BlockEntityRenderState state, ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         state.blockPos = blockEntity.getBlockPos();

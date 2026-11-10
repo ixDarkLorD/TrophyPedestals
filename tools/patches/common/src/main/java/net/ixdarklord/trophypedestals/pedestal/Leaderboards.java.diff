@@ -1,0 +1,26 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/Leaderboards.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/Leaderboards.java
+@@ -1,5 +1,6 @@
+ package net.ixdarklord.trophypedestals.pedestal;
+ 
++import com.mojang.authlib.GameProfile;
+ import net.ixdarklord.coolcatcore.api.event.v2.common.PlayerEvents;
+ import net.ixdarklord.coolcatcore.api.event.v2.common.ServerLifecycleEvents;
+ import net.ixdarklord.coolcatcore.api.event.v2.common.ServerTickEvents;
+@@ -13,7 +14,6 @@
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ServerPlayer;
+-import net.minecraft.server.players.NameAndId;
+ import net.minecraft.stats.ServerStatsCounter;
+ import net.minecraft.stats.Stat;
+ import net.minecraft.stats.Stats;
+@@ -233,7 +233,7 @@
+                         return;
+                     }
+                     if (server.getPlayerList().getPlayer(id) != null) return;
+-                    String known = server.services().nameToIdCache().get(id).map(NameAndId::name).orElse("");
++                    String known = Optional.ofNullable(server.getProfileCache()).flatMap(cache -> cache.get(id)).map(GameProfile::getName).orElse("");
+                     if (known.isEmpty()) return;
+                     OFFLINE.put(id, counts(new ServerStatsCounter(server, file.toFile())));
+                     NAMES.put(id, known);

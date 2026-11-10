@@ -46,7 +46,10 @@ KEEP_ROOT = ROOT / "tools/keep"
 KEEP: set[str] = {file.relative_to(KEEP_ROOT).as_posix() for file in KEEP_ROOT.rglob("*") if file.is_file()}
 
 # Not brought over.
-SKIP: list[str] = []
+# The One Probe has no Fabric build for this version (its first is for 26.1.2).
+SKIP: list[str] = [
+    "fabric/src/main/java/net/ixdarklord/trophypedestals/fabric/compat",
+]
 
 RENAMES = [
     (r"IdentifierArgument", "ResourceLocationArgument"),
@@ -254,6 +257,48 @@ RENAMES = [
     (r"\bimage\.getPixel\(", "image.getPixelRGBA("),
     # The well's lens and an item's light in an entity sheet.
     (r"\bRenderType\.entityTranslucentEmissive\(", "RenderType.entityTranslucentEmissive("),
+
+    # ── The ledger, leaderboards and glass cases (26.1.2's latest).
+    (r"\bgraphics\.centeredText\(", "graphics.drawCenteredString("),
+    (r"\bsetTooltipForNextRenderPass\(font, ", "setTooltipForNextRenderPass("),
+    (r"\b(?:minecraft|event)\.hasShiftDown\(\)", "Screen.hasShiftDown()"),
+    # An item's name in its rarity's color.
+    (r"\b(\w+)\.getStyledHoverName\(\)", r"\1.getHoverName().copy().withStyle(\1.getRarity().color)"),
+    # A player's inventory isn't a list of its own: its main, armor and offhand slots are.
+    (r"for \(ItemStack (\w+) : (\w+)\.getInventory\(\)\)", r"for (ItemStack \1 : Iterables.concat(\2.getInventory().items, \2.getInventory().armor, \2.getInventory().offhand))"),
+    (r"\.getTags\(\)\.map\(HolderSet\.Named::key\)", ".getTagNames()"),
+    (r"MobTrophies\.rarity\((\w+), player\.level\(\)\)", r"MobTrophies.rarity(\1, player.serverLevel())"),
+    # A comparator reads a block without asking from which side.
+    (r"getAnalogOutputSignal\(BlockState state, Level level, BlockPos pos, Direction direction\)", "getAnalogOutputSignal(BlockState state, Level level, BlockPos pos)"),
+    (r"\.getAnalogOutputSignal\((\w+), (\w+), Direction\.\w+\)", r".getAnalogOutputSignal(\1, \2)"),
+    # A block's picked item: asked of the block (the game adds a block entity's data itself).
+    (r"protected ItemStack getCloneItemStack\(LevelReader level, BlockPos pos, BlockState state, boolean includeData\)",
+     "public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state)"),
+    (r"\b(\w+)\.getCloneItemStack\((\w+), ([\w.]+(?:\(\))?), (?:includeData|false|true)\)", r"\1.getBlock().getCloneItemStack(\2, \3, \1)"),
+    # A stats file is read from a File.
+    (r"new ServerStatsCounter\(server, (\w+)\)", r"new ServerStatsCounter(server, \1.toFile())"),
+
+    # Advancements: an advancement is its own holder (with its id), its display is nullable, and its kind is its frame.
+    (r"\bAdvancementHolder\b", "Advancement"),
+    (r"\bAdvancementType\b", "FrameType"),
+    (r"\b(advancement|challenge|task)\.id\(\)", r"\1.getId()"),
+    (r"\b(advancement|challenge|task)\.value\(\)\.display\(\)", r"Optional.ofNullable(\1.getDisplay())"),
+    (r"\bdisplay\.getType\(\)", "display.getFrame()"),
+
+    # ── 1.20.1: no data components on a block entity, older equipment, sounds, dyes, item and codec calls.
+    (r"\bslot\.getSerializedName\(\)", "slot.getName()"),
+    (r"SoundEvents\.ARMOR_EQUIP_GENERIC\.value\(\)", "SoundEvents.ARMOR_EQUIP_GENERIC"),
+    (r"EquipmentSlot\.Type\.HUMANOID_ARMOR", "EquipmentSlot.Type.ARMOR"),
+    (r"\bpedestal\.getLevel\(\)\.registryAccess\(\)\.createSerializationContext\(NbtOps\.INSTANCE\)", "NbtOps.INSTANCE"),
+    (r"\b([\w.]+(?:\(\))?)\.getTextureDiffuseColor\(\)", r"ARGB.diffuse(\1)"),
+    (r"server\.getAdvancements\(\)\.get\(", "server.getAdvancements().getAdvancement("),
+    (r"(\w+)\.consume\((\d+), (\w+)\);", r"if (!\3.getAbilities().instabuild) \1.shrink(\2);"),
+    (r"DataResult\.success\((\w+Trigger)\.CODEC\)", r"DataResult.success(\1.CODEC.codec())"),
+    (r"\n    @Override\n    protected MapCodec<\? extends Block> codec\(\) \{\n        return CODEC;\n    \}\n", ""),
+    # A pedestal's item name lives on its item here (worked out again from its record when it's dropped), and its own
+    # (anvil) name in its block entity's CustomName.
+    (r"\n\s*setComponents\(DataComponentMap\.builder\(\)\.addAll\(components\(\)\)\.set\(DataComponents\.ITEM_NAME, [^;]+\)\.build\(\)\);", ""),
+    (r"Components\.get\((\w+)\.components\(\), DataComponents\.CUSTOM_NAME\)", r"\1.customName()"),
 ]
 
 # 26.1 classes that compat classes stand in for here: their imports become the compat class's (in order).
@@ -272,7 +317,7 @@ COMPAT = {
     "net.minecraft.client.renderer.state.level.CameraRenderState": "net.ixdarklord.trophypedestals.compat.render.CameraRenderState",
     **{f"net.minecraft.client.renderer.entity.state.{name}": f"net.ixdarklord.trophypedestals.compat.render.{name}"
        for name in ["EntityRenderState", "LivingEntityRenderState", "ArmedEntityRenderState", "HumanoidRenderState",
-                    "AvatarRenderState", "EnderDragonRenderState", "WitherRenderState"]},
+                    "AvatarRenderState", "EnderDragonRenderState", "WitherRenderState", "SquidRenderState"]},
 }
 
 # Methods whose bodies take renames of their own: (the method's signature, as a regex up to its "{"; the renames).
@@ -287,7 +332,9 @@ METHOD_RENAMES = [
     (r"public boolean mouseClicked\(MouseButtonEvent event, boolean doubleClick\) \{", [
         (r"MouseButtonEvent event, boolean doubleClick", "double mouseX, double mouseY, int button"),
         (r"super\.mouseClicked\(event, doubleClick\)", "super.mouseClicked(mouseX, mouseY, button)"),
-    ] + [(r"\bevent\.x\(\)", "mouseX"), (r"\bevent\.y\(\)", "mouseY"), (r"\bevent\.button\(\)", "button")]),
+    ] + [(r"\bevent\.x\(\)", "mouseX"), (r"\bevent\.y\(\)", "mouseY"), (r"\bevent\.button\(\)", "button"),
+       # (A copy of the event's place under the arguments' own names.)
+       (r"\n\s*double mouseX = mouseX, mouseY = mouseY;", "")]),
     (r"public boolean mouseDragged\(MouseButtonEvent event, double dragX, double dragY\) \{", [
         (r"MouseButtonEvent event, double dragX", "double mouseX, double mouseY, int button, double dragX"),
         (r"super\.mouseDragged\(event, dragX, dragY\)", "super.mouseDragged(mouseX, mouseY, button, dragX, dragY)"),
@@ -322,6 +369,9 @@ IMPORTS = [
     (r"\bLootItemFunctionType\b", "net.minecraft.world.level.storage.loot.functions.LootItemFunctionType"),
     (r"\bLootContextParam<", "net.minecraft.world.level.storage.loot.parameters.LootContextParam"),
     (r"\bOptional\.", "java.util.Optional"),
+    (r"\bGameTestCompat\.", "net.ixdarklord.trophypedestals.gametest.GameTestCompat"),
+    (r"\bIterables\.", "com.google.common.collect.Iterables"),
+    (r"\bScreen\.hasShiftDown", "net.minecraft.client.gui.screens.Screen"),
     (r"\bnew PropertyMap\(\)", "com.mojang.authlib.properties.PropertyMap"),
     (r"\bHolderLookup\.Provider registries\b", "net.minecraft.core.HolderLookup"),
     (r"\bCompoundTag tag\b", "net.minecraft.nbt.CompoundTag"),
@@ -506,6 +556,14 @@ UNUSED = [
 ]
 
 EDITS: dict[str, list[tuple[str, str]]] = {
+    # REI before 26.x has no display serializers (this display is made on the client, never sent or saved).
+    "common/" + JAVA + "/compat/rei/TrophyPedestalsReiPlugin.java": [
+        ("\n        // (Made on the client from the game's own mobs: never sent or saved.)\n        @Override\n        public DisplaySerializer<? extends Display> getSerializer() {\n            return null;\n        }\n", ""),
+        ("import me.shedaniel.rei.api.common.display.DisplaySerializer;\n", ""),
+    ],
+    "fabric/src/main/resources/fabric.mod.json": [
+        ('    ],\n    "theoneprobe": [\n      "net.ixdarklord.trophypedestals.fabric.compat.top.TrophyProbeFabric"\n    ]\n', '    ]\n'),
+    ],
     "common/" + JAVA + "/client/PedestalBody.java": [
         # (Over the material, in the see-through sheet the level draws after the cutout one: the plain see-through
         # type is drawn first here, before the column under the flutes, which then hides it.)
@@ -747,6 +805,9 @@ def convert_resources():
     for definition in (root / ASSETS / "items").glob("*.json"):
         item = definition.stem
         own = models / (item + ".json")
+        # A plain model (the ledger, the crest) is this version's own item model already: nothing to draw by code.
+        if json.loads(definition.read_text(encoding="utf-8"))["model"].get("type") == "minecraft:model":
+            continue
         if own.exists():
             own.rename(models / (item + "_trimmed.json"))
             text = definition.read_text(encoding="utf-8").replace(f'"trophypedestals:item/{item}"', f'"trophypedestals:item/{item}_trimmed"')

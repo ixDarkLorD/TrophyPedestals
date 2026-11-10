@@ -2,6 +2,7 @@ package net.ixdarklord.trophypedestals.compat.render;
 
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,7 +13,10 @@ public class LivingEntityRenderState extends EntityRenderState {
     /** Where in its walk cycle it is, and how fast it walks; a negative speed leaves its own. */
     public float walkAnimationPos, walkAnimationSpeed = -1.0F;
 
+    public boolean isBaby;
+
     public LivingEntityRenderState(Entity entity) {
         super(entity);
+        isBaby = entity instanceof LivingEntity living && living.isBaby();
     }
 }

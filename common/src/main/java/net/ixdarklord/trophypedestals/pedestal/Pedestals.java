@@ -147,6 +147,10 @@ public final class Pedestals {
         }
     }
 
+    /** The upper part of a glass case, in the space over a cased pedestal: invisible, its shape the case's ({@link VitrineTopBlock}). */
+    public static final RegistryEntry<VitrineTopBlock> VITRINE_TOP = BLOCKS.register("vitrine_top", () -> new VitrineTopBlock(BlockBehaviour.Properties.of()
+            .sound(SoundType.GLASS).noOcclusion().strength(0.3F).noLootTable()));
+
     /**
      * The custom pedestal: one block for every material a data pack adds, its material on its item and block entity
      * ({@link #PEDESTAL_MATERIAL}) and drawn with that block's textures. A data pack can't add blocks, only data, so a
@@ -155,6 +159,12 @@ public final class Pedestals {
     public static final RegistryEntry<PedestalBlock> CUSTOM = BLOCKS.register("custom_pedestal", () -> new PedestalBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.STONE).sound(SoundType.STONE).noOcclusion().strength(2.0F, 6.0F)
             .lightLevel(PedestalBlock::light)));
+    /** The Mob Trophies Ledger: the book of every mob trophy, with those its reader has collected filled in. */
+    public static final RegistryEntry<Item> TROPHY_LEDGER = ITEMS.register("trophy_ledger", () -> new TrophyLedgerItem(
+            new Item.Properties().stacksTo(1)));
+    /** The Leaderboard Crest: used on an empty display pedestal, it makes it a leaderboard. */
+    public static final RegistryEntry<Item> LEADERBOARD_CREST = ITEMS.register("leaderboard_crest", () -> new Item(
+            new Item.Properties()));
     public static final RegistryEntry<BlockItem> CUSTOM_ITEM = ITEMS.register("custom_pedestal", () -> new CustomPedestalItem(CUSTOM.get(),
             new Item.Properties()));
 
@@ -209,6 +219,8 @@ public final class Pedestals {
                 ITEMS_BY_STONE.values().forEach(item -> items.accept(new ItemStack(item.get())));
                 // (Not the custom pedestal: it's made of a data pack's material, and a bare one would show as stone.)
                 DISPLAY_ITEMS.forEach(item -> items.accept(new ItemStack(item.get())));
+                items.accept(new ItemStack(TROPHY_LEDGER.get()));
+                items.accept(new ItemStack(LEADERBOARD_CREST.get()));
             })
             .title(Component.translatable("itemGroup.trophypedestals.pedestals"))
             .icon(() -> new ItemStack(DEFAULT.get()))

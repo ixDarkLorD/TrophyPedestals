@@ -1,0 +1,9 @@
+{
+  "trigger": {
+    "type": "stat",
+    "value": "minecraft:mob_kills",
+    "at_least": 1000
+  },
+  "icon": "minecraft:iron_sword",
+  "rank": "rare"
+}

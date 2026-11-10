@@ -1,6 +1,6 @@
 --- a/common/src/main/java/net/ixdarklord/trophypedestals/gametest/TrophyPedestalsGameTests.java
 +++ b/common/src/main/java/net/ixdarklord/trophypedestals/gametest/TrophyPedestalsGameTests.java
-@@ -53,6 +53,7 @@
+@@ -67,6 +67,7 @@
  import net.minecraft.world.item.Items;
  import net.minecraft.world.item.SpawnEggItem;
  import net.minecraft.world.item.crafting.Recipe;
@@ -8,7 +8,7 @@
  import net.minecraft.world.level.GameType;
  import net.minecraft.world.level.block.Block;
  import net.minecraft.world.level.block.Blocks;
-@@ -431,10 +432,11 @@
+@@ -460,10 +461,11 @@
          }
          try {
              JsonObject recipe = JsonParser.parseString(Files.readString(Path.of(pack,

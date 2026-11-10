@@ -1,0 +1,20 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/MobTrophyRecord.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/MobTrophyRecord.java
+@@ -54,16 +54,7 @@
+             Codec.BOOL.optionalFieldOf("gilded", false).forGetter(MobTrophyRecord::gilded)
+     ).apply(instance, MobTrophyRecord::new));
+ 
+-    public static final StreamCodec<FriendlyByteBuf, MobTrophyRecord> STREAM_CODEC = StreamCodec.composite(
+-            ByteBufCodecs.RESOURCE_LOCATION, MobTrophyRecord::entity,
+-            ByteBufCodecs.STRING_UTF8, MobTrophyRecord::slayer,
+-            ByteBufCodecs.VAR_LONG, MobTrophyRecord::slainAt,
+-            ByteBufCodecs.RESOURCE_LOCATION, MobTrophyRecord::rarity,
+-            ByteBufCodecs.COMPOUND_TAG, MobTrophyRecord::look,
+-            ComponentSerialization.OPTIONAL_STREAM_CODEC, MobTrophyRecord::title,
+-            ByteBufCodecs.VAR_INT, MobTrophyRecord::kills,
+-            ByteBufCodecs.BOOL, MobTrophyRecord::gilded,
+-            MobTrophyRecord::new);
++    public static final StreamCodec<FriendlyByteBuf, MobTrophyRecord> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC).cast();
+ 
+     /** A record of a mob shown as it spawns. */
+     public MobTrophyRecord(ResourceLocation entity, String slayer, long slainAt, ResourceLocation rarity) {

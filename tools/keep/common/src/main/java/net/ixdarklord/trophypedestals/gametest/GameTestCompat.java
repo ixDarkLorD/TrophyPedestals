@@ -53,7 +53,11 @@ final class GameTestCompat {
             return result == InteractionResult.PASS ? ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION
                     : result.consumesAction() ? ItemInteractionResult.SUCCESS : ItemInteractionResult.FAIL;
         } finally {
+            // What the use left in the hand instead of the item (a mannequin's helmet swapped for it) is kept, in the
+            // inventory, as 26.1 leaves it with the player.
+            ItemStack given = player.getItemInHand(hand);
             player.setItemInHand(hand, held);
+            if (given != stack && given != held && !given.isEmpty() && !player.getInventory().add(given)) player.drop(given, false);
         }
     }
 

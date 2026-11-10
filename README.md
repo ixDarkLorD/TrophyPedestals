@@ -28,9 +28,6 @@ Trophy Pedestals gives you somewhere to show off what you've done. Put any item 
 cone of warm light; slay mobs and now and then they leave a trophy of themselves behind; defeat a player for their
 statue. Then line them all up in trophy cabinets and wall shelves. It's needed **on both the client and the server**.
 
-Other mods can hand out trophies for their own achievements: [Tierwise](https://modrinth.com/mod/tierwise) gives one
-for every tier you unlock.
-
 ## 🧩 Features
 
 - **🏛️ Pedestals.** 37 pedestals in vanilla stones and woods, each crafted from six of its material around a gold
@@ -40,7 +37,9 @@ for every tier you unlock.
   animated. Bosses give epic and legendary ones, and other mods' mobs drop them too.
 - **⭐ Five ranks.** Common to legendary, by how tough the mob is: each grander than the last, with outlines, flares,
   a beam, halos, a crown and sounds.
-- **🗿 Player statues.** Turn on `player_trophies` and a defeated player can drop their statue, in their own skin.
+- **🗿 Player statues.** Turn on `mob_trophies.player_trophies` and a defeated player can drop their statue, in their own skin.
+- **📖 Collect them all.** The Mob Trophies Ledger tracks every mob trophy you've had, rare gilded ones stand on gold, a cabinet of four Nether (or End, Ocean, Boss, Illager) mobs earns its set, and a leaderboard pedestal shows whoever leads a statistic as their statue.
+- **🪟 Show them off.** Engrave a trophy's name in an anvil, close a glass case over a pedestal, or install an armor stand, dress it in a full armour set and pose it.
 - **🗄️ Cabinets and shelves.** Trophy cabinets hold four trophies and stack into tall cases; wall shelves hang on walls
   and join side by side. Both come in every wood, and their gold trim can be any block (an axe takes it off).
 - **🎛️ Make it yours.** Sneak and use an empty hand on a pedestal to adjust its size (up to 20 times), height,
@@ -48,8 +47,9 @@ for every tier you unlock.
   private to their owner.
 - **🧰 For packs and mods.** The `trophypedestals:set_trophy` and `trophypedestals:set_mob_trophy` loot functions,
   `/trophypedestals mob_trophy`, the `TrophyPedestals`, `TrophyKinds`, `PedestalSettings` and `PedestalRarities` APIs,
-  a `TrophyPedestals` KubeJS binding (NeoForge), and JEI pages for mob trophies and trims. Every field, setting and
-  API is in the [reference](docs/reference.md).
+  a `TrophyPedestals` KubeJS binding (NeoForge and Forge), JEI and REI pages for mob trophies and trims, what a pedestal
+  holds in Jade and The One Probe, and a trophy reward for FTB Quests. Every field, setting and API is in the
+  [reference](docs/reference.md).
 
 ## 📦 Download
 
@@ -57,8 +57,8 @@ for every tier you unlock.
 |---|---|
 | [trophy-pedestals](https://www.curseforge.com/minecraft/mc-mods/trophy-pedestals) | [trophypedestals](https://modrinth.com/mod/trophypedestals) |
 
-It needs [CoolCatLib](https://modrinth.com/mod/coolcatlib), and [Fabric API](https://modrinth.com/mod/fabric-api) on
-Fabric. JEI is optional.
+It needs [CoolCatLib](https://modrinth.com/mod/coolcatlib) 8.2.0 or newer, and [Fabric API](https://modrinth.com/mod/fabric-api)
+on Fabric. JEI, REI, Jade, The One Probe, FTB Quests and KubeJS are optional, where they have a build for your version.
 
 ## 🧭 Versions
 
@@ -71,6 +71,29 @@ Each Minecraft version lives on its own branch.
 | **26.1 – 26.1.2** | Fabric, NeoForge | [`26.1.2`](https://github.com/ixDarkLorD/TrophyPedestals/tree/26.1.2) | ✅ Supported | — |
 | **1.21.1** | Fabric, NeoForge | [`1.21-1.21.1`](https://github.com/ixDarkLorD/TrophyPedestals/tree/1.21-1.21.1) | ✅ Supported | — |
 | **1.20.1** | Fabric, Forge | [`1.20.1`](https://github.com/ixDarkLorD/TrophyPedestals/tree/1.20.1) | ✅ Supported | — |
+
+## 🔌 For mod developers
+
+Trophy Pedestals is on the [ModResources Maven](https://ixdarklord.github.io/ModResources/), free to use with no token:
+
+```groovy
+repositories {
+    maven {
+        name = "ModResources"
+        url = "https://ixdarklord.github.io/ModResources/maven/"
+    }
+}
+
+dependencies {
+    compileOnly "net.ixdarklord.trophypedestals:trophypedestals-common:0.1.0+26.1.2"       // in the common module
+    implementation "net.ixdarklord.trophypedestals:trophypedestals-fabric:0.1.0+26.1.2"    // in each loader's module
+}
+```
+
+Artifacts are `net.ixdarklord.trophypedestals:trophypedestals-<module>:<version>+<minecraft>`, the module being
+`common`, `fabric`, `neoforge` or `forge`. On 1.21.1 and older, use `modImplementation` for the loader jars. Your mod's
+achievements can give trophies through the `TrophyPedestals` and `TrophyKinds` APIs: the
+[reference](docs/reference.md) has them all, with examples.
 
 ## 🛠️ Building
 

@@ -2,7 +2,6 @@ package net.ixdarklord.trophypedestals.pedestal;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.compat.ResolvableProfile;
 import net.ixdarklord.trophypedestals.compat.ValueInput;
@@ -10,10 +9,12 @@ import net.ixdarklord.trophypedestals.compat.component.Components;
 import net.ixdarklord.trophypedestals.compat.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.ixdarklord.coolcatcore.api.network.codec.ByteBufCodecs;
 import net.ixdarklord.coolcatcore.api.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -36,27 +37,63 @@ import java.util.Optional;
  * @param slainAt when, in milliseconds since the epoch
  * @param rarity  its rarity's id ({@link PedestalRarities})
  * @param look    how the mob looked ({@link MobLooks}), or empty to show it as it spawns
+ * @param title   the name it goes by in place of its mob's ("First Wither Slain", an engraved name), if it has one
+ * @param kills   how many of its mob its slayer has killed, counted while it's placed (0 before it's counted)
+ * @param gilded  whether it's a gilded trophy: a rare one, on a gold pedestal
  */
-public record MobTrophyRecord(ResourceLocation entity, String slayer, long slainAt, ResourceLocation rarity, CompoundTag look) {
+public record MobTrophyRecord(ResourceLocation entity, String slayer, long slainAt, ResourceLocation rarity, CompoundTag look, Optional<Component> title,
+                              int kills, boolean gilded) {
     public static final Codec<MobTrophyRecord> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("entity").forGetter(MobTrophyRecord::entity),
             Codec.STRING.optionalFieldOf("slayer", "").forGetter(MobTrophyRecord::slayer),
             Codec.LONG.fieldOf("slain_at").forGetter(MobTrophyRecord::slainAt),
             PedestalRarities.ID_CODEC.optionalFieldOf("rarity", PedestalRarities.COMMON.id()).forGetter(MobTrophyRecord::rarity),
-            CompoundTag.CODEC.optionalFieldOf("look", new CompoundTag()).forGetter(MobTrophyRecord::look)
+            CompoundTag.CODEC.optionalFieldOf("look", new CompoundTag()).forGetter(MobTrophyRecord::look),
+            ExtraCodecs.COMPONENT.optionalFieldOf("title").forGetter(MobTrophyRecord::title),
+            Codec.INT.optionalFieldOf("kills", 0).forGetter(MobTrophyRecord::kills),
+            Codec.BOOL.optionalFieldOf("gilded", false).forGetter(MobTrophyRecord::gilded)
     ).apply(instance, MobTrophyRecord::new));
 
-    public static final StreamCodec<ByteBuf, MobTrophyRecord> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.RESOURCE_LOCATION, MobTrophyRecord::entity,
-            ByteBufCodecs.STRING_UTF8, MobTrophyRecord::slayer,
-            ByteBufCodecs.VAR_LONG, MobTrophyRecord::slainAt,
-            ByteBufCodecs.RESOURCE_LOCATION, MobTrophyRecord::rarity,
-            ByteBufCodecs.COMPOUND_TAG, MobTrophyRecord::look,
-            MobTrophyRecord::new);
+    public static final StreamCodec<FriendlyByteBuf, MobTrophyRecord> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC).cast();
 
     /** A record of a mob shown as it spawns. */
     public MobTrophyRecord(ResourceLocation entity, String slayer, long slainAt, ResourceLocation rarity) {
         this(entity, slayer, slainAt, rarity, new CompoundTag());
+    }
+
+    /** A record going by its mob's name. */
+    public MobTrophyRecord(ResourceLocation entity, String slayer, long slainAt, ResourceLocation rarity, CompoundTag look) {
+        this(entity, slayer, slainAt, rarity, look, Optional.empty());
+    }
+
+    /** A record not yet counted, and not gilded. */
+    public MobTrophyRecord(ResourceLocation entity, String slayer, long slainAt, ResourceLocation rarity, CompoundTag look, Optional<Component> title) {
+        this(entity, slayer, slainAt, rarity, look, title, 0, false);
+    }
+
+    /** The same record with this title (or none: its mob's name). */
+    public MobTrophyRecord withTitle(Optional<Component> title) {
+        return new MobTrophyRecord(entity, slayer, slainAt, rarity, look, title, kills, gilded);
+    }
+
+    /** The same record counting this many kills, at this rank. */
+    public MobTrophyRecord withKills(int kills, ResourceLocation rarity) {
+        return new MobTrophyRecord(entity, slayer, slainAt, rarity, look, title, kills, gilded);
+    }
+
+    /** The same record, gilded or not. */
+    public MobTrophyRecord withGilded(boolean gilded) {
+        return new MobTrophyRecord(entity, slayer, slainAt, rarity, look, title, kills, gilded);
+    }
+
+    /** The name it goes by: its title, or its mob's name ("Gilded Zombie" for a gilded one). */
+    public Component displayName() {
+        return title.orElseGet(() -> gilded ? Component.translatable("trophypedestals.pedestal.gilded", mobName()) : mobName());
+    }
+
+    /** "Slain by Steve", or "Slain by Steve (152 slain)" once its slayer's kills of its mob are counted. */
+    public Component slainLine() {
+        return kills > 0 ? Component.translatable("trophypedestals.pedestal.slain_by_count", slayer, kills) : slainBy();
     }
 
     /** The mob's entity type, or null if it's no longer in the game (a removed mod's mob). */

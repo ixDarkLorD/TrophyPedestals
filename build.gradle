@@ -13,4 +13,31 @@ subprojects {
     tasks.withType(Jar).configureEach {
         from(rootProject.file("LICENSE"))
     }
+
+    // FTB Quests and Library (an optional integration) are published only to FTB's own Maven, and The One Probe to
+    // McJty's.
+    repositories {
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = "FTB"
+                    url = "https://maven.ftb.dev/releases"
+                }
+            }
+            filter {
+                includeGroup "dev.ftb.mods"
+            }
+        }
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = "McJty"
+                    url = "https://maven.k-4u.nl"
+                }
+            }
+            filter {
+                includeGroup "mcjty.theoneprobe"
+            }
+        }
+    }
 }

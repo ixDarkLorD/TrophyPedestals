@@ -41,7 +41,7 @@ import java.util.Optional;
 
 /**
  * The mob trophies: each mob, drawn standing still, and the trophy a player who slays it can
- * find, with its rank and the chance of it dropping ({@code mob_trophy_chance}). Its spawn egg finds the page too.
+ * find, with its rank and the chance of it dropping ({@code mob_trophies.chance}). Its spawn egg finds the page too.
  */
 public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategory.Drop> {
     public static final RecipeType<Drop> TYPE = new RecipeType<>(TrophyPedestalsMod.id("mob_trophy"), Drop.class);

@@ -181,7 +181,7 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
                 poseStack.mulPose(Axis.YP.rotationDegrees(MOB_SLOT_YAW + PedestalRenderer.modelTurn(shown)));
             }
             poseStack.scale(scale, scale, scale);
-            poseStack.translate(0.0F, -PedestalRenderer.sink(shown), 0.0F);
+            poseStack.translate(0.0F, PedestalRenderer.lift(mob) - PedestalRenderer.sink(shown), 0.0F);
             EntityRenderStates.submit(shown, CAMERA, 0.0, 0.0, 0.0, poseStack, collector);
             poseStack.popPose();
             return true;

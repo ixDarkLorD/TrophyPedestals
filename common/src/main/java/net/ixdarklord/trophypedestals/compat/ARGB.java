@@ -1,6 +1,7 @@
 package net.ixdarklord.trophypedestals.compat;
 
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.DyeColor;
 
 /**
  * 1.20.1's stand-in for 26.1's {@code ARGB}: the packed-color helpers Trophy Pedestals uses, by the same names, so its
@@ -59,5 +60,11 @@ public final class ARGB {
 
     private static int clamp(float value) {
         return Mth.clamp((int) value, 0, 255);
+    }
+
+    /** A dye's color, packed (26.1's {@code DyeColor.getTextureDiffuseColor()}). */
+    public static int diffuse(DyeColor dye) {
+        float[] parts = dye.getTextureDiffuseColors();
+        return color(255, Math.round(parts[0] * 255.0F), Math.round(parts[1] * 255.0F), Math.round(parts[2] * 255.0F));
     }
 }

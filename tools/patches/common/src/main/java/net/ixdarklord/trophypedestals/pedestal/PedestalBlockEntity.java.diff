@@ -1,0 +1,52 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalBlockEntity.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalBlockEntity.java
+@@ -66,6 +66,7 @@
+     private static final String TEXT_MODE = "TextMode";
+     private static final String OWNER = "Owner";
+     private static final String OWNER_NAME = "OwnerName";
++    private static final String CUSTOM_NAME = "CustomName";
+     private static final String SCALE = "Scale";
+     private static final String HEIGHT = "Height";
+     private static final String STILL = "Still";
+@@ -134,6 +135,8 @@
+     private TextMode textMode = TextMode.LOOKING;
+     private @Nullable UUID owner;
+     private String ownerName = "";
++    // Its own name, from the named item it was placed from (26.1 keeps it in the block entity's components).
++    private @Nullable Component customName;
+     private float scale = 1.0F;
+     private float height;
+     private boolean spins = true;
+@@ -470,6 +473,16 @@
+         return ownerName;
+     }
+ 
++    /** The name it was given (an anvil's, on the item it was placed from), or null. */
++    public @Nullable Component customName() {
++        return customName;
++    }
++
++    public void setCustomName(@Nullable Component name) {
++        customName = name;
++        setChanged();
++    }
++
+     public void setOwner(Player player) {
+         owner = player.getUUID();
+         ownerName = player.getName().getString();
+@@ -863,6 +876,7 @@
+             output.store(OWNER, UUIDUtil.CODEC, owner);
+             output.putString(OWNER_NAME, ownerName);
+         }
++        if (customName != null) output.putString(CUSTOM_NAME, Component.Serializer.toJson(customName));
+         if (scale != 1.0F) output.putFloat(SCALE, scale);
+         if (height != 0.0F) output.putFloat(HEIGHT, height);
+         if (!spins) output.putBoolean(STILL, true);
+@@ -927,6 +941,7 @@
+         display = input.read(DISPLAY, ItemStack.CODEC).orElse(ItemStack.EMPTY);
+         owner = input.read(OWNER, UUIDUtil.CODEC).orElse(null);
+         ownerName = input.getStringOr(OWNER_NAME, "");
++        customName = input.readName(CUSTOM_NAME).orElse(null);
+         scale = Mth.clamp(input.getFloatOr(SCALE, 1.0F), MIN_SCALE, MAX_SCALE);
+         height = Mth.clamp(input.getFloatOr(HEIGHT, 0.0F), MIN_HEIGHT, MAX_HEIGHT);
+         spins = !input.getBooleanOr(STILL, false);

@@ -1,0 +1,20 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/feat/Feats.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/feat/Feats.java
+@@ -174,7 +174,7 @@
+         DisplayInfo display = advancement == null ? null : Optional.ofNullable(advancement.getDisplay()).orElse(null);
+         Component title = feat.title().orElseGet(() -> display != null ? display.getTitle()
+                 : Component.translatableWithFallback("trophypedestals.feat." + id.getNamespace() + "." + id.getPath().replace('/', '.'), id.getPath()));
+-        ResourceLocation icon = feat.icon().orElseGet(() -> display != null ? display.getIcon().item().unwrapKey().map(key -> key.location()).orElse(DEFAULT_ICON) : DEFAULT_ICON);
++        ResourceLocation icon = feat.icon().orElseGet(() -> display != null ? Optional.of(BuiltInRegistries.ITEM.getKey(display.getIcon().getItem())).orElse(DEFAULT_ICON) : DEFAULT_ICON);
+         give(player, id, feat, record(player, FEAT, id, feat, title, icon));
+     }
+ 
+@@ -189,7 +189,7 @@
+             case GOAL -> PedestalRarities.RARE;
+             case CHALLENGE -> PedestalRarities.EPIC;
+         };
+-        ResourceLocation icon = display.getIcon().item().unwrapKey().map(key -> key.location()).orElse(DEFAULT_ICON);
++        ResourceLocation icon = Optional.of(BuiltInRegistries.ITEM.getKey(display.getIcon().getItem())).orElse(DEFAULT_ICON);
+         ItemStack trophy = new ItemStack(Pedestals.DEFAULT.get());
+         Pedestals.record(trophy, new PedestalRecord(ADVANCEMENT, advancement.getId(), PedestalRecord.Unlocker.PLAYER, player.getName().getString(),
+                 System.currentTimeMillis(), rank.id(), Optional.of(display.getTitle()), Optional.of(icon)));

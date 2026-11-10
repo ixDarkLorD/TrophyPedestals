@@ -1,7 +1,6 @@
 --- a/common/src/main/java/net/ixdarklord/trophypedestals/client/PedestalBody.java
 +++ b/common/src/main/java/net/ixdarklord/trophypedestals/client/PedestalBody.java
-@@ -10,16 +10,13 @@
- import net.ixdarklord.trophypedestals.compat.render.SubmitNodeCollector;
+@@ -11,16 +11,13 @@
  import net.ixdarklord.trophypedestals.compat.render.VertexConsumer;
  import net.ixdarklord.trophypedestals.pedestal.TrophyDisplayBlock;
  import net.minecraft.client.Minecraft;
@@ -20,7 +19,7 @@
  import net.minecraft.core.Direction;
  import net.minecraft.core.registries.BuiltInRegistries;
  import net.minecraft.resources.ResourceLocation;
-@@ -55,8 +52,8 @@
+@@ -57,8 +54,8 @@
      // Faces turned to the light: as a block's are shaded.
      private static final float SHADE_UP = 1.0F, SHADE_DOWN = 0.5F, SHADE_NORTH_SOUTH = 0.8F, SHADE_EAST_WEST = 0.6F;
  
@@ -31,7 +30,7 @@
      private static List<Face> faces = List.of();
      private static final Map<Block, Look> LOOKS = new ConcurrentHashMap<>();
      // The gold faces of the trophy displays' models, by model, for trims of other blocks.
-@@ -66,12 +63,10 @@
+@@ -68,12 +65,10 @@
  
      /** Draws a custom pedestal's body, of this material (stone for none), in this light. */
      public static void submit(@Nullable ResourceLocation material, PoseStack poseStack, SubmitNodeCollector collector, int light) {
@@ -46,7 +45,7 @@
          collector.submitCustomGeometry(poseStack, RenderType.entityCutout(TextureAtlas.LOCATION_BLOCKS), (pose, consumer) -> {
              for (Face face : faces) if (!face.texture.overlay()) face(consumer, pose, face, look, light);
          });
-@@ -82,7 +77,8 @@
+@@ -84,7 +79,8 @@
      }
  
      // After the resources reload, the shapes and textures are read again.
@@ -56,7 +55,7 @@
          if (models == readFor) return;
          readFor = models;
          faces = readFaces(TEMPLATE);
-@@ -96,12 +92,11 @@
+@@ -98,12 +94,11 @@
       * bottom on those turned down, a side on the rest), each pixel where the gold's would be, in this light.
       */
      public static void submitTrim(ResourceLocation model, ResourceLocation material, PoseStack poseStack, SubmitNodeCollector collector, int light) {
@@ -71,9 +70,7 @@
          // (The gold trim, a trimmed item's when it's gold, in the gold trim's own texture.)
          boolean gold = material.equals(TrophyDisplayBlock.GOLD);
          collector.submitCustomGeometry(poseStack, RenderType.entityCutout(TextureAtlas.LOCATION_BLOCKS), (pose, consumer) -> {
-             for (Face face : trim) {
-                 if (face.texture != Texture.GOLD) continue;
-@@ -125,37 +120,32 @@
+@@ -129,37 +124,32 @@
  
      // A material's textures and tints, from its block's model: its top's, bottom's and a side's, or its particle texture
      // for a face it doesn't have (a model that isn't a whole block).

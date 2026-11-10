@@ -1,0 +1,39 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/VitrineTopBlock.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/VitrineTopBlock.java
+@@ -1,7 +1,6 @@
+ package net.ixdarklord.trophypedestals.pedestal;
+ 
+ import net.ixdarklord.trophypedestals.compat.ItemInteractionResult;
+-import net.ixdarklord.trophypedestals.gametest.GameTestCompat;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.world.InteractionHand;
+@@ -60,7 +59,7 @@
+ 
+     // A middle click gives the pedestal (with its data, as the game copies it).
+     @Override
+-    public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
++    public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+         BlockState below = level.getBlockState(pos.below());
+         return below.getBlock() instanceof PedestalBlock ? below.getBlock().getCloneItemStack(level, pos.below(), below) : ItemStack.EMPTY;
+     }
+@@ -70,7 +69,7 @@
+         BlockPos below = pos.below();
+         BlockState pedestal = level.getBlockState(below);
+         if (!(pedestal.getBlock() instanceof PedestalBlock)) return InteractionResult.PASS;
+-        return GameTestCompat.useWithoutItem(pedestal, level, player, new BlockHitResult(hit.getLocation(), hit.getDirection(), below, hit.isInside()));
++        return pedestal.use(level, player, InteractionHand.MAIN_HAND, new BlockHitResult(hit.getLocation(), hit.getDirection(), below, hit.isInside()));
+     }
+ 
+     // 1.20.1 uses a block once, with whatever's in hand: the item's use first, then (passed on) the empty hand's.
+@@ -87,7 +86,9 @@
+         BlockPos below = pos.below();
+         BlockState pedestal = level.getBlockState(below);
+         if (!(pedestal.getBlock() instanceof PedestalBlock)) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+-        return GameTestCompat.useItemOn(pedestal, stack, level, player, hand, new BlockHitResult(hit.getLocation(), hit.getDirection(), below, hit.isInside()));
++        InteractionResult result = pedestal.use(level, player, hand, new BlockHitResult(hit.getLocation(), hit.getDirection(), below, hit.isInside()));
++        return result == InteractionResult.PASS ? ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION
++                : result.consumesAction() ? ItemInteractionResult.SUCCESS : ItemInteractionResult.FAIL;
+     }
+ 
+     // Broken by a player: the glass comes off the pedestal below, and drops (the pedestal stays).

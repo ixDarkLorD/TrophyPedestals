@@ -1,5 +1,6 @@
 package net.ixdarklord.trophypedestals.gametest;
 
+import com.google.common.collect.Iterables;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -16,8 +17,14 @@ import net.ixdarklord.trophypedestals.api.TrophyKinds;
 import net.ixdarklord.trophypedestals.api.TrophyPedestals;
 import net.ixdarklord.trophypedestals.compat.component.Components;
 import net.ixdarklord.trophypedestals.compat.component.DataComponents;
+import net.ixdarklord.trophypedestals.feat.Feat;
+import net.ixdarklord.trophypedestals.feat.Feats;
+import net.ixdarklord.trophypedestals.feat.TrophyLedger;
+import net.ixdarklord.trophypedestals.network.AdjustMannequinPayload;
 import net.ixdarklord.trophypedestals.network.AdjustPedestalPayload;
+import net.ixdarklord.trophypedestals.network.SetLeaderboardPayload;
 import net.ixdarklord.trophypedestals.pedestal.DisplayedTrophySettings;
+import net.ixdarklord.trophypedestals.pedestal.Leaderboards;
 import net.ixdarklord.trophypedestals.pedestal.MobLooks;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophies;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophyRecord;
@@ -26,8 +33,11 @@ import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
 import net.ixdarklord.trophypedestals.pedestal.PedestalRecord;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.ixdarklord.trophypedestals.pedestal.Statues;
+import net.ixdarklord.trophypedestals.pedestal.TrophyCabinetBlock;
 import net.ixdarklord.trophypedestals.pedestal.TrophyCabinetBlockEntity;
 import net.ixdarklord.trophypedestals.pedestal.TrophyDisplayBlock;
+import net.ixdarklord.trophypedestals.pedestal.TrophySets;
+import net.minecraft.advancements.Advancement;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -39,16 +49,20 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.RegistryOps;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
@@ -72,7 +86,10 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -183,21 +200,34 @@ public final class TrophyPedestalsGameTests {
         helper.assertTrue(pedestal.display().isEmpty() && player.getInventory().countItem(Items.DIAMOND) >= 1, "and comes back off with an empty hand");
         helper.assertFalse(helper.getLevel().getBlockState(pos).getValue(PedestalBlock.LIT), "going dark again");
         helper.assertTrue(pedestal.textMode() == PedestalBlockEntity.TextMode.LOOKING && pedestal.scale() == 1.0F, "its text shows when looked at by default, at the usual size");
-        // The adjustment screen's changes, as the server takes them: anyone may adjust a pedestal with no owner.
+        // The adjustment screen's changes, as the server takes them: anyone may adjust a pedestal with no owner. A display
+        // pedestal's size, place, turn and text size are kept as they are until the server gives it Display and Text tabs.
         player.setPos(pos.getCenter());
-        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.HIDDEN, 1.5F, 1.0F, false, -2.0F, 90.0F, 30.0F, -45.0F, false, PedestalBlockEntity.RedstoneMode.SHOW, false, false, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(player);
-        helper.assertTrue(pedestal.textMode() == PedestalBlockEntity.TextMode.HIDDEN && pedestal.scale() == 1.5F && pedestal.height() == 1.0F
-                && !pedestal.spins() && pedestal.textHeight() == -2.0F && pedestal.yaw() == 90.0F && pedestal.pitch() == 30.0F
-                && pedestal.roll() == -45.0F && !pedestal.effects()
-                && pedestal.redstone() == PedestalBlockEntity.RedstoneMode.SHOW && !pedestal.displayed() && !pedestal.sounds() && !pedestal.animates(),
-                "the screen hides its text, resizes it, raises it, stills it, freezes it, lowers its text and turns it");
-        // A redstone signal shows it.
-        helper.getLevel().setBlockAndUpdate(pos.north(), Blocks.REDSTONE_BLOCK.defaultBlockState());
-        helper.assertTrue(pedestal.powered() && pedestal.displayed(), "a redstone signal shows a pedestal set to show while powered");
-        helper.getLevel().setBlockAndUpdate(pos.north(), Blocks.AIR.defaultBlockState());
-        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.ALWAYS, 99.0F, 99.0F, true, 0.0F, 0.0F, 0.0F, 0.0F, true, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(player);
-        helper.assertTrue(pedestal.textMode() == PedestalBlockEntity.TextMode.ALWAYS && pedestal.scale() == PedestalBlockEntity.MAX_SCALE
-                && pedestal.height() == PedestalBlockEntity.MAX_HEIGHT, "within its limits");
+        AdjustPedestalPayload adjust = new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.HIDDEN, 1.5F, 1.0F, false, -2.0F, 90.0F, 30.0F, -45.0F, false, PedestalBlockEntity.RedstoneMode.SHOW, false, false, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE);
+        adjust.apply(player);
+        helper.assertTrue(pedestal.textMode() == PedestalBlockEntity.TextMode.HIDDEN && !pedestal.spins() && !pedestal.effects()
+                && pedestal.redstone() == PedestalBlockEntity.RedstoneMode.SHOW && !pedestal.displayed() && !pedestal.sounds(),
+                "the screen hides its text, stills it and turns it");
+        helper.assertTrue(pedestal.scale() == 1.0F && pedestal.height() == 0.0F && pedestal.yaw() == 0.0F && pedestal.textHeight() == 0.0F,
+                "but leaves a display pedestal's size, place and text as they are by default");
+        TrophyPedestalsConfig.DISPLAY_PEDESTAL_DISPLAY_SETTINGS.set(true);
+        TrophyPedestalsConfig.DISPLAY_PEDESTAL_TEXT_SETTINGS.set(true);
+        try {
+            adjust.apply(player);
+            helper.assertTrue(pedestal.scale() == 1.5F && pedestal.height() == 1.0F && pedestal.textHeight() == -2.0F && pedestal.yaw() == 90.0F
+                    && pedestal.pitch() == 30.0F && pedestal.roll() == -45.0F && pedestal.animates(),
+                    "with the server's display pedestal tabs on, it resizes it, raises it, lowers its text and turns it (and has no pose)");
+            // A redstone signal shows it.
+            helper.getLevel().setBlockAndUpdate(pos.north(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+            helper.assertTrue(pedestal.powered() && pedestal.displayed(), "a redstone signal shows a pedestal set to show while powered");
+            helper.getLevel().setBlockAndUpdate(pos.north(), Blocks.AIR.defaultBlockState());
+            new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.ALWAYS, 99.0F, 99.0F, true, 0.0F, 0.0F, 0.0F, 0.0F, true, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(player);
+            helper.assertTrue(pedestal.textMode() == PedestalBlockEntity.TextMode.ALWAYS && pedestal.scale() == PedestalBlockEntity.MAX_SCALE
+                    && pedestal.height() == PedestalBlockEntity.MAX_HEIGHT, "within its limits");
+        } finally {
+            TrophyPedestalsConfig.DISPLAY_PEDESTAL_DISPLAY_SETTINGS.reset();
+            TrophyPedestalsConfig.DISPLAY_PEDESTAL_TEXT_SETTINGS.reset();
+        }
         // Owned by someone else, only they (and operators) may, unless the server lets anyone.
         ServerPlayer owner = player(helper);
         pedestal.setOwner(owner);
@@ -560,6 +590,272 @@ public final class TrophyPedestalsGameTests {
                 "broken, it keeps its trim: " + drops);
         GameTestCompat.useItemOn(level.getBlockState(pos), new ItemStack(Items.IRON_AXE), level, player, InteractionHand.MAIN_HAND, hit);
         helper.assertTrue(shelf.trim() == null && !level.getBlockState(pos).getValue(TrophyDisplayBlock.GOLD_TRIM), "and an axe takes it off");
+        helper.succeed();
+    }
+
+    // The trophies in a player's inventory.
+    private static List<ItemStack> trophies(ServerPlayer player) {
+        List<ItemStack> found = new ArrayList<>();
+        for (ItemStack stack : Iterables.concat(player.getInventory().items, player.getInventory().armor, player.getInventory().offhand)) if (Pedestals.isTrophy(stack)) found.add(stack);
+        return found;
+    }
+
+    @GameTest
+    public static void earnedTrophiesComeFromFeatsAndAdvancements(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        helper.assertTrue(Feats.all().containsKey(TrophyPedestalsMod.id("first_kill/wither")) && Feats.all().containsKey(TrophyPedestalsMod.id("milestone/angler"))
+, "the mod's own trophies load: " + Feats.all().keySet());
+        // A first kill of everyone on the server: only the first player to kill an elder guardian gets it, showing it, titled.
+        ServerPlayer first = player(helper), second = player(helper);
+        Feats.FIRST_KILLS.reset(server);
+        try {
+            LivingEntity guardian = EntityType.ELDER_GUARDIAN.create(helper.getLevel());
+            Feats.onKill(first, guardian);
+            Feats.onKill(second, guardian);
+            List<ItemStack> won = trophies(first);
+            MobTrophyRecord record = won.isEmpty() ? null : Components.get(won.get(0), Pedestals.MOB_TROPHY.get());
+            helper.assertTrue(won.size() == 1 && record != null && record.type() == EntityType.ELDER_GUARDIAN && record.title().isPresent()
+                    && PedestalRarities.EPIC.id().equals(record.rarity()) && record.slayer().equals(first.getName().getString()), "the first to kill it gets its trophy");
+            helper.assertTrue(trophies(second).isEmpty(), "and no one after");
+            // A player's own first kill, from a pack: once for each player, however many they kill.
+            Map<ResourceLocation, Feat> withOwn = new LinkedHashMap<>(Feats.all());
+            ResourceLocation own = TrophyPedestalsMod.id("test/own_first_zombie");
+            withOwn.put(own, new Feat(new Feat.FirstKillTrigger(new Feat.Target(new ResourceLocation("zombie"), false), Feat.Scope.PLAYER),
+                    Optional.empty(), Optional.empty(), PedestalRarities.UNCOMMON.id(), Optional.empty(), true));
+            Map<ResourceLocation, Feat> before = Feats.all();
+            Feats.loadForTests(withOwn);
+            try {
+                LivingEntity zombie = EntityType.ZOMBIE.create(helper.getLevel());
+                Feats.onKill(second, zombie);
+                Feats.onKill(second, zombie);
+                Feats.onKill(second, zombie);
+                helper.assertTrue(trophies(second).size() == 1, "a player's own first kill gives one trophy, not one a kill: " + trophies(second).size());
+            } finally {
+                Feats.loadForTests(before);
+            }
+        } finally {
+            Feats.FIRST_KILLS.reset(server);
+        }
+        // A milestone: 100 fish caught.
+        ServerPlayer angler = player(helper);
+        angler.getStats().setValue(angler, Stats.CUSTOM.get(Stats.FISH_CAUGHT), 100);
+        Feats.checkStats(angler);
+        Feats.checkStats(angler);
+        List<ItemStack> milestones = trophies(angler);
+        PedestalRecord milestone = milestones.isEmpty() ? null : Components.get(milestones.get(0), Pedestals.RECORD.get());
+        helper.assertTrue(milestones.size() == 1 && milestone != null && milestone.kind().equals(Feats.FEAT)
+                && milestone.subject().equals(TrophyPedestalsMod.id("milestone/angler")) && milestone.icon().map(id -> id.equals(new ResourceLocation("fishing_rod"))).orElse(false)
+                && TrophyKinds.name(milestone, false).getString().equals("Angler"), "100 fish caught gives the Angler trophy once");
+        // An advancement gives none by default; with the server's set to challenges, a challenge gives an epic trophy
+        // titled and shown as it is, once.
+        ServerPlayer hunter = player(helper);
+        Advancement challenge = server.getAdvancements().getAdvancement(new ResourceLocation("adventure/kill_all_mobs"));
+        Advancement task = server.getAdvancements().getAdvancement(new ResourceLocation("story/mine_stone"));
+        helper.assertTrue(TrophyPedestalsConfig.ADVANCEMENT_TROPHIES.getDefault() == TrophyPedestalsConfig.AdvancementTrophies.NONE, "advancement trophies are off by default");
+        try {
+            TrophyPedestalsConfig.ADVANCEMENT_TROPHIES.set(TrophyPedestalsConfig.AdvancementTrophies.NONE);
+            Feats.onAdvancement(hunter, challenge);
+            helper.assertTrue(trophies(hunter).isEmpty(), "and while off, give none");
+            TrophyPedestalsConfig.ADVANCEMENT_TROPHIES.set(TrophyPedestalsConfig.AdvancementTrophies.CHALLENGES);
+            Feats.onAdvancement(hunter, challenge);
+            Feats.onAdvancement(hunter, challenge);
+            Feats.onAdvancement(hunter, task);
+        } finally {
+            TrophyPedestalsConfig.ADVANCEMENT_TROPHIES.reset();
+        }
+        List<ItemStack> earned = trophies(hunter);
+        PedestalRecord advancement = earned.isEmpty() ? null : Components.get(earned.get(0), Pedestals.RECORD.get());
+        helper.assertTrue(earned.size() == 1 && advancement != null && advancement.kind().equals(Feats.ADVANCEMENT) && advancement.subject().equals(challenge.getId())
+                && PedestalRarities.EPIC.id().equals(advancement.rarity()) && TrophyKinds.name(advancement, false).getString().equals(Optional.ofNullable(challenge.getDisplay()).orElseThrow().getTitle().getString()),
+                "with challenges on, a challenge gives its trophy once, and a task none");
+        helper.succeed();
+    }
+
+    @GameTest
+    public static void recordsKeepTheirOwnTitleAndIcon(GameTestHelper helper) {
+        // A record's own title and icon are kept, and win over its kind's.
+        PedestalRecord titled = new PedestalRecord(kind(), SUBJECT, PedestalRecord.Unlocker.PLAYER, "x", 0L, PedestalRarities.RARE.id(),
+                Optional.of(Component.literal("Engraved")), Optional.of(new ResourceLocation("emerald")));
+        PedestalRecord read = PedestalRecord.CODEC.parse(NbtOps.INSTANCE, PedestalRecord.CODEC.encodeStart(NbtOps.INSTANCE, titled).getOrThrow(false, error -> {})).getOrThrow(false, error -> {});
+        helper.assertTrue(read.equals(titled) && TrophyKinds.name(read, false).getString().equals("Engraved") && TrophyKinds.icon(read, false).is(Items.EMERALD),
+                "a record's own title and icon are kept and shown");
+        helper.succeed();
+    }
+
+    @GameTest
+    public static void mobTrophiesGrowGildAndAreCollected(GameTestHelper helper) {
+        ServerPlayer slayer = player(helper);
+        // Growing: a placed trophy counts its slayer's kills of its mob, and with rank KILLS goes up a rank.
+        BlockPos pos = helper.absolutePos(new BlockPos(1, 1, 1));
+        ItemStack trophy = MobTrophies.trophy(Pedestals.DEFAULT.get(), EntityType.ZOMBIE, slayer.getName().getString(), 0L, PedestalRarities.COMMON);
+        helper.getLevel().setBlockAndUpdate(pos, Pedestals.DEFAULT.get().defaultBlockState());
+        PedestalBlockEntity pedestal = (PedestalBlockEntity) helper.getLevel().getBlockEntity(pos);
+        Components.applyToBlockEntity(pedestal, trophy);
+        slayer.getStats().setValue(slayer, Stats.ENTITY_KILLED.get(EntityType.ZOMBIE), 30);
+        TrophyPedestalsConfig.MOB_TROPHY_RARITY.set(TrophyPedestalsConfig.MobTrophyRarity.KILLS);
+        try {
+            MobTrophies.count(helper.getLevel(), pos, pedestal, slayer);
+        } finally {
+            TrophyPedestalsConfig.MOB_TROPHY_RARITY.reset();
+        }
+        MobTrophyRecord grown = pedestal.mobTrophy();
+        helper.assertTrue(grown != null && grown.kills() == 30 && PedestalRarities.RARE.id().equals(grown.rarity())
+                && grown.slainLine().getString().contains("30"), "a trophy counts 30 zombie kills and grows to rare: " + grown);
+        // Gilded: on a gold pedestal, named so.
+        ItemStack gilded = MobTrophies.gild(trophy);
+        MobTrophyRecord gold = Components.get(gilded, Pedestals.MOB_TROPHY.get());
+        helper.assertTrue(gilded.is(Pedestals.CUSTOM_ITEM.get()) && gold != null && gold.gilded()
+                && new ResourceLocation("gold_block").equals(Components.get(gilded, Pedestals.PEDESTAL_MATERIAL.get()))
+                && gilded.getHoverName().getString().startsWith("Gilded"), "a gilded trophy is on a gold pedestal: " + gilded.getHoverName().getString());
+        // The ledger: each mob once, gilded ones apart.
+        TrophyLedger.collect(slayer, gold);
+        TrophyLedger.collect(slayer, gold);
+        helper.assertTrue(TrophyLedger.COLLECTED.get(slayer).equals(List.of(new ResourceLocation("zombie")))
+                && TrophyLedger.COLLECTED_GILDED.get(slayer).size() == 1, "the ledger notes a mob once");
+        helper.assertTrue(MobTrophies.collectable(helper.getLevel().enabledFeatures()).contains(EntityType.ZOMBIE)
+                && !MobTrophies.collectable(helper.getLevel().enabledFeatures()).contains(EntityType.GIANT), "the ledger lists the mobs that can be trophies");
+        helper.succeed();
+    }
+
+    @GameTest
+    public static void cabinetsMakeSetsAndPedestalsLeadBoards(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        // A cabinet of four Nether mobs makes the Nether set; with one off the set, none.
+        BlockPos left = helper.absolutePos(new BlockPos(1, 1, 1));
+        BlockState leftState = Pedestals.CABINETS.values().iterator().next().get().defaultBlockState();
+        BlockPos right = TrophyCabinetBlock.partner(left, leftState);
+        level.setBlockAndUpdate(left, leftState);
+        level.setBlockAndUpdate(right, leftState.setValue(TrophyCabinetBlock.PART, TrophyCabinetBlock.Part.RIGHT));
+        TrophyCabinetBlockEntity a = (TrophyCabinetBlockEntity) level.getBlockEntity(left), b = (TrophyCabinetBlockEntity) level.getBlockEntity(right);
+        EntityType<?>[] nether = {EntityType.BLAZE, EntityType.GHAST, EntityType.MAGMA_CUBE, EntityType.PIGLIN};
+        for (int i = 0; i < 4; i++) (i < 2 ? a : b).setItem(i % 2, MobTrophies.trophy(Pedestals.DEFAULT.get(), nether[i], "x", 0L, PedestalRarities.COMMON));
+        TagKey<EntityType<?>> set = TrophySets.complete(level, a);
+        helper.assertTrue(set != null && set.location().equals(TrophyPedestalsMod.id("sets/nether")), "four Nether mobs make the Nether set: " + set);
+        b.setItem(1, MobTrophies.trophy(Pedestals.DEFAULT.get(), EntityType.ZOMBIE, "x", 0L, PedestalRarities.COMMON));
+        helper.assertTrue(TrophySets.complete(level, a) == null, "a zombie breaks it");
+        // A leaderboard pedestal: whoever leads its board.
+        ServerPlayer leader = player(helper);
+        leader.getStats().setValue(leader, Stats.CUSTOM.get(Stats.MOB_KILLS), 1_000_000);
+        BlockPos board = helper.absolutePos(new BlockPos(3, 1, 3));
+        level.setBlockAndUpdate(board, Pedestals.DEFAULT.get().defaultBlockState());
+        PedestalBlockEntity pedestal = (PedestalBlockEntity) level.getBlockEntity(board);
+        pedestal.setLeaderboard(Leaderboards.Board.MOB_KILLS);
+        Leaderboards.Leader best = Leaderboards.leader(level.getServer(), Leaderboards.Board.MOB_KILLS);
+        helper.assertTrue(best != null && best.name().equals(leader.getName().getString()) && best.value() == 1_000_000, "the board's leader is the one with most kills: " + best);
+        helper.assertTrue(pedestal.on(), "a leaderboard pedestal is lit");
+        // The board picker: a board picked with a crest in hand makes an empty display pedestal a leaderboard, using it up.
+        BlockPos picked = helper.absolutePos(new BlockPos(5, 1, 5));
+        level.setBlockAndUpdate(picked, Pedestals.DEFAULT.get().defaultBlockState());
+        PedestalBlockEntity fresh = (PedestalBlockEntity) level.getBlockEntity(picked);
+        leader.setPos(picked.getCenter());
+        leader.setGameMode(GameType.SURVIVAL);
+        leader.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Pedestals.LEADERBOARD_CREST.get()));
+        new SetLeaderboardPayload(picked, Stats.JUMP).apply(leader);
+        helper.assertTrue(fresh.leaderboard() != null && fresh.leaderboard().id().equals(Stats.JUMP) && leader.getMainHandItem().isEmpty(),
+                "picking Most Jumps with a crest in hand makes it a leaderboard, taking the crest");
+        helper.assertTrue(Leaderboards.Board.all().size() > 20 && Leaderboards.Board.all().get(0).title().getString().startsWith("Most")
+                && Leaderboards.Board.byName("distance_walked") != null && Leaderboards.Board.byName("distance_walked").id().equals(Stats.WALK_ONE_CM),
+                "every statistic is a board, the titled ones first, and old saved names still load");
+        helper.succeed();
+    }
+
+    @GameTest
+    public static void glassCasesAndMannequins(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = player(helper);
+        player.setGameMode(GameType.SURVIVAL);
+        // A glass case: closed with glass over a displayed item, which then stays put until the glass is lifted.
+        BlockPos pos = helper.absolutePos(new BlockPos(1, 1, 1));
+        level.setBlockAndUpdate(pos, Pedestals.DEFAULT.get().defaultBlockState());
+        PedestalBlockEntity pedestal = (PedestalBlockEntity) level.getBlockEntity(pos);
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false);
+        use(level, pos, player, new ItemStack(Items.DIAMOND), hit);
+        use(level, pos, player, new ItemStack(Items.RED_STAINED_GLASS), hit);
+        helper.assertTrue(pedestal.glass() && pedestal.glassColor() == DyeColor.RED && pedestal.display().is(Items.DIAMOND), "red stained glass closes a red case over a displayed item");
+        BlockState top = level.getBlockState(pos.above());
+        double caseTop = 1.0 + top.getCollisionShape(level, pos.above()).max(Direction.Axis.Y);
+        helper.assertTrue(level.getBlockState(pos).getValue(PedestalBlock.CASED) && top.is(Pedestals.VITRINE_TOP.get()) && caseTop > 1.9 && caseTop <= 2.0
+                && top.getBlock().getCloneItemStack(level, pos.above(), top).is(Pedestals.DEFAULT.get().asItem()),
+                "and the case is solid, its upper part picked as the pedestal, the pedestal and its case within two blocks: " + caseTop);
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        GameTestCompat.useWithoutItem(level.getBlockState(pos), level, player, hit);
+        helper.assertTrue(pedestal.glass() && pedestal.display().is(Items.DIAMOND), "an empty hand alone takes nothing from under glass");
+        player.setShiftKeyDown(true);
+        GameTestCompat.useWithoutItem(level.getBlockState(pos), level, player, hit);
+        helper.assertTrue(pedestal.glass(), "sneaking on the pedestal under the glass leaves it (it opens the adjust screen)");
+        // (On the glass itself: its upper part, passed on to the pedestal.)
+        BlockPos above = pos.above();
+        GameTestCompat.useWithoutItem(level.getBlockState(above), level, player, new BlockHitResult(Vec3.atCenterOf(above), Direction.NORTH, above, false));
+        player.setShiftKeyDown(false);
+        helper.assertTrue(!pedestal.glass() && pedestal.display().is(Items.DIAMOND) && player.getInventory().countItem(Items.RED_STAINED_GLASS) == 1,
+                "sneaking with an empty hand on the glass lifts it (the same red glass), leaving the item");
+        helper.assertFalse(level.getBlockState(pos).getValue(PedestalBlock.CASED) || level.getBlockState(pos.above()).is(Pedestals.VITRINE_TOP.get()),
+                "and its shape is the pedestal's again, its upper part gone");
+        GameTestCompat.useWithoutItem(level.getBlockState(pos), level, player, hit);
+        helper.assertTrue(pedestal.display().isEmpty(), "and then takes the item");
+        // Armour on a pedestal with no armor stand is only an item on display.
+        use(level, pos, player, new ItemStack(Items.DIAMOND_HELMET), hit);
+        helper.assertTrue(!pedestal.mannequin() && pedestal.display().is(Items.DIAMOND_HELMET), "armour with no armor stand goes on display");
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        GameTestCompat.useWithoutItem(level.getBlockState(pos), level, player, hit);
+        // A mannequin: an armor stand is installed first; then armour dresses it, and a sword goes in its hand.
+        use(level, pos, player, new ItemStack(Items.ARMOR_STAND), hit);
+        helper.assertTrue(pedestal.mannequin() && !pedestal.playerModel() && pedestal.on() && pedestal.standPose().equals(PedestalBlockEntity.DEFAULT_STAND_POSE),
+                "an armor stand makes it a mannequin pedestal, shown as the armor stand in its own pose");
+        use(level, pos, player, new ItemStack(Items.DIAMOND_HELMET), hit);
+        use(level, pos, player, new ItemStack(Items.IRON_CHESTPLATE), hit);
+        use(level, pos, player, new ItemStack(Items.DIAMOND_SWORD), hit);
+        helper.assertTrue(pedestal.outfit(EquipmentSlot.HEAD).is(Items.DIAMOND_HELMET) && pedestal.outfit(EquipmentSlot.CHEST).is(Items.IRON_CHESTPLATE)
+                && pedestal.outfit(EquipmentSlot.MAINHAND).is(Items.DIAMOND_SWORD) && pedestal.display().isEmpty(), "armour dresses it, and a sword goes in its hand");
+        use(level, pos, player, new ItemStack(Items.GOLDEN_HELMET), hit);
+        helper.assertTrue(pedestal.outfit(EquipmentSlot.HEAD).is(Items.GOLDEN_HELMET) && player.getInventory().countItem(Items.DIAMOND_HELMET) == 1, "another helmet swaps with its own");
+        // The adjust screen sets its model and its armor stand's pose (each angle kept within half a turn).
+        List<Float> pose = new ArrayList<>(PedestalBlockEntity.DEFAULT_STAND_POSE);
+        pose.set(0, 30.0F);
+        pose.set(9, 270.0F);
+        player.setPos(pos.getCenter());
+        new AdjustMannequinPayload(pos, true, pose).apply(player);
+        helper.assertTrue(pedestal.playerModel() && pedestal.standPose().get(0) == 30.0F && pedestal.standPose().get(9) == -90.0F,
+                "the screen sets its model and its pose");
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        GameTestCompat.useWithoutItem(level.getBlockState(pos), level, player, hit);
+        helper.assertTrue(pedestal.mannequin() && player.getInventory().countItem(Items.GOLDEN_HELMET) == 1 && player.getInventory().countItem(Items.DIAMOND_SWORD) == 1,
+                "an empty hand takes its outfit back, leaving the armor stand");
+        GameTestCompat.useWithoutItem(level.getBlockState(pos), level, player, hit);
+        helper.assertTrue(!pedestal.mannequin() && !pedestal.on() && player.getInventory().countItem(Items.ARMOR_STAND) == 1 && !pedestal.playerModel(),
+                "and then the armor stand");
+        helper.succeed();
+    }
+
+    // Uses this (one of it) on the pedestal, as a player would.
+    private static void use(ServerLevel level, BlockPos pos, ServerPlayer player, ItemStack stack, BlockHitResult hit) {
+        player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+        GameTestCompat.useItemOn(level.getBlockState(pos), stack, level, player, InteractionHand.MAIN_HAND, hit);
+    }
+
+    @GameTest
+    public static void comparatorsReadRanksAndMobsMakeTheirSounds(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = player(helper);
+        BlockPos pos = helper.absolutePos(new BlockPos(1, 1, 1));
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false);
+        level.setBlockAndUpdate(pos, Pedestals.DEFAULT.get().defaultBlockState());
+        helper.assertTrue(level.getBlockState(pos).getAnalogOutputSignal(level, pos) == 0, "an empty pedestal gives no signal");
+        use(level, pos, player, new ItemStack(Items.DIAMOND), hit);
+        helper.assertTrue(level.getBlockState(pos).getAnalogOutputSignal(level, pos) == 1, "one showing an item gives 1");
+        // An epic zombie trophy gives 4, and makes the zombie's sound when used, not again straight away.
+        BlockPos trophyPos = helper.absolutePos(new BlockPos(3, 1, 3));
+        ItemStack trophy = MobTrophies.trophy(Pedestals.DEFAULT.get(), EntityType.ZOMBIE, "x", 0L, PedestalRarities.EPIC);
+        level.setBlockAndUpdate(trophyPos, Pedestals.DEFAULT.get().defaultBlockState().setValue(PedestalBlock.LIT, true).setValue(PedestalBlock.RANK, 4));
+        PedestalBlockEntity pedestal = (PedestalBlockEntity) level.getBlockEntity(trophyPos);
+        Components.applyToBlockEntity(pedestal, trophy);
+        helper.assertTrue(level.getBlockState(trophyPos).getAnalogOutputSignal(level, trophyPos) == 4, "an epic trophy gives 4");
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        BlockHitResult trophyHit = new BlockHitResult(Vec3.atCenterOf(trophyPos), Direction.UP, trophyPos, false);
+        GameTestCompat.useWithoutItem(level.getBlockState(trophyPos), level, player, trophyHit);
+        long first = pedestal.lastSound();
+        GameTestCompat.useWithoutItem(level.getBlockState(trophyPos), level, player, trophyHit);
+        helper.assertTrue(first == level.getGameTime() && pedestal.lastSound() == first, "a mob trophy makes its sound when used, not again within a second");
         helper.succeed();
     }
 }

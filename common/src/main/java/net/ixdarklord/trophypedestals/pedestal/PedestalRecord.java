@@ -2,12 +2,13 @@ package net.ixdarklord.trophypedestals.pedestal;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.ixdarklord.coolcatcore.api.network.codec.ByteBufCodecs;
 import net.ixdarklord.coolcatcore.api.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.StringRepresentable;
 
 import java.time.Instant;
@@ -15,6 +16,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * What a trophy pedestal records: what was achieved (its {@code kind}, a {@link net.ixdarklord.trophypedestals.api.TrophyKind}
@@ -25,8 +27,12 @@ import java.util.Locale;
  * @param name       the player's or team's name when it was unlocked (empty for the server)
  * @param unlockedAt when, in milliseconds since the epoch
  * @param rarity     its rarity's id ({@link PedestalRarities}); trophies from before rarities are common
+ * @param title      the name it shows in place of its kind's name for its subject (a data pack's trophy, an
+ *                   advancement's title, an engraved name), if it has one
+ * @param icon       the item it shows turning over it in place of its kind's icon, if it has one
  */
-public record PedestalRecord(ResourceLocation kind, ResourceLocation subject, Unlocker unlocker, String name, long unlockedAt, ResourceLocation rarity) {
+public record PedestalRecord(ResourceLocation kind, ResourceLocation subject, Unlocker unlocker, String name, long unlockedAt, ResourceLocation rarity,
+                             Optional<Component> title, Optional<ResourceLocation> icon) {
     public enum Unlocker implements StringRepresentable {
         PLAYER, TEAM, SERVER;
 
@@ -44,17 +50,22 @@ public record PedestalRecord(ResourceLocation kind, ResourceLocation subject, Un
             Unlocker.CODEC.fieldOf("unlocker").forGetter(PedestalRecord::unlocker),
             Codec.STRING.optionalFieldOf("name", "").forGetter(PedestalRecord::name),
             Codec.LONG.fieldOf("unlocked_at").forGetter(PedestalRecord::unlockedAt),
-            PedestalRarities.ID_CODEC.optionalFieldOf("rarity", PedestalRarities.COMMON.id()).forGetter(PedestalRecord::rarity)
+            PedestalRarities.ID_CODEC.optionalFieldOf("rarity", PedestalRarities.COMMON.id()).forGetter(PedestalRecord::rarity),
+            ExtraCodecs.COMPONENT.optionalFieldOf("title").forGetter(PedestalRecord::title),
+            ResourceLocation.CODEC.optionalFieldOf("icon").forGetter(PedestalRecord::icon)
     ).apply(instance, PedestalRecord::new));
 
-    public static final StreamCodec<ByteBuf, PedestalRecord> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.RESOURCE_LOCATION, PedestalRecord::kind,
-            ByteBufCodecs.RESOURCE_LOCATION, PedestalRecord::subject,
-            ByteBufCodecs.VAR_INT.map(index -> Unlocker.values()[index], Unlocker::ordinal), PedestalRecord::unlocker,
-            ByteBufCodecs.STRING_UTF8, PedestalRecord::name,
-            ByteBufCodecs.VAR_LONG, PedestalRecord::unlockedAt,
-            ByteBufCodecs.RESOURCE_LOCATION, PedestalRecord::rarity,
-            PedestalRecord::new);
+    public static final StreamCodec<FriendlyByteBuf, PedestalRecord> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC).cast();
+
+    /** A record with its kind's own name and icon for its subject. */
+    public PedestalRecord(ResourceLocation kind, ResourceLocation subject, Unlocker unlocker, String name, long unlockedAt, ResourceLocation rarity) {
+        this(kind, subject, unlocker, name, unlockedAt, rarity, Optional.empty(), Optional.empty());
+    }
+
+    /** The same record with this title (or none: its kind's name). */
+    public PedestalRecord withTitle(Optional<Component> title) {
+        return new PedestalRecord(kind, subject, unlocker, name, unlockedAt, rarity, title, icon);
+    }
 
     /** "Unlocked by Steve", "Unlocked by Team Red", or "Unlocked by the whole server". */
     public Component unlockedBy() {
