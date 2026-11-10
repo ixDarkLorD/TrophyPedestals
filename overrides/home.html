@@ -1,0 +1,226 @@
+{% extends "main.html" %}
+
+{#- The landing page, laid out like a gallery: a split hero (the words on the left, a lit display case playing the
+    legendary trophy's loop on the right, a trophy's text panel under it), the five ranks as a wall of display cases
+    with museum labels, a few pictures from the game hung as an exhibition, three steps as plaques, the adjust screen,
+    cabinets and shelves as a spec sheet, what it works with as rows, and a closing band with where it runs. The
+    docs' sidebars are hidden. -#}
+{% block site_nav %}{% endblock %}
+
+{% block content %}
+<div class="tp">
+
+  <!-- Hero: the gallery, the words, the display case -->
+  <section class="tp-hero">
+    <div class="tp-sky" aria-hidden="true">
+      <span class="tp-spot"></span>
+      <canvas class="tp-stars"></canvas>
+      <span class="tp-curtain tp-curtain--left"></span>
+      <span class="tp-curtain tp-curtain--right"></span>
+      <span class="tp-floor"></span>
+    </div>
+    <div class="tp-hero__inner md-grid">
+      <div class="tp-hero__text">
+        <p class="tp-tag" data-rise>A Minecraft mod for NeoForge, Fabric and Forge</p>
+        <h1 class="tp-title" data-rise>A pedestal for <em>everything</em> you've done.</h1>
+        <p class="tp-lead" data-rise>
+          Put any item on display in a soft cone of light. Keep the mobs you've slain, posed and animated, just as they
+          looked, and the players you've beaten as statues. Every trophy shines in one of five ranks, and cabinets and
+          wall shelves in every wood hold the collection.
+        </p>
+        <div class="tp-actions" data-rise>
+          <a class="tp-btn tp-btn--gold" href="{{ 'docs/guide/' | url }}">Get started</a>
+          <a class="tp-btn" href="{{ 'docs/reference/' | url }}">Reference</a>
+        </div>
+      </div>
+
+      <!-- A display case in a gold frame: a dark wall lit by a gold spotlight, the pedestal's own silhouette in the wall's
+           dark, then the legendary trophy's loop, recorded on black and screen-blended so only the pedestal and its light
+           show; its text panel steps through the ranks under it. -->
+      <div class="tp-showcase">
+        <figure class="tp-vitrine">
+          <span class="tp-vitrine__shade" style="--mask:url('{{ 'assets/pedestals/legendary-mask.png' | url }}')" aria-hidden="true"></span>
+          <video class="tp-vitrine__video" data-src="{{ 'assets/pedestals/legendary.webm' | url }}" poster="{{ 'assets/pedestals/legendary-poster.webp' | url }}" muted loop playsinline preload="none" aria-label="A legendary trophy pedestal: a beam of light, a crown of light shards and a gold crown"></video>
+        </figure>
+        <div class="tp-plate" aria-hidden="true">
+          <div class="tp-frame" data-rank="common">
+            <i class="tp-frame__crown"></i>
+            <span class="tp-frame__rank">Common</span>
+            <span class="tp-frame__what">Zombie</span>
+            <span class="tp-frame__who">Slain by Steve</span>
+            <span class="tp-frame__when">&nbsp;</span>
+          </div>
+          <div class="tp-plate__dots"><i style="--c:#b8b8c2"></i><i style="--c:#7cc35a"></i><i style="--c:#4a9dff"></i><i style="--c:#c06bff"></i><i style="--c:#ffc24a"></i></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- The ranks: a wall of five display cases, each with its museum label -->
+  <section class="tp-section tp-section--hall">
+    <div class="md-grid">
+      <header class="tp-intro" data-rise>
+        <div>
+          <p class="tp-kicker">Gallery I &middot; The ranks</p>
+          <h2>From a faint glow to a legendary beam.</h2>
+        </div>
+        <p>Every trophy has a rank, and each one is grander than the last. The rank colors its light, its text frame and
+          its name, and a lit pedestal lights the room by it: from light level 11 for common to 15 for legendary.</p>
+      </header>
+      <!-- Each case: a soft spotlight in the rank's colour on a dark wall, the pedestal's own silhouette in the wall's dark
+           (cut from its loop, so the light shows round the pedestal and not through it), then the loop, recorded on black
+           and screen-blended so only the pedestal and its light show. Each loop loads and plays only while the wall is in
+           view (pedestals.js). -->
+      <div class="tp-cases">
+        <figure class="tp-case" style="--c:#b8b8c2">
+          <div class="tp-case__box"><span class="tp-case__shade" style="--mask:url('{{ 'assets/pedestals/common-mask.png' | url }}')" aria-hidden="true"></span><video class="tp-case__video" data-src="{{ 'assets/pedestals/common.webm' | url }}" poster="{{ 'assets/pedestals/common-poster.webp' | url }}" muted loop playsinline preload="none" aria-label="A common trophy pedestal with its effects"></video></div>
+          <figcaption class="tp-label"><small>No. I</small><b>Common</b><span>Three rising outlines, a faint flare and a two-armed spiral of light.</span></figcaption>
+        </figure>
+        <figure class="tp-case" style="--c:#7cc35a">
+          <div class="tp-case__box"><span class="tp-case__shade" style="--mask:url('{{ 'assets/pedestals/uncommon-mask.png' | url }}')" aria-hidden="true"></span><video class="tp-case__video" data-src="{{ 'assets/pedestals/uncommon.webm' | url }}" poster="{{ 'assets/pedestals/uncommon-poster.webp' | url }}" muted loop playsinline preload="none" aria-label="An uncommon trophy pedestal with its effects"></video></div>
+          <figcaption class="tp-label"><small>No. II</small><b>Uncommon</b><span>Faster outlines, a stronger flare, more glints, and a chime when placed.</span></figcaption>
+        </figure>
+        <figure class="tp-case" style="--c:#4a9dff">
+          <div class="tp-case__box"><span class="tp-case__shade" style="--mask:url('{{ 'assets/pedestals/rare-mask.png' | url }}')" aria-hidden="true"></span><video class="tp-case__video" data-src="{{ 'assets/pedestals/rare.webm' | url }}" poster="{{ 'assets/pedestals/rare-poster.webp' | url }}" muted loop playsinline preload="none" aria-label="A rare trophy pedestal with its effects"></video></div>
+          <figcaption class="tp-label"><small>No. III</small><b>Rare</b><span>Four outlines, a halo circling the icon, a spark orbiting it, and a bell.</span></figcaption>
+        </figure>
+        <figure class="tp-case" style="--c:#c06bff">
+          <div class="tp-case__box"><span class="tp-case__shade" style="--mask:url('{{ 'assets/pedestals/epic-mask.png' | url }}')" aria-hidden="true"></span><video class="tp-case__video" data-src="{{ 'assets/pedestals/epic.webm' | url }}" poster="{{ 'assets/pedestals/epic-poster.webp' | url }}" muted loop playsinline preload="none" aria-label="An epic trophy pedestal with its effects"></video></div>
+          <figcaption class="tp-label"><small>No. IV</small><b>Epic</b><span>Five shimmering outlines, a pulsing double flare and two crossed halos.</span></figcaption>
+        </figure>
+        <figure class="tp-case" style="--c:#ffc24a">
+          <div class="tp-case__box"><span class="tp-case__shade" style="--mask:url('{{ 'assets/pedestals/legendary-mask.png' | url }}')" aria-hidden="true"></span><video class="tp-case__video" data-src="{{ 'assets/pedestals/legendary.webm' | url }}" poster="{{ 'assets/pedestals/legendary-poster.webp' | url }}" muted loop playsinline preload="none" aria-label="A legendary trophy pedestal with its effects"></video></div>
+          <figcaption class="tp-label"><small>No. V</small><b>Legendary</b><span>A beam, a crown of light shards, a gold crown, bursts of light and a fanfare.</span></figcaption>
+        </figure>
+      </div>
+      <p class="tp-more"><a class="tp-link" href="{{ 'docs/reference/ranks/' | url }}">Every rank's effects &rarr;</a></p>
+    </div>
+  </section>
+
+  <!-- Pictures from the game, hung as an exhibition: one large, the rest around it, each with a label under it -->
+  <section class="tp-section md-grid">
+    <header class="tp-intro" data-rise>
+      <div>
+        <p class="tp-kicker">Gallery II &middot; In the world</p>
+        <h2>Every pedestal is something someone did.</h2>
+      </div>
+      <p>Mob trophies keep the mob as it looked, statues keep the player's own skin, and any pedestal can be shown up to
+        twenty times its size. Click a picture to see it whole.</p>
+    </header>
+    <div class="tp-salon">
+      <figure class="tp-shot tp-salon__big" data-rise><img src="{{ 'assets/shots/plaza-sunset.webp' | url }}" alt="A stone trophy plaza in a meadow at sunset: a crowned player's statue under a golden beam, ranked trophy pedestals around it" loading="lazy"><figcaption>A trophy plaza at sunset</figcaption></figure>
+      <figure class="tp-shot" data-rise><img src="{{ 'assets/shots/mob-trophies.webp' | url }}" alt="A row of mob trophies, one for each rank, each pedestal's panel naming the mob and who slew it" loading="lazy"><figcaption>Mob trophies, one of each rank</figcaption></figure>
+      <figure class="tp-shot" data-rise><img src="{{ 'assets/shots/giant-statue.webp' | url }}" alt="A player's statue shown many times its size over a legendary pedestal, crowned, with light shards round it" loading="lazy"><figcaption>A statue at many times its size</figcaption></figure>
+      <figure class="tp-shot" data-rise><img src="{{ 'assets/shots/custom-pedestals.webp' | url }}" alt="Custom pedestals made of amethyst, obsidian, copper, mossy stone bricks and blackstone, each showing an amethyst shard" loading="lazy"><figcaption>Custom pedestals of any block</figcaption></figure>
+      <figure class="tp-shot" data-rise><img src="{{ 'assets/shots/plaza-night.webp' | url }}" alt="The trophy plaza at night, its pedestals glowing among the trees" loading="lazy"><figcaption>The same plaza at night</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- How it works: three plaques, then the data a pack hands trophies out with -->
+  <section class="tp-section md-grid">
+    <header class="tp-intro" data-rise>
+      <div>
+        <p class="tp-kicker">How it works</p>
+        <h2>Craft it, earn it, show it off.</h2>
+      </div>
+      <p>A pedestal is a block you craft. A trophy is a pedestal that remembers something: what it was, who earned it,
+        and when.</p>
+    </header>
+    <ol class="tp-plaques">
+      <li data-rise><span>I</span><b>Craft a pedestal</b><p>Six of a stone or wood around a gold ingot: 37 of vanilla's, or any block through data.</p></li>
+      <li data-rise><span>II</span><b>Earn trophies</b><p>Slain mobs and defeated players drop them now and then, and milestones and other mods give their own.</p></li>
+      <li data-rise><span>III</span><b>Show them off</b><p>Size, pose and light each one, and fill cabinets and shelves with the rest.</p></li>
+    </ol>
+  </section>
+
+  <!-- The adjust screen: its tabs in a strip, the words beside it -->
+  <section class="tp-section md-grid">
+    <div class="tp-split tp-split--flip">
+      <div class="tp-gallery tp-gallery--single" data-rise>
+        <div class="tp-gallery__track" tabindex="0" aria-label="The adjust screen's tabs">
+          <figure class="tp-shot tp-shot--ui"><img src="{{ 'assets/shots/pedestal-screen.webp' | url }}" alt="The adjust screen's Display tab: display size with 1x to 20x buttons, display height and facing" loading="lazy"><figcaption>Display: size, height and facing.</figcaption></figure>
+          <figure class="tp-shot tp-shot--ui"><img src="{{ 'assets/shots/pedestal-text.webp' | url }}" alt="The adjust screen's Text tab: when the text shows, its height and its size" loading="lazy"><figcaption>Text: when it shows, how high, how large.</figcaption></figure>
+          <figure class="tp-shot tp-shot--ui"><img src="{{ 'assets/shots/pedestal-pose.webp' | url }}" alt="The adjust screen's Pose tab: icon or statue, the statue's pose, and an animation list" loading="lazy"><figcaption>Pose: icon or statue, and its animation.</figcaption></figure>
+        </div>
+        <div class="tp-gallery__dots"></div>
+      </div>
+      <div data-rise>
+        <p class="tp-kicker">The adjust screen</p>
+        <h2>Every pedestal, just so.</h2>
+        <p class="tp-split__text">Sneak and use one with an empty hand. Show it from half to twenty times its size, raise it up to
+          ten blocks, turn it, set its text, freeze its mob or play an animation found from the mob itself, and turn its
+          flourishes, sounds, light and crown on or off. It can even answer redstone.</p>
+        <a class="tp-link" href="{{ 'docs/guide/adjust/' | url }}">The adjust screen &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cabinets and shelves (no pictures of them yet): a spec sheet -->
+  <section class="tp-section md-grid">
+    <header class="tp-intro" data-rise>
+      <div>
+        <p class="tp-kicker">Cabinets and shelves</p>
+        <h2>For when the floor fills up.</h2>
+      </div>
+      <p>Trophy cabinets and wall shelves in every wood. Trophies on them show as on their own pedestals, shrunk to fit,
+        light, crown and text panel included.</p>
+    </header>
+    <dl class="tp-specs">
+      <div data-rise><dt>4 <small>&middot;</small> 2</dt><dd><b>Trophies held</b>A cabinet is two blocks wide and holds four; a shelf hangs on a wall and holds two.</dd></div>
+      <div data-rise><dt>&infin;</dt><dd><b>Stack and join</b>Stacked cabinets share one divider; shelves side by side make one long shelf.</dd></div>
+      <div data-rise><dt>Any</dt><dd><b>Block for a trim</b>Use a block on one to trim it in that block, gold for gold. An axe takes it off.</dd></div>
+      <div data-rise><dt>Each</dt><dd><b>Trophy its own</b>Every spot keeps its own facing, text, pose, light, crown and redstone.</dd></div>
+    </dl>
+    <p class="tp-more"><a class="tp-link" href="{{ 'docs/guide/cabinets/' | url }}">Cabinets and shelves &rarr;</a></p>
+  </section>
+
+  <!-- What it works with: one row each -->
+  <section class="tp-section md-grid">
+    <header class="tp-intro" data-rise>
+      <div>
+        <p class="tp-kicker">Works with</p>
+        <h2>Plays well with your pack.</h2>
+      </div>
+      <p>Each one turns on by itself when its mod is installed. None of them is required.</p>
+    </header>
+    <ul class="tp-rows">
+      <li data-rise><span class="tp-rows__mark"><img src="https://cdn.modrinth.com/data/u6dRKJwZ/4a3f18ac0d096c9f8e9176984c44be4e58f94c89_96.webp" alt="" loading="lazy"></span><b>JEI</b><span>Every mob trophy listed, one per mob, mods' mobs included.</span></li>
+      <li data-rise><span class="tp-rows__mark"><img src="https://cdn.modrinth.com/data/nfn13YXA/54ac5daa4166011bae713448e84413987316433a_96.webp" alt="" loading="lazy"></span><b>REI</b><span>The same mob trophy pages, with the chance and rank of each.</span></li>
+      <li data-rise><span class="tp-rows__mark"><img src="https://cdn.modrinth.com/data/nvQzSEkH/b04217bc2b7dc524c4d12f81ff42cc1cefb9b0fc_96.webp" alt="" loading="lazy"></span><b>Jade</b><span>What a looked-at pedestal holds: its trophy, rank and who earned it.</span></li>
+      <li data-rise><span class="tp-rows__mark"><img src="https://cdn.modrinth.com/data/Eyw0UxEx/dd47ea7f2da6c76cb4a4bbec513bb83beb66c65f_96.webp" alt="" loading="lazy"></span><b>The One Probe</b><span>The same, for packs that use The One Probe.</span></li>
+      <li data-rise><span class="tp-rows__mark tp-rows__mark--text">FTB</span><b>FTB Quests</b><span>A trophy reward, titled and ranked as the pack maker picks.</span></li>
+      <li data-rise><span class="tp-rows__mark"><img src="https://cdn.modrinth.com/data/umyGl7zF/ced768ee05e293837a24eacf00838061e02964a0_96.webp" alt="" loading="lazy"></span><b>KubeJS</b><span>Read, set and lock any pedestal's settings from server scripts (NeoForge and Forge).</span></li>
+      <li data-rise><span class="tp-rows__mark tp-rows__mark--text">{ }</span><b>Packs and mods</b><span>Loot functions, a command, and a Java API for your own kinds of trophy and ranks.</span></li>
+    </ul>
+    <p class="tp-more"><a class="tp-link" href="{{ 'docs/reference/' | url }}">The reference &rarr;</a></p>
+  </section>
+
+  <!-- Closing band: the call on the left, where it runs on the right -->
+  <section class="tp-cta">
+    <div class="md-grid tp-cta__inner">
+      <div data-rise>
+        <h2>Clear a wall for the collection.</h2>
+        <p>Six stones and a gold ingot make your first pedestal.</p>
+        <div class="tp-actions">
+          <a class="tp-btn tp-btn--gold" href="{{ 'docs/guide/' | url }}">Get started</a>
+          <a class="tp-btn" href="{{ 'downloads/' | url }}">Downloads</a>
+        </div>
+      </div>
+      <div class="tp-runs" data-rise>
+        <table class="tp-table">
+          <thead><tr><th>Minecraft</th><th>Loaders</th></tr></thead>
+          <tbody>
+            <tr><td>26.3</td><td>NeoForge &middot; Fabric</td></tr>
+            <tr><td>26.2</td><td>NeoForge &middot; Fabric</td></tr>
+            <tr><td>26.1 &ndash; 26.1.2</td><td>NeoForge &middot; Fabric</td></tr>
+            <tr><td>1.21.1</td><td>NeoForge &middot; Fabric</td></tr>
+            <tr><td>1.20.1</td><td>Forge &middot; Fabric</td></tr>
+          </tbody>
+        </table>
+        <p class="tp-needs">Needs <a href="https://ixdarklord.github.io/CoolCatLib/">CoolCatLib</a> on the server and every client.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

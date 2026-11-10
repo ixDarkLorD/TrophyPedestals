@@ -1,0 +1,108 @@
+[project]
+site_url = "https://ixdarklord.github.io/TrophyPedestals/"
+site_name = "Trophy Pedestals"
+site_description = "Pedestals to show off what you've done in Minecraft: display pedestals for any item, mob trophies that keep the mob's look, player statues, five glowing ranks, and trophy cabinets and wall shelves in every wood."
+site_author = "ixDarkLorD"
+repo_url = "https://github.com/ixDarkLorD/TrophyPedestals"
+repo_name = "ixDarkLorD/TrophyPedestals"
+copyright = "Copyright &copy; 2026 ixDarkLorD"
+extra_css = ["assets/pedestals.css"]
+extra_javascript = ["assets/pedestals.js"]
+
+nav = [
+  { "Home" = "index.md" },
+  { "Docs" = [
+    { "Overview" = "docs/index.md" },
+    { "Guide" = [
+      { "Getting started" = "docs/guide/index.md" },
+      { "The adjust screen" = "docs/guide/adjust.md" },
+      { "Cabinets and shelves" = "docs/guide/cabinets.md" },
+    ] },
+    { "Reference" = [
+      { "Pedestals" = "docs/reference/index.md" },
+      { "Ranks" = "docs/reference/ranks.md" },
+      { "Mob trophies" = "docs/reference/mob-trophies.md" },
+      { "Collecting" = "docs/reference/collecting.md" },
+      { "Earned trophies" = "docs/reference/earned-trophies.md" },
+      { "Making trophies" = "docs/reference/making-trophies.md" },
+      { "For mods" = "docs/reference/for-mods.md" },
+      { "Commands and config" = "docs/reference/commands-config.md" },
+    ] },
+  ] },
+  { "Changelog" = "changelog.md" },
+  { "Downloads" = "downloads.md" },
+  { "License" = "license.md" },
+]
+
+[project.theme]
+custom_dir = "overrides"
+favicon = "assets/favicon.png"
+logo = "assets/logo.png"
+language = "en"
+features = [
+  "content.code.annotate",
+  "content.code.copy",
+  "content.tabs.link",
+  "content.tooltips",
+  "navigation.footer",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.instant.progress",
+  "navigation.sections",
+  "navigation.tabs",
+  "navigation.tabs.sticky",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+  "toc.follow",
+]
+
+[project.theme.font]
+text = "Figtree"
+code = "JetBrains Mono"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to system preference"
+
+[project.markdown_extensions]
+abbr = {}
+admonition = {}
+attr_list = {}
+def_list = {}
+footnotes = {}
+md_in_html = {}
+tables = {}
+toc.permalink = true
+pymdownx.betterem = {}
+pymdownx.details = {}
+pymdownx.emoji.emoji_generator = "zensical.extensions.emoji.to_svg"
+pymdownx.emoji.emoji_index = "zensical.extensions.emoji.twemoji"
+pymdownx.highlight.anchor_linenums = true
+pymdownx.highlight.line_spans = "__span"
+pymdownx.highlight.pygments_lang_class = true
+pymdownx.inlinehilite = {}
+pymdownx.keys = {}
+pymdownx.magiclink = {}
+pymdownx.mark = {}
+pymdownx.smartsymbols = {}
+pymdownx.superfences = {}
+pymdownx.tabbed.alternate_style = true
+pymdownx.tasklist.custom_checkbox = true

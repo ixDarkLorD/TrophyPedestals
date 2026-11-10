@@ -1,0 +1,39 @@
+{#- The foot of every page: on a docs page, the step before and the step after as two cards; then the site's own footer,
+    a dark band edged in the five ranks' colours, with the name, the links and the credit. -#}
+<footer class="tp-foot">
+  {% if page.meta and page.meta.template == "home.html" %}{% else %}
+    {% if page.previous_page or page.next_page %}
+      <nav class="tp-steps md-grid" aria-label="{{ lang.t('footer') }}">
+        {% if page.previous_page %}
+          <a class="tp-step tp-step--prev" href="{{ page.previous_page.url | url }}" rel="prev">
+            <small>{% include ".icons/lucide/arrow-left.svg" %} Previous</small>
+            <strong>{{ page.previous_page.title }}</strong>
+          </a>
+        {% else %}<span></span>{% endif %}
+        {% if page.next_page %}
+          <a class="tp-step tp-step--next" href="{{ page.next_page.url | url }}" rel="next">
+            <small>Next {% include ".icons/lucide/arrow-right.svg" %}</small>
+            <strong>{{ page.next_page.title }}</strong>
+          </a>
+        {% endif %}
+      </nav>
+    {% endif %}
+  {% endif %}
+  <div class="tp-foot__band">
+    <div class="tp-foot__inner md-grid">
+      <a class="tp-foot__brand" href="{{ nav.homepage.url | url }}">
+        <img src="{{ 'assets/logo.png' | url }}" alt="" width="40" height="40">
+        <span><b>{{ config.site_name }}</b><small>A pedestal for everything you've done</small></span>
+      </a>
+      <nav class="tp-foot__links" aria-label="Elsewhere">
+        <a href="{{ 'docs/guide/' | url }}">Guide</a>
+        <a href="{{ 'docs/reference/' | url }}">Reference</a>
+        <a href="{{ 'changelog/' | url }}">Changelog</a>
+        <a href="{{ 'downloads/' | url }}">Downloads</a>
+        <a href="{{ config.repo_url }}">GitHub</a>
+        <a href="{{ config.repo_url }}/issues">Issues</a>
+      </nav>
+      <p class="tp-foot__credit">&copy; 2026 ixDarkLorD</p>
+    </div>
+  </div>
+</footer>
