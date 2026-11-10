@@ -33,9 +33,9 @@ public record AdjustDisplayedTrophyPayload(BlockPos pos, int slot, PedestalBlock
         if (!player.level().isLoaded(pos) || player.distanceToSqr(Vec3.atCenterOf(pos)) > REACH * REACH) return;
         if (!(player.level().getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display) || display.item(slot).isEmpty()) return;
         DisplayedTrophySettings old = display.settings(slot);
-        // Each of the screen's tabs only if the server lets players change it (Behavior always).
-        boolean shown = TrophyPedestalsConfig.PEDESTAL_DISPLAY_SETTINGS.get(), text = TrophyPedestalsConfig.PEDESTAL_TEXT_SETTINGS.get();
-        boolean pose = TrophyPedestalsConfig.PEDESTAL_POSE_SETTINGS.get();
+        // (Only trophies go on cabinets and shelves: each tab only if the server lets players change a trophy's, Behavior always.)
+        boolean shown = TrophyPedestalsConfig.TROPHY_DISPLAY_SETTINGS.get(), text = TrophyPedestalsConfig.TROPHY_TEXT_SETTINGS.get();
+        boolean pose = TrophyPedestalsConfig.TROPHY_POSE_SETTINGS.get();
         display.setSettings(slot, new DisplayedTrophySettings(text ? textMode : old.textMode(), spins, shown ? yaw : old.yaw(), shown ? pitch : old.pitch(),
                 shown ? roll : old.roll(), effects,
                 redstone, sounds, pose ? animates : old.animates(), pose ? statue : old.statue(), pose ? statuePose : old.statuePose(),

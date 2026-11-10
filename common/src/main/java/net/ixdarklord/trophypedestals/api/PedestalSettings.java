@@ -76,7 +76,7 @@ public final class PedestalSettings {
         lock(pedestal, refusal);
     }
 
-    /** Lets players with access (by the server's {@code pedestal_access}) change its settings again. */
+    /** Lets players with access (by the server's {@code pedestals.access}) change its settings again. */
     public static void unlock(PedestalBlockEntity pedestal) {
         pedestal.unlock();
     }

@@ -11,6 +11,18 @@ dependencies {
     // JEI in a dev run only when asked (-Ptest_jei=true).
     if (project.findProperty("test_jei") == "true") localRuntime "mezz.jei:jei-26.2-neoforge:${jei_version}"
 
+    // Optional REI's plugin annotation and The One Probe's API (registered through NeoForge's inter-mod messages).
+    compileOnly("me.shedaniel:RoughlyEnoughItems-api-neoforge:${rei_version}") { transitive = false }
+    compileOnly("mcjty.theoneprobe:theoneprobe:${top_neoforge_version}:api") { transitive = false }
+    // REI in a dev run only when asked (-Ptest_rei=true), with the two mods it needs at runtime.
+    if (project.findProperty("test_rei") == "true") {
+        localRuntime "me.shedaniel:RoughlyEnoughItems-neoforge:${rei_version}"
+        localRuntime "dev.architectury:architectury-neoforge:${architectury_version}"
+        localRuntime "me.shedaniel.cloth:cloth-config-neoforge:${cloth_config_version}"
+    }
+    // Jade in a dev run only when asked (-Ptest_jade=true).
+    if (project.findProperty("test_jade") == "true") localRuntime "maven.modrinth:jade:${jade_neoforge_version}"
+
     // spark in a dev run only when asked (-Ptest_spark=true).
     if (project.findProperty("test_spark") == "true") localRuntime "maven.modrinth:spark:${spark_version}-neoforge"
 }

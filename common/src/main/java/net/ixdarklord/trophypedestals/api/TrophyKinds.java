@@ -1,6 +1,7 @@
 package net.ixdarklord.trophypedestals.api;
 
 import net.ixdarklord.trophypedestals.pedestal.PedestalRecord;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
@@ -16,6 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class TrophyKinds {
     private static final Map<Identifier, TrophyKind> KINDS = new ConcurrentHashMap<>();
+    // A record's own icon, made once per item (drawn every frame).
+    private static final Map<Identifier, ItemStack> ICONS = new ConcurrentHashMap<>();
 
     private TrophyKinds() {}
 
@@ -29,8 +32,9 @@ public final class TrophyKinds {
         return KINDS.get(id);
     }
 
-    /** The name of what this trophy records, or its id if its kind is unknown. */
+    /** The name of what this trophy records: its own title, else its kind's name, or its id if its kind is unknown. */
     public static Component name(PedestalRecord record, boolean client) {
+        if (record.title().isPresent()) return record.title().get();
         TrophyKind kind = get(record.kind());
         return kind == null ? Component.literal(record.subject().toString()) : kind.name(record.subject(), client);
     }
@@ -41,8 +45,9 @@ public final class TrophyKinds {
         return kind == null ? 0xFFFFFF : kind.color(record.subject(), client);
     }
 
-    /** What the trophy shows turning over it (empty if its kind is unknown). */
+    /** What the trophy shows turning over it: its own icon, else its kind's (empty if its kind is unknown). */
     public static ItemStack icon(PedestalRecord record, boolean client) {
+        if (record.icon().isPresent()) return ICONS.computeIfAbsent(record.icon().get(), id -> BuiltInRegistries.ITEM.getOptional(id).map(ItemStack::new).orElse(ItemStack.EMPTY));
         TrophyKind kind = get(record.kind());
         return kind == null ? ItemStack.EMPTY : kind.icon(record.subject(), client);
     }

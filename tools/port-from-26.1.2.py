@@ -24,11 +24,17 @@ KEEP: set[str] = set()
 
 # KubeJS (and Rhino) have no 26.2 build yet: its plugin isn't copied (and nothing else loads it).
 SKIP = [
-    "neoforge/src/main/java/net/ixdarklord/trophypedestals/neoforge/compat",
+    "neoforge/src/main/java/net/ixdarklord/trophypedestals/neoforge/compat/kubejs",
     "neoforge/src/main/resources/kubejs.plugins.txt",
+    # FTB Quests (and FTB Library) have no build for this version: FTB's Maven has only 26.1.2 ones.
+    "common/src/main/java/net/ixdarklord/trophypedestals/compat/ftb",
 ]
 
 RENAMES = [
+    # (Also when it's called on the game itself.)
+    (r"\bMinecraft\.getInstance\(\)\.setScreen\(", "Minecraft.getInstance().gui.setScreen("),
+    # Dyed items come in a collection by color.
+    (r"\bItems\.([A-Z]+)_STAINED_GLASS\b", r"Items.STAINED_GLASS.pick(DyeColor.\1)"),
     # The entity type constants moved from EntityType to EntityTypes (EntityType is still the class of a type).
     (r"\bEntityType\.(?=[A-Z][A-Z0-9_]*\b)", "EntityTypes."),
     # The hide-the-HUD toggle (F1) moved from the options to the HUD.
@@ -43,11 +49,17 @@ RENAMES = [
 
 # Classes the renames may start using, imported where they do: (what the text then has, the class).
 IMPORTS = [
+    ("DyeColor.", "net.minecraft.world.item.DyeColor"),
     ("EntityTypes.", "net.minecraft.world.entity.EntityTypes"),
     ("Vec3.atCenterOf(", "net.minecraft.world.phys.Vec3"),
 ]
 
 EDITS: dict[str, list[tuple[str, str]]] = {
+    # FTB Quests' reward isn't here (no FTB build for this version).
+    "common/src/main/java/net/ixdarklord/trophypedestals/TrophyPedestalsMod.java": [
+        ("import net.ixdarklord.trophypedestals.compat.ftb.TrophyReward;\n", ""),
+        ("        if (Platform.isModLoaded(\"ftbquests\")) TrophyReward.register();\n", ""),
+    ],
     # The quartz and purpur pillars' side textures are named for their side now.
     # The mod list's square icon (logoFile is deprecated: it's the banner now, and dev runs warn about it).
     "neoforge/src/main/resources/META-INF/neoforge.mods.toml": [
