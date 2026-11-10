@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "trophypedestals:item/trophy_ledger"
+  }
+}

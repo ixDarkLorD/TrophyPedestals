@@ -1,0 +1,9 @@
+{
+  "trigger": {
+    "type": "stat",
+    "value": "minecraft:play_time",
+    "at_least": 7200000
+  },
+  "icon": "minecraft:clock",
+  "rank": "epic"
+}
