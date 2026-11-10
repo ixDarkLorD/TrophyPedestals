@@ -9,6 +9,8 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
@@ -21,9 +23,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.Containers;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -31,7 +36,10 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.EnumMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -43,6 +51,18 @@ import java.util.UUID;
  */
 public class PedestalBlockEntity extends BlockEntity {
     private static final String RECORD = "Record";
+    private static final String GLASS = "Glass", GLASS_COLOR = "GlassColor";
+    private static final String OUTFIT = "Outfit";
+    private static final String ARMOR_STAND = "ArmorStand", PLAYER_MODEL = "PlayerModel", STAND_POSE = "StandPose";
+    /** The parts of a mannequin's armor stand that can be posed, each turned about x, y and z (in that order). */
+    public static final List<String> STAND_PARTS = List.of("head", "body", "left_arm", "right_arm", "left_leg", "right_leg");
+    /** An armor stand's pose as the game stands one: each part's x, y and z, in degrees, in {@link #STAND_PARTS}' order. */
+    public static final List<Float> DEFAULT_STAND_POSE = List.of(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, -10.0F, 0.0F, -10.0F,
+            -15.0F, 0.0F, 10.0F, -1.0F, 0.0F, -1.0F, 1.0F, 0.0F, 1.0F);
+    /** The slots a mannequin pedestal dresses: its armour, then its hands. */
+    public static final List<EquipmentSlot> OUTFIT_SLOTS = List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET,
+            EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND);
+    private static final String LEADERBOARD = "Leaderboard", LEADER_NAME = "LeaderName", LEADER_VALUE = "LeaderValue";
     private static final String DISPLAY = "Display";
     private static final String MOB_TROPHY = "MobTrophy";
     private static final String TEXT_MODE = "TextMode";
@@ -95,6 +115,21 @@ public class PedestalBlockEntity extends BlockEntity {
     private static final String TEXT_ALWAYS = "TextAlways";
     private @Nullable PedestalRecord record;
     private @Nullable MobTrophyRecord mobTrophy;
+    // A mannequin pedestal's outfit, by slot (all empty for any other pedestal).
+    private final Map<EquipmentSlot, ItemStack> outfit = new EnumMap<>(EquipmentSlot.class);
+    // Whether an armor stand is installed on it (a mannequin pedestal), whether it shows as a player (in its owner's
+    // skin) instead of the armor stand, and the armor stand's pose.
+    private boolean armorStand, playerModel;
+    private List<Float> standPose = DEFAULT_STAND_POSE;
+    // When its mob trophy last made its sound (game time; not saved).
+    private long lastSound = Long.MIN_VALUE / 2;
+    // Whether a glass case (a vitrine) closes over what it shows, and its stained glass's colour (null for clear glass).
+    private boolean glass;
+    private @Nullable DyeColor glassColor;
+    // A leaderboard pedestal's board, and its leader and their count (empty while no one leads it).
+    private Leaderboards.@Nullable Board leaderboard;
+    private String leaderName = "";
+    private int leaderValue;
     // A custom pedestal's material: the block it's drawn with.
     private @Nullable Identifier material;
     private ItemStack display = ItemStack.EMPTY;
@@ -129,6 +164,9 @@ public class PedestalBlockEntity extends BlockEntity {
     private boolean scene;
     // On clients: the mob a mob trophy shows, made once to be drawn.
     private @Nullable Entity shownMob;
+    // (Client only.) How far its mob or mannequin has reached out and up at most, posed and animated, while under glass:
+    // fitted to the case by that, so it keeps one size as it moves; measured again when what it shows or how changes.
+    private float glassReach, glassHeight;
     // When a player placed it (game time), so the clients that see it placed play its turning on.
     private long placedAt = Long.MIN_VALUE / 2;
     // On clients: when it last turned on or off (game time), so its light can rise and lower; whether it was on then;
@@ -183,7 +221,182 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     public void setShownMob(@Nullable Entity mob) {
+        clearGlassFit();
         shownMob = mob;
+    }
+
+    /**
+     * Changes its mob trophy's record (its kills counted, a new rank), keeping the item it breaks into named to match and
+     * its block lit by its rank, and sends it to clients.
+     */
+    public void updateMobTrophy(MobTrophyRecord updated) {
+        if (mobTrophy == null || level == null) return;
+        mobTrophy = updated;
+        ItemStack named = new ItemStack(getBlockState().getBlock());
+        MobTrophies.record(named, updated);
+        setComponents(DataComponentMap.builder().addAll(components()).set(DataComponents.ITEM_NAME, named.get(DataComponents.ITEM_NAME)).build());
+        BlockState state = getBlockState();
+        int rank = PedestalBlock.rank(updated.rarity());
+        if (state.hasProperty(PedestalBlock.RANK) && state.getValue(PedestalBlock.RANK) != rank) level.setBlock(worldPosition, state.setValue(PedestalBlock.RANK, rank), Block.UPDATE_ALL);
+        setChanged();
+        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+    }
+
+    private boolean sameOutfit(Map<EquipmentSlot, ItemStack> other) {
+        if (other.size() != outfit.size()) return false;
+        for (Map.Entry<EquipmentSlot, ItemStack> entry : other.entrySet()) {
+            if (!ItemStack.matches(entry.getValue(), outfit(entry.getKey()))) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Whether it's a mannequin pedestal: an armor stand installed on it (an armor stand used on an empty display
+     * pedestal), wearing what it's given, in its armour slots and hands.
+     */
+    public boolean mannequin() {
+        return armorStand;
+    }
+
+    /** Installs an armor stand on it (making it a mannequin pedestal), or takes it off (with its outfit gone already). */
+    public void setArmorStand(boolean installed) {
+        armorStand = installed;
+        if (!installed) {
+            playerModel = false;
+            standPose = DEFAULT_STAND_POSE;
+        }
+        setChanged();
+        refresh();
+    }
+
+    /** Whether its mannequin shows as a player, in its owner's skin, instead of the armor stand (the default). */
+    public boolean playerModel() {
+        return playerModel;
+    }
+
+    /** Its armor stand's pose: each of {@link #STAND_PARTS}' x, y and z, in degrees. */
+    public List<Float> standPose() {
+        return standPose;
+    }
+
+    /** Sets how its mannequin looks: as a player or the armor stand, and the armor stand's pose (each angle kept within half a turn). */
+    public void setMannequinLook(boolean playerModel, List<Float> pose) {
+        clearGlassFit();
+        this.playerModel = playerModel;
+        if (pose.size() == DEFAULT_STAND_POSE.size()) this.standPose = pose.stream().map(angle -> Mth.wrapDegrees(angle)).toList();
+        setChanged();
+        if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+    }
+
+    /** What its mannequin wears in this slot, or empty. */
+    public ItemStack outfit(EquipmentSlot slot) {
+        return outfit.getOrDefault(slot, ItemStack.EMPTY);
+    }
+
+    /** Dresses its mannequin in this (empty takes it off), and gives back what was there. */
+    public ItemStack setOutfit(EquipmentSlot slot, ItemStack stack) {
+        ItemStack old = stack.isEmpty() ? outfit.remove(slot) : outfit.put(slot, stack);
+        setChanged();
+        refresh();
+        return old == null ? ItemStack.EMPTY : old;
+    }
+
+    /**
+     * (Client only.) Takes in how far its mob or mannequin reaches out from its middle and up from its feet as drawn now,
+     * under glass, and gives back the most of each so far, {reach, height}, which it's fitted to the case by.
+     */
+    public float[] fitGlass(float reach, float height) {
+        glassReach = Math.max(glassReach, reach);
+        glassHeight = Math.max(glassHeight, height);
+        return new float[] {glassReach, glassHeight};
+    }
+
+    private void clearGlassFit() {
+        glassReach = 0.0F;
+        glassHeight = 0.0F;
+    }
+
+    /** When its mob trophy last made its sound (game time). */
+    public long lastSound() {
+        return lastSound;
+    }
+
+    public void markSound(long time) {
+        lastSound = time;
+    }
+
+    /** Whether a glass case closes over what it shows: nothing comes off it, or goes on, until the glass is lifted. */
+    public boolean glass() {
+        return glass;
+    }
+
+    /** Its glass case's colour: a stained glass's, or null for clear glass. */
+    public @Nullable DyeColor glassColor() {
+        return glassColor;
+    }
+
+    /** The glass its case is made of, as the block item it comes back as. */
+    public ItemStack glassItem() {
+        return glassItem(glassColor);
+    }
+
+    /** Clear glass, or the stained glass of this colour. */
+    public static ItemStack glassItem(@Nullable DyeColor color) {
+        return color == null ? new ItemStack(Items.GLASS)
+                : new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.withDefaultNamespace(color.getSerializedName() + "_stained_glass")));
+    }
+
+    /** Closes a case of this glass over it (null: clear glass), or lifts it off. */
+    public void setGlass(boolean glass, @Nullable DyeColor color) {
+        this.glassColor = glass ? color : null;
+        setGlass(glass);
+    }
+
+    public void setGlass(boolean glass) {
+        this.glass = glass;
+        setChanged();
+        // (Its block takes in the case's shape while it has one.)
+        BlockState state = getBlockState();
+        if (level != null && !level.isClientSide() && state.hasProperty(PedestalBlock.CASED) && state.getValue(PedestalBlock.CASED) != glass) {
+            BlockPos above = worldPosition.above();
+            // Lifted off whole: its upper part goes quietly first (no shattering glass, as if it broke; see VitrineTopBlock).
+            if (!glass && level.getBlockState(above).is(Pedestals.VITRINE_TOP.get())) level.removeBlock(above, false);
+            level.setBlock(worldPosition, state.setValue(PedestalBlock.CASED, glass), Block.UPDATE_ALL);
+            // Its upper part, over it.
+            if (glass && level.getBlockState(above).canBeReplaced()) level.setBlock(above, Pedestals.VITRINE_TOP.get().defaultBlockState(), Block.UPDATE_ALL);
+        }
+        if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+    }
+
+    /** A leaderboard pedestal's board, or null for any other pedestal. */
+    public Leaderboards.@Nullable Board leaderboard() {
+        return leaderboard;
+    }
+
+    /** Who leads its board, or empty while no one does. */
+    public String leaderName() {
+        return leaderName;
+    }
+
+    public int leaderValue() {
+        return leaderValue;
+    }
+
+    /** Makes it a leaderboard pedestal for this board (null: an ordinary one again), its leader found next. */
+    public void setLeaderboard(Leaderboards.@Nullable Board board) {
+        leaderboard = board;
+        leaderName = "";
+        leaderValue = 0;
+        setChanged();
+        // (Lit while it's a leaderboard, as while it shows an item.)
+        refresh();
+    }
+
+    public void setLeader(String name, int value) {
+        leaderName = name;
+        leaderValue = value;
+        setChanged();
+        if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
 
     /** Whether it's a trophy of either kind. */
@@ -234,7 +447,7 @@ public class PedestalBlockEntity extends BlockEntity {
      * as it turns on, and its light sinks as it turns off.
      */
     public boolean on() {
-        return displayed() && (isTrophy() || !display.isEmpty());
+        return displayed() && (isTrophy() || !display.isEmpty() || leaderboard != null || armorStand);
     }
 
     /** Records that it was just placed, so the clients that see it placed play its turning on. */
@@ -512,6 +725,7 @@ public class PedestalBlockEntity extends BlockEntity {
 
     /** Sets its yaw, pitch and roll together, sending one update. */
     public void setRotation(float yaw, float pitch, float roll) {
+        clearGlassFit();
         this.yaw = Mth.clamp(yaw, 0.0F, 360.0F);
         this.pitch = Mth.clamp(pitch, -MAX_TILT, MAX_TILT);
         this.roll = Mth.clamp(roll, -MAX_TILT, MAX_TILT);
@@ -568,6 +782,7 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     public void setStatuePose(StatuePose pose) {
+        clearGlassFit();
         this.statuePose = pose;
         setChanged();
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
@@ -583,6 +798,7 @@ public class PedestalBlockEntity extends BlockEntity {
     }
 
     public void setAnimation(String animation) {
+        clearGlassFit();
         this.animation = animationId(animation);
         setChanged();
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
@@ -618,11 +834,29 @@ public class PedestalBlockEntity extends BlockEntity {
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         super.preRemoveSideEffects(pos, state);
         if (level != null && !display.isEmpty()) Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, display);
+        if (level != null) outfit.values().forEach(worn -> Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, worn));
+        if (level != null && armorStand) Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, new ItemStack(Items.ARMOR_STAND));
+        if (level != null && glass) Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, glassItem());
+        // A leaderboard pedestal gives back its crest.
+        if (level != null && leaderboard != null) Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, new ItemStack(Pedestals.LEADERBOARD_CREST.get()));
     }
 
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
+        if (glass) output.putBoolean(GLASS, true);
+        if (glass && glassColor != null) output.putString(GLASS_COLOR, glassColor.getSerializedName());
+        outfit.forEach((slot, worn) -> output.store(OUTFIT + slot.getSerializedName(), ItemStack.CODEC, worn));
+        if (armorStand) {
+            output.putBoolean(ARMOR_STAND, true);
+            if (playerModel) output.putBoolean(PLAYER_MODEL, true);
+            if (!standPose.equals(DEFAULT_STAND_POSE)) output.store(STAND_POSE, Codec.FLOAT.listOf(), standPose);
+        }
+        if (leaderboard != null) {
+            output.putString(LEADERBOARD, leaderboard.getSerializedName());
+            output.putString(LEADER_NAME, leaderName);
+            output.putInt(LEADER_VALUE, leaderValue);
+        }
         if (record != null) output.store(RECORD, PedestalRecord.CODEC, record);
         if (mobTrophy != null) output.store(MOB_TROPHY, MobTrophyRecord.CODEC, mobTrophy);
         if (material != null) output.store(MATERIAL, Identifier.CODEC, material);
@@ -664,6 +898,28 @@ public class PedestalBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
+        glass = input.getBooleanOr(GLASS, false);
+        glassColor = input.getString(GLASS_COLOR).map(name -> DyeColor.byName(name, null)).orElse(null);
+        Map<EquipmentSlot, ItemStack> wearing = new EnumMap<>(EquipmentSlot.class);
+        for (EquipmentSlot slot : OUTFIT_SLOTS) input.read(OUTFIT + slot.getSerializedName(), ItemStack.CODEC).ifPresent(worn -> wearing.put(slot, worn));
+        // (On clients, a mannequin dressed differently is made again.)
+        if (!sameOutfit(wearing)) shownMob = null;
+        outfit.clear();
+        outfit.putAll(wearing);
+        // (A mannequin dressed before armor stands were installed has one, and keeps showing as a player.)
+        boolean dressedBefore = !wearing.isEmpty() && !input.getBooleanOr(ARMOR_STAND, false);
+        armorStand = input.getBooleanOr(ARMOR_STAND, false) || dressedBefore;
+        playerModel = input.getBooleanOr(PLAYER_MODEL, false) || dressedBefore;
+        List<Float> pose = input.read(STAND_POSE, Codec.FLOAT.listOf()).filter(angles -> angles.size() == DEFAULT_STAND_POSE.size()).orElse(DEFAULT_STAND_POSE);
+        // (On clients, a mannequin posed differently is fitted to its glass again.)
+        if (!pose.equals(standPose)) clearGlassFit();
+        standPose = pose;
+        leaderboard = input.getString(LEADERBOARD).map(Leaderboards.Board::byName).orElse(null);
+        String leader = input.getStringOr(LEADER_NAME, "");
+        // (On clients, a new leader's statue is made again.)
+        if (!leader.equals(leaderName)) shownMob = null;
+        leaderName = leader;
+        leaderValue = input.getIntOr(LEADER_VALUE, 0);
         record = input.read(RECORD, PedestalRecord.CODEC).orElse(null);
         MobTrophyRecord shown = mobTrophy;
         mobTrophy = input.read(MOB_TROPHY, MobTrophyRecord.CODEC).orElse(null);
@@ -691,7 +947,10 @@ public class PedestalBlockEntity extends BlockEntity {
         crownY = Mth.clamp(input.getFloatOr(CROWN_Y, 0.0F), -MAX_CROWN_OFFSET, MAX_CROWN_OFFSET);
         light = !input.getBooleanOr(NO_LIGHT, false);
         // (One saved before pitch and roll keeps the way it faced as its yaw.)
-        yaw = Mth.clamp(input.getFloatOr(YAW, input.getFloatOr(OLD_FACING, 0.0F)), 0.0F, 360.0F);
+        float turned = Mth.clamp(input.getFloatOr(YAW, input.getFloatOr(OLD_FACING, 0.0F)), 0.0F, 360.0F);
+        // (On clients, one turned another way is fitted to its glass again.)
+        if (turned != yaw) clearGlassFit();
+        yaw = turned;
         pitch = Mth.clamp(input.getFloatOr(PITCH, 0.0F), -MAX_TILT, MAX_TILT);
         roll = Mth.clamp(input.getFloatOr(ROLL, 0.0F), -MAX_TILT, MAX_TILT);
         effects = !input.getBooleanOr(NO_EFFECTS, false);
@@ -706,8 +965,9 @@ public class PedestalBlockEntity extends BlockEntity {
             wasOn = on;
             synced = true;
         } else if (level.isClientSide()) {
-            // Turned on or off since its last word; or first heard of just after it was placed, already on.
-            boolean placedNow = !synced && on && level.getGameTime() - placedAt < JUST_PLACED;
+            // Turned on or off since its last word; or first heard of just after it was placed, already on (unless this
+            // client placed it and is already playing its turning on).
+            boolean placedNow = !synced && on && level.getGameTime() - placedAt < JUST_PLACED && level.getGameTime() - displayChangedAt >= JUST_PLACED;
             if (synced ? on != wasOn : placedNow) displayChangedAt = level.getGameTime();
             wasOn = on;
             synced = true;
@@ -720,6 +980,9 @@ public class PedestalBlockEntity extends BlockEntity {
         record = components.get(Pedestals.RECORD.get());
         mobTrophy = components.get(Pedestals.MOB_TROPHY.get());
         material = components.get(Pedestals.PEDESTAL_MATERIAL.get());
+        // Placed by this client's player (the game places it on their side before the server says so): it turns on from
+        // now, rather than showing lit until the server's word starts its turning on.
+        if (level != null && level.isClientSide() && !synced && on()) displayChangedAt = level.getGameTime();
     }
 
     @Override
