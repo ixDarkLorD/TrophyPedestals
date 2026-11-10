@@ -1,0 +1,9 @@
+{
+  "trigger": {
+    "type": "stat",
+    "value": "minecraft:walk_one_cm",
+    "at_least": 10000000
+  },
+  "icon": "minecraft:leather_boots",
+  "rank": "rare"
+}

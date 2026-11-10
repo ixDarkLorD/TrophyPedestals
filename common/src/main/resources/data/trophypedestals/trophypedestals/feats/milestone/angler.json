@@ -1,0 +1,9 @@
+{
+  "trigger": {
+    "type": "stat",
+    "value": "minecraft:fish_caught",
+    "at_least": 100
+  },
+  "icon": "minecraft:fishing_rod",
+  "rank": "uncommon"
+}
