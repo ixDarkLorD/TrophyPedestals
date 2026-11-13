@@ -34,12 +34,18 @@ public final class TrophyPedestalsMod implements ModConstructor {
         Feats.init();
         Leaderboards.init();
         TrophyPedestalsCommands.init();
-        // Optional FTB Quests: a reward that gives a trophy (compat/ftb).
-        if (Platform.isModLoaded("ftbquests")) TrophyReward.register();
 
         if (GameTests.isEnabled()) {
             LOGGER.info("Registered game tests {}", GameTests.register(MOD_ID, TrophyPedestalsGameTests.class));
         }
+    }
+
+    @Override
+    public void onCommonSetup() {
+        // Optional FTB Quests: a reward that gives a trophy (compat/ftb). FTB Quests keeps its reward types in a plain
+        // HashMap, and mods are constructed in parallel, so registering from onConstructMod can collide with another
+        // mod doing the same (a ConcurrentModificationException at startup). Common setup runs on the main thread.
+        if (Platform.isModLoaded("ftbquests")) TrophyReward.register();
     }
 
     public static Identifier id(String path) {
