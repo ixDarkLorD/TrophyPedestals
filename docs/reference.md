@@ -346,7 +346,7 @@ The server config (`config/trophypedestals-server`, per world) has three groups.
 | `display_pedestal_settings.display` | `false` | whether a display pedestal's screen has a Display tab: its item's size, height and rotation |
 | `display_pedestal_settings.text` | `false` | whether a display pedestal's screen has its text's height and size, on a Text tab |
 
-With both `display_pedestal_settings` off, a display pedestal keeps its one-page screen (when its text shows, redstone,
+Both `display_pedestal_settings` are off by default. With both off, a display pedestal keeps its one-page screen (when its text shows, redstone,
 sounds and its showcase light). With either on, its screen has tabs too: Display (if on), Text, and Behavior (spin,
 sounds, showcase light and redstone).
 
