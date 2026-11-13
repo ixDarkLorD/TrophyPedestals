@@ -46,7 +46,8 @@ statue. Then line them all up in trophy cabinets and wall shelves. It's needed *
   and join side by side. Both come in every wood, and their gold trim can be any block (an axe takes it off).
 - **🎛️ Make it yours.** Sneak and use an empty hand on a pedestal to adjust its size (up to 20 times), height,
   rotation, text, pose and animation, spin, flourishes, sounds, light, crown and redstone. Pedestals can be kept
-  private to their owner.
+  private to their owner. Item display pedestals keep a simpler screen by default; turn on
+  `pedestals.display_pedestal_settings` in the server config to give them size, height, rotation and text controls too.
 - **🧰 For packs and mods.** The `trophypedestals:set_trophy` and `trophypedestals:set_mob_trophy` loot functions,
   `/trophypedestals mob_trophy`, the `TrophyPedestals`, `TrophyKinds`, `PedestalSettings` and `PedestalRarities` APIs,
   a `TrophyPedestals` KubeJS binding (NeoForge and Forge), JEI and REI pages for mob trophies and trims, what a pedestal
