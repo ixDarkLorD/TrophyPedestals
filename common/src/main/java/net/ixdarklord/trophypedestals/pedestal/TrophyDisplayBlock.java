@@ -1,16 +1,19 @@
 package net.ixdarklord.trophypedestals.pedestal;
 import net.ixdarklord.coolcatcore.api.network.Network;
+import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.network.OpenCabinetPayload;
 import net.ixdarklord.trophypedestals.network.OpenDisplayedTrophyPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.Prediction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -24,6 +27,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -148,10 +152,29 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
         }
     }
 
-    // A block it can be trimmed with: any block's item but another display's or a pedestal's.
+    /** Blocks never used as a trim (for a data pack to fill; none of its own). */
+    public static final TagKey<Block> NO_TRIM = TagKey.create(Registries.BLOCK, TrophyPedestalsMod.id("no_trim"));
+
+    // A block it can be trimmed with, from the block item in hand: see canTrim.
     private static @Nullable Identifier trimMaterial(ItemStack stack) {
-        if (!(stack.getItem() instanceof BlockItem item) || item.getBlock() instanceof TrophyDisplayBlock || item.getBlock() instanceof PedestalBlock) return null;
+        if (!(stack.getItem() instanceof BlockItem item) || !canTrim(item.getBlock())) return null;
         return BuiltInRegistries.BLOCK.getKey(item.getBlock());
+    }
+
+    /**
+     * Whether a cabinet or shelf can be trimmed with this block: any block but one with a block entity (a chest, a
+     * furnace, a pedestal, another display, a mod's machine: its looks aren't its block model's alone) or one in the
+     * {@code trophypedestals:no_trim} block tag.
+     */
+    public static boolean canTrim(Block block) {
+        return !(block instanceof EntityBlock) && !block.builtInRegistryHolder().is(NO_TRIM);
+    }
+
+    /** Whether the trim material this id names can be used: a block that {@link #canTrim} (gold, always). */
+    public static boolean canTrim(Identifier material) {
+        if (GOLD.equals(material)) return true;
+        Block block = BuiltInRegistries.BLOCK.getOptional(material).orElse(null);
+        return block != null && canTrim(block);
     }
 
     // Placed from an item with a trim, it has that trim.
