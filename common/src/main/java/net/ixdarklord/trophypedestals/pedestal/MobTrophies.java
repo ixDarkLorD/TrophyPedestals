@@ -5,9 +5,11 @@ import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.api.PedestalRarity;
+import net.ixdarklord.trophypedestals.api.TrophyEvents;
 import net.ixdarklord.trophypedestals.compat.component.Components;
 import net.ixdarklord.trophypedestals.compat.component.DataComponents;
 import net.ixdarklord.trophypedestals.feat.TrophyLedger;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -23,7 +25,6 @@ import net.minecraft.stats.Stats;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -68,14 +69,42 @@ public final class MobTrophies {
         LivingEvents.DEATH.register((entity, source) -> {
             if (entity.level() instanceof ServerLevel level) {
                 ItemStack trophy = roll(entity, source, level.getRandom());
+                // (Mods and scripts can change it or stop it: TrophyEvents.MOB_TROPHY_DROP.)
+                if (trophy != null && source.getEntity() instanceof ServerPlayer player) {
+                    TrophyEvents.Drop drop = new TrophyEvents.Drop(player, entity, trophy);
+                    TrophyEvents.MOB_TROPHY_DROP.invoker().onDrop(drop);
+                    trophy = drop.cancelled() ? null : drop.trophy();
+                }
                 if (trophy != null) {
                     MobTrophyRecord record = Components.get(trophy, Pedestals.MOB_TROPHY.get());
-                    if (record != null && source.getEntity() instanceof ServerPlayer slayer) TrophyLedger.collect(slayer, record);
+                    if (record != null && source.getEntity() instanceof ServerPlayer slayer) {
+                        TrophyLedger.collect(slayer, record);
+                        announce(slayer, trophy, record);
+                    }
                     entity.spawnAtLocation(trophy);
                 }
             }
             return EventResult.pass();
         });
+    }
+
+    /**
+     * Tells the whole server, while {@code mob_trophies.announce_rare} is on, that a player got a legendary or gilded
+     * mob trophy: a gold trophy cup, then the news in pale gold, the trophy's name in its rank's colour, its tooltip
+     * shown on hover.
+     */
+    // The announcement's own words: the mod's pale gold (the player's name and the trophy's keep their colours).
+    private static final int ANNOUNCE_COLOR = 0xFFE08A;
+    // The trophy cup's font and its one character (a private use one), for the announcement's prefix.
+    private static final ResourceLocation ICON_FONT = TrophyPedestalsMod.id("icons");
+    private static final String TROPHY_GLYPH = "";
+
+    public static void announce(ServerPlayer player, ItemStack trophy, MobTrophyRecord record) {
+        if (!TrophyPedestalsConfig.ANNOUNCE_RARE.get() || !(record.gilded() || PedestalRarities.LEGENDARY.id().equals(record.rarity()))) return;
+        // (The cup: one character of the mod's icon font, assets/trophypedestals/font/icons.json, drawn untinted.)
+        Component cup = Component.literal(TROPHY_GLYPH).withStyle(style -> style.withFont(ICON_FONT).withColor(ChatFormatting.WHITE));
+        player.level().getServer().getPlayerList().broadcastSystemMessage(Component.empty().append(cup).append(" ")
+                .append(Component.translatable("trophypedestals.announce.rare", player.getDisplayName(), trophy.getDisplayName()).withStyle(style -> style.withColor(ANNOUNCE_COLOR))), false);
     }
 
     /**
@@ -86,7 +115,8 @@ public final class MobTrophies {
     public static @Nullable ItemStack roll(LivingEntity entity, DamageSource source, RandomSource random) {
         if (entity instanceof ServerPlayer victim) return rollPlayer(victim, source, random);
         if (!TrophyPedestalsConfig.MOB_TROPHIES.get() || !droppable(entity) || !(source.getEntity() instanceof ServerPlayer player)) return null;
-        if (random.nextDouble() >= TrophyPedestalsConfig.MOB_TROPHY_CHANCE.get()) return null;
+        if (bossCollected(entity.getType(), player)) return null;
+        if (random.nextDouble() >= chance(entity.getType())) return null;
         ResourceLocation rank = rank(entity, player);
         ItemStack trophy = trophy(Pedestals.DEFAULT.get(), entity, player.getName().getString(), System.currentTimeMillis(), rank);
         return random.nextDouble() < TrophyPedestalsConfig.GILDED_CHANCE.get() ? gild(trophy) : trophy;
@@ -132,6 +162,55 @@ public final class MobTrophies {
     /** Whether this can drop a trophy at all: any living thing but a player or an armor stand, unless tagged not to. */
     public static boolean droppable(LivingEntity entity) {
         return !(entity instanceof Player) && !(entity instanceof ArmorStand) && !entity.getType().builtInRegistryHolder().is(NONE);
+    }
+
+    /**
+     * The chance this mob drops its trophy: the first {@code mob_trophies.chance_overrides} entry naming it by id, else the
+     * first naming one of its tags, else the first naming its mod ({@code @mod id}), else {@code mob_trophies.chance}. An
+     * entry that can't be read is logged and skipped.
+     */
+    public static double chance(EntityType<?> type) {
+        ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
+        Double byTag = null, byMod = null;
+        for (String entry : TrophyPedestalsConfig.MOB_TROPHY_CHANCE_OVERRIDES.get()) {
+            int split = entry.indexOf('=');
+            Double chance = split < 0 ? null : probability(entry.substring(split + 1));
+            String target = split < 0 ? "" : entry.substring(0, split).trim();
+            if (chance == null || target.length() < 2) {
+                if (WARNED_OVERRIDES.add(entry)) TrophyPedestalsMod.LOGGER.warn("Can't read the mob_trophies.chance_overrides entry \"{}\"; it needs \"<mob id, #tag or @mod id> = chance\" with a chance from 0 to 1", entry);
+                continue;
+            }
+            if (target.startsWith("#")) {
+                ResourceLocation tag = ResourceLocation.tryParse(target.substring(1));
+                if (byTag == null && tag != null && type.builtInRegistryHolder().is(TagKey.create(Registries.ENTITY_TYPE, tag))) byTag = chance;
+            } else if (target.startsWith("@")) {
+                if (byMod == null && id.getNamespace().equals(target.substring(1))) byMod = chance;
+            } else if (id.equals(ResourceLocation.tryParse(target))) {
+                return chance;
+            }
+        }
+        if (byTag != null) return byTag;
+        if (byMod != null) return byMod;
+        return TrophyPedestalsConfig.MOB_TROPHY_CHANCE.get();
+    }
+
+    // "0.05" as a chance from 0 to 1; null if it isn't a number in that range.
+    private static @Nullable Double probability(String text) {
+        try {
+            double chance = Double.parseDouble(text.trim());
+            return chance >= 0.0 && chance <= 1.0 ? chance : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Whether this is a boss whose trophy the player has already collected, while {@code mob_trophies.boss_trophies_once}
+     * is on: then it drops no more for them.
+     */
+    public static boolean bossCollected(EntityType<?> type, ServerPlayer player) {
+        if (!TrophyPedestalsConfig.BOSS_TROPHIES_ONCE.get() || tagged(type) == null) return false;
+        return TrophyLedger.COLLECTED.get(player).contains(BuiltInRegistries.ENTITY_TYPE.getKey(type));
     }
 
     /** The rank a trophy of this mob dropped for this player has, by the server's {@code mob_trophies.rank}. */

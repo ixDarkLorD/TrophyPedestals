@@ -58,7 +58,8 @@ public final class PedestalParticles {
         double x = pos.getX() + 0.5, y = pos.getY() + 0.95 + pedestal.height(), z = pos.getZ() + 0.5;
         long time = level.getGameTime();
         // Its ambient sound, offset by its place so pedestals side by side don't sound together.
-        if (pedestal.sounds() && looks.ambient != null && (time + pos.asLong()) % rarity.ambientTicks() == 0
+        boolean sounds = pedestal.sounds() && TrophyPedestalsClientConfig.AMBIENT_SOUNDS.get();
+        if (sounds && looks.ambient != null && (time + pos.asLong()) % rarity.ambientTicks() == 0
                 && minecraft.player.distanceToSqr(x, y, z) < SOUND_RANGE * SOUND_RANGE) {
             PedestalRarity.Sound sound = rarity.ambientSound();
             level.playLocalSound(pos, looks.ambient, SoundSource.BLOCKS, sound.volume(), sound.pitch(), false);
@@ -66,7 +67,7 @@ public final class PedestalParticles {
         // Everything spreads and rises as far as the pedestal's display scale makes what it shows.
         double size = pedestal.scale();
         // The rest is light: none with its flourishes off (its sounds follow their own setting).
-        if (!pedestal.effects() || !PedestalRenderer.lookedAt(pos, (float) size, pedestal.height())) return;
+        if (!pedestal.effects() || !TrophyPedestalsClientConfig.FLOURISHES.get() || !PedestalRenderer.lookedAt(pos, (float) size, pedestal.height())) return;
         ParticleStatus status = minecraft.options.particles().get();
         if (status == ParticleStatus.MINIMAL) return;
         boolean all = status == ParticleStatus.ALL;
@@ -107,7 +108,7 @@ public final class PedestalParticles {
                 double a = i * Math.PI * 2.0 / sparks;
                 WorldParticles.spawn(looks.burst, x, y + 0.42 * size, z, Math.cos(a) * 0.07 * size, 0.01, Math.sin(a) * 0.07 * size);
             }
-            if (pedestal.sounds()) level.playLocalSound(pos, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 0.6F, 1.6F, false);
+            if (sounds) level.playLocalSound(pos, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 0.6F, 1.6F, false);
         }
         PedestalEffect effect = PedestalEffects.of(rarity);
         if (effect != null) effect.tick(level, pos, rarity);

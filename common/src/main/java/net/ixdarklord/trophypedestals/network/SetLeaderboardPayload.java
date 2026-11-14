@@ -1,12 +1,12 @@
 package net.ixdarklord.trophypedestals.network;
 
+import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.pedestal.Leaderboards;
 import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -46,7 +46,7 @@ public record SetLeaderboardPayload(BlockPos pos, ResourceLocation board) implem
             return;
         }
         pedestal.setLeaderboard(chosen);
-        Leaderboards.show(pedestal, Leaderboards.leader(player.level().getServer(), chosen));
+        Leaderboards.show(pedestal, Leaderboards.top(player.level().getServer(), chosen));
         player.displayClientMessage(Component.translatable("trophypedestals.leaderboard.set", chosen.title()), true);
         player.level().playSound(null, pos, SoundEvents.ITEM_FRAME_ROTATE_ITEM, SoundSource.BLOCKS, 1.0F, 1.0F);
     }

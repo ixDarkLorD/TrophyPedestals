@@ -1,10 +1,10 @@
 package net.ixdarklord.trophypedestals.network;
 
+import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
 import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
 import net.minecraft.core.BlockPos;
-import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 
 /**

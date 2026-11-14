@@ -1,8 +1,8 @@
 package net.ixdarklord.trophypedestals.network;
 
+import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.minecraft.core.BlockPos;
-import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;

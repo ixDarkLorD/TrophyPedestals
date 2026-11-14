@@ -42,7 +42,15 @@ and a **trophy shelf** (on the side of a solid block, holding two; shelves side 
 with no trim. Use a block on one to trim it with that block: its rails, posts, corner caps and brackets are drawn in
 that block's textures. A gold ingot (or a gold block) gives the gold trim, and an axe takes the trim off again. The
 trim is the `trophypedestals:trim_material` component (`minecraft:gold_block` for gold), kept when it's broken; a
-trimmed one's item shows its trim. Use a trophy on a spot to put it there, and an empty hand to take it back.
+trimmed one's item shows its trim. Use a trophy on a spot to put it there, and an empty hand to take it back. Any item
+that isn't a block goes on a spot too, standing there by itself (a block in hand is for the trim). Each spot can be
+aimed at by itself, through the open front only: aiming through the rim, the sides, the back or the frame isn't aiming
+at a trophy, so it neither takes it nor shows its text. Sneaking with an empty hand on a trophy opens its settings; on
+anything else of the cabinet or shelf, the owner gets its **Cabinet Settings**: who else may use it (Private, the
+default, Team, or Everyone; operators always can) and when the name of the set its trophies make shows over it (Shown,
+the default, On Look, or Hidden). Whoever places one owns it (one placed before had no owner and stays open to anyone),
+and only those its owner lets may put trophies on it, take them off, trim it or adjust them. Four different mobs of
+one mod (not Minecraft's own) make that mod's set, "Aether II Set", with no data pack needed.
 
 ### Ranks
 
@@ -117,7 +125,10 @@ a gold pedestal (a custom pedestal of gold blocks), named "Gilded Zombie Trophy"
 The **Mob Trophies Ledger** (a book and a gold nugget) lists every mob that can be a trophy, in the order of the mob trophies'
 creative tab. Each mob its reader has had a trophy of (one dropped for them, or a first kill) shows in full, its name on
 hover; the rest are dark silhouettes, "???". A gilded one has a gold corner, and the top counts them: "Collected 23 of
-87 (26%)".
+87 (26%)". Its search box finds collected mobs by name and any mob by its mod's name (so it gives away no mob not yet
+collected), and the button beside it shows one mod's mobs at a time (a right click goes back one), the count then that
+mod's. The Missing toggle leaves only the mobs not collected yet. Hovering a mob not collected yet shows where it
+spawns by itself ("Found in: Plains, Forest, Taiga and 3 more"), not its name.
 
 **Buying back a lost trophy.** A trophy lost (burned, despawned, broken by someone else) can be bought back from the
 Ledger: click a collected mob to pick it (a gold outline, and its cost on hover), then click it again to buy a new trophy
@@ -126,13 +137,15 @@ for twice as many. It's yours, slain by you now, at the rank a new one would dro
 bought again, so it can't be stocked up on.
 
 A trophy cabinet whose four spots hold trophies of four different mobs from one **set** shows the set's name over it in a
-gold frame. The sets are the Nether, the End, the Ocean, the Bosses and the Illagers. Each is an entity type tag under
+gold frame. The sets are the Nether, the End, the Ocean, the Bosses, the Illagers, the Undead, the Arthropods, the Farm Animals and
+the Wildlife. Each is an entity type tag under
 `trophypedestals:sets/` (`trophypedestals:sets/nether`), so data packs can change them or add their own, named by the
 lang key `trophypedestals.set.<name>`.
 
 A **Leaderboard Crest** (a gold ingot and paper) used on an empty display pedestal makes it a **leaderboard**: it shows
 whoever on the server leads one statistic, as their statue in their own skin, with the board's name, theirs and their
-count. Using the crest opens a picker of every board: each of the game's statistics (mob kills, deaths, distance
+count, and under them the runners-up ("2nd: Alex, 24", "3rd: ..."), whose smaller statues stand beside the leader's
+as on a podium. Using the crest opens a picker of every board: each of the game's statistics (mob kills, deaths, distance
 walked, time played... and any a mod adds), with who leads it now and by how much, and a search bar that finds a board
 by its name or its leader. Picking one shows it; using the crest on a leaderboard opens the picker again to change it.
 Most Mob Kills, Most Player Kills, Most Deaths, Farthest Walked, Longest Played, Most Fish Caught, Most Jumps and Most
@@ -151,11 +164,12 @@ trophy's own colour, in place of what it records. It keeps the name placed and b
 item, a mannequin or a leaderboard) to close a case of it over it: clear glass with a silver rim (a clear case's lid
 tinted by its light), or stained glass in its colour. Every case is the same size, standing on the cap and as wide as
 it, the pedestal and its case within two blocks (the space over the pedestal must be free), and solid, so no one walks
-into it. Its upper part is clicked as the pedestal, and a middle click on it gives the pedestal; breaking it lifts the
-glass off. What it shows floats centred in the case, a gap over and under it, as large as that room lets it be (a mob or mannequin standing still, facing its yaw), with nothing reaching out of
+into it. Glass placed in the space over a pedestal closes a case the same way. Nothing else can be placed there, by a
+player, a dispenser or another mod's machine: it's the room for what the pedestal shows. Its upper part is clicked as the pedestal, and a middle click on it gives the pedestal; breaking it lifts the
+glass off. What it shows floats centred in the case, a gap over and under it, at its usual size, shrunk only if it wouldn't fit (a mob or mannequin standing still, facing its yaw), with nothing reaching out of
 the glass: a mob or mannequin is fitted by how it's posed and animated, and by what it holds, and anything tipped is fitted
-however it turns. Its display size can make it smaller in the case, never larger than the case lets it be (its height
-setting is kept for when the glass comes off). There's no beam or halos under
+however it turns. Its display size and height settings don't apply under glass; they're kept for when the glass comes
+off. There's no beam or halos under
 glass. Closing a case sounds like putting an item in an item frame, and lifting one like taking it out. Nothing goes on it or comes off it until the glass is lifted:
 sneaking and using an empty hand on the glass lifts it (the same glass comes back), for those who may adjust the pedestal; on the pedestal under it, that opens its adjust screen as usual. Breaking the pedestal drops
 the glass.
@@ -193,6 +207,8 @@ full) and announced in chat (`earned_trophies.announce`).
   "First Wither Slain", and the first to kill the Warden or an Elder Guardian an epic one. No one after them does.
 - **Milestones.** Walking 100 km (Wanderer, rare), killing 1,000 mobs (Monster Hunter, rare), catching 100 fish
   (Angler, uncommon) and playing for 100 hours (Veteran, epic).
+- **Collections.** Trophies of 10 different mobs (Collector, uncommon), 25 (Curator, rare), 50 (Archivist, epic) and
+  100 (Grand Curator, legendary), and 5 gilded ones (Gilded Gallery, epic).
 
 All but the advancements' are data, in `data/trophypedestals/trophypedestals/feats/`, and packs add their own the same
 way (`earned_trophies.feats` turns them all off). Each file is one trophy:
@@ -222,6 +238,7 @@ way (`earned_trophies.feats` turns them all off). Each file is one trophy:
 | `advancement` | `advancement` | a player earns that advancement (its title and icon are the advancement's unless given; one already earned counts when they next join) |
 | `stat` | `stat` (default `minecraft:custom`), `value`, `at_least` | a player's statistic reaches `at_least` (checked every 5 seconds) |
 | `first_kill` | `entity` (an id or `#tag`), `scope` (`server`, the default, or `player`) | a player kills that mob first, of everyone or for themselves; the trophy shows the mob |
+| `collection` | `at_least`, `gilded` (default `false`) | a player's Mob Trophies Ledger holds trophies of `at_least` different mobs (gilded ones only, with `gilded`) |
 
 A file that can't be read is logged with its pack and path, and skipped.
 
@@ -304,6 +321,11 @@ with teams of its own sets another source with `PedestalTeams.setSource`, so its
 `/trophypedestals mob_trophy <players> <entity> [pedestal] [rarity]` (operators) gives each player a mob trophy, slain
 by them, on a deepslate pedestal or the one named, ranked by the mob's toughness or as named.
 
+`/trophypedestals trophy <players> "<title>" [icon] [rarity] [pedestal]` (operators) gives each player a titled trophy,
+as a quest's Trophy reward makes one: showing the item named (a gold ingot unless one is), rare unless another rank is
+named, on a deepslate pedestal or the one named, earned by them now. For example
+`/trophypedestals trophy @p "Dragon Slayer" minecraft:dragon_head legendary`.
+
 ## Config
 
 The server config (`config/trophypedestals-server`, per world) has three groups.
@@ -314,6 +336,9 @@ The server config (`config/trophypedestals-server`, per world) has three groups.
 |---|---|---|
 | `enabled` | `true` | whether mobs a player kills can drop a trophy |
 | `chance` | `0.01` | the chance, 0 to 1 |
+| `announce_rare` | `true` | whether the whole server is told in chat (with a gold trophy cup) when someone gets a legendary or gilded mob trophy |
+| `chance_overrides` | `[]` | other chances, each `"<mob id, #tag or @mod id> = chance"`, e.g. `"#minecraft:raiders = 0.05"` or `"@alexsmobs = 0.005"`; a mob's id wins over its tags, and a tag over its mod |
+| `boss_trophies_once` | `false` | whether a boss (in the epic or legendary mob trophy tags) drops its trophy only for a player who hasn't collected it yet |
 | `player_trophies` | `false` | whether a player another player kills can drop a statue trophy |
 | `gilded_chance` | `0.02` | the chance a mob trophy that drops is gilded, 0 to 1 |
 | `growing` | `true` | whether a placed mob trophy counts its slayer's kills, and grows a rank with `KILLS` |
@@ -346,9 +371,20 @@ The server config (`config/trophypedestals-server`, per world) has three groups.
 | `display_pedestal_settings.display` | `false` | whether a display pedestal's screen has a Display tab: its item's size, height and rotation |
 | `display_pedestal_settings.text` | `false` | whether a display pedestal's screen has its text's height and size, on a Text tab |
 
-Both `display_pedestal_settings` are off by default. With both off, a display pedestal keeps its one-page screen (when its text shows, redstone,
-sounds and its showcase light). With either on, its screen has tabs too: Display (if on), Text, and Behavior (spin,
-sounds, showcase light and redstone).
+Both `display_pedestal_settings` are off by default. A display pedestal's screen has the Display, Text and Behavior
+(spin, sounds, showcase light and redstone) tabs; while `display` is off, its Display tab shows greyed out and says, while
+hovered, that the server turned it off, and while `text` is off its Text tab has only when its text shows. A trophy's tab
+turned off by `trophy_settings` shows the same way.
+
+Each player also has their own client config (`config/trophypedestals-client`), for a calmer or lighter trophy room.
+It only takes away: a pedestal whose owner turned its flourishes or sounds off stays without them.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `flourishes` | `true` | whether ranked trophies show their beams, halos, flares, crowns and particles (their showcase light and outlines stay) |
+| `ambient_sounds` | `true` | whether ranked trophies play their ambient sounds and chimes |
+| `moving_mobs` | `true` | whether mobs and statues on trophies move and play their animations |
+| `display_distance` | `64` | how far away, in blocks (16 to 256), what pedestals show is drawn |
 
 ## Other mods
 
@@ -358,8 +394,11 @@ sounds, showcase light and redstone).
   kills too), an engraved name, a leaderboard's leader, a mannequin, an item on display, and its glass case. Before 26.1,
   The One Probe is on NeoForge and Forge only (it had no Fabric build).
 - **FTB Quests:** a "Trophy" reward, made as it's claimed: titled as the pack maker writes it (the quest's title if
-  left blank), showing the item they name, of the rank they pick, recorded as earned by the player who claims it. From
-  1.20.1 to 26.1.2 (FTB Quests has no build for 26.2 or 26.3 yet).
+  left blank), showing the item they name, of the rank they pick, recorded as earned by the player who claims it. And a
+  "Mob Trophy" task, done once the player's Mob Trophies Ledger has a trophy of the mob named (`mob`, such as
+  `minecraft:zombie`), or of `count` different mobs with no mob named; `gilded` asks for gilded ones. It's checked on
+  login and every few ticks, so trophies collected before the quest was added count too, and it shows the mob's trophy.
+  From 1.20.1 to 26.1.2 (FTB Quests has no build for 26.2 or 26.3 yet).
 - **EMI:** not yet.
 
 ## KubeJS (NeoForge and Forge, up to 26.1.2)
@@ -371,3 +410,19 @@ Server scripts get a `TrophyPedestals` binding:
 | `TrophyPedestals.isPedestal(level, pos)` | whether there's a pedestal there |
 | `TrophyPedestals.pedestalSettings(level, pos)`, `setPedestal(level, pos, {...})` | a pedestal's settings, by name: `textMode`, `scale`, `height`, `yaw`, `pitch`, `roll`, `spins`, `animates`, `effects`, `sounds`, `textHeight`, `textScale`, `crown`, `light`, `redstone`, `statue`, `statuePose`, `animation` (and `locked`) |
 | `TrophyPedestals.forcePedestal(level, pos, {...}, message)`, `lockPedestal(level, pos[, message])`, `unlockPedestal(level, pos)` | set and lock its settings against every player, with a refusal message (or `null`, silently) |
+
+And `TrophyPedestalsEvents`, both on the server:
+
+| Event | Fires | Has |
+|---|---|---|
+| `TrophyPedestalsEvents.mobTrophyDrop(event => ...)` | a mob trophy is about to drop for the player who killed the mob | `event.player`, `event.mob`, `event.trophy` (set it to drop another); `event.cancel()` drops nothing and records nothing in their ledger |
+| `TrophyPedestalsEvents.collected(event => ...)` | a mob trophy was recorded in a player's Mob Trophies Ledger | `event.player`, `event.mobType`, `event.gilded`, `event.first` (the first of that mob they've had) |
+
+```js
+TrophyPedestalsEvents.mobTrophyDrop(event => {
+  if (event.mob.type == 'minecraft:pig') event.cancel()
+})
+```
+
+Mods on either loader get the same two events from `net.ixdarklord.trophypedestals.api.TrophyEvents` (`MOB_TROPHY_DROP`,
+`COLLECTED`).

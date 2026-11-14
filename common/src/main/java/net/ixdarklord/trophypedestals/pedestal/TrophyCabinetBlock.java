@@ -9,7 +9,6 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -29,6 +28,9 @@ import java.util.Locale;
  */
 public class TrophyCabinetBlock extends TrophyDisplayBlock {
     public static final EnumProperty<Part> PART = EnumProperty.create("part", Part.class);
+    // Its two spots' windows on its front (pixels, facing north: the left spot is on the viewer's left, east), between
+    // its base and its top rail, inside its outer post.
+    private static final double[][] SPOTS = {{8.2, 2, 14, 14}, {2, 2, 7.8, 14}};
     /** Whether it's joined to a cabinet's like half above it, or below it (stacked: their boards meet as one divider). */
     public static final BooleanProperty UP = BlockStateProperties.UP, DOWN = BlockStateProperties.DOWN;
 
@@ -46,6 +48,11 @@ public class TrophyCabinetBlock extends TrophyDisplayBlock {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(PART, Part.LEFT)
                 .setValue(UP, false).setValue(DOWN, false).setValue(GOLD_TRIM, false));
+    }
+
+    @Override
+    protected double[][] spots() {
+        return SPOTS;
     }
 
     @Override
