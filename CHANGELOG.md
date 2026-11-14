@@ -1,6 +1,10 @@
 # Changelog
 This file is for listing all the changes to this project
 
+## v0.2.0 (unreleased)
+### 🐛 Fixes
+- Trophy cabinet items no longer show broken, gappy or speckled icons (and dropped or held cabinets no longer come apart) in large modpacks: the item model's wooden faces now carry their own texture coordinates instead of reading past the planks' texture into its neighbours in the atlas.
+
 ## v0.1.0 Release | Nov 10, 2026
 ### ✨ New Features
 - First release, for Minecraft 26.1 to 26.1.2, 26.2 and 26.3 (NeoForge, Fabric), 1.21.1 (NeoForge, Fabric) and 1.20.1 (Forge, Fabric), built on CoolCatLib 8.2.0.
