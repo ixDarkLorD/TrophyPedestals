@@ -62,7 +62,7 @@ public final class TrimCategory implements IRecipeCategory<TrimCategory.Trim> {
             List<ItemStack> materials = new ArrayList<>(), trimmed = new ArrayList<>();
             for (Item material : MATERIALS) {
                 ResourceLocation trim = material == Items.GOLD_INGOT ? TrophyDisplayBlock.GOLD
-                        : material instanceof BlockItem block ? BuiltInRegistries.BLOCK.getKey(block.getBlock()) : null;
+                        : material instanceof BlockItem block && TrophyDisplayBlock.canTrim(block.getBlock()) ? BuiltInRegistries.BLOCK.getKey(block.getBlock()) : null;
                 if (trim == null) continue;
                 ItemStack result = display.copy();
                 Components.set(result, Pedestals.TRIM_MATERIAL.get(), trim);
