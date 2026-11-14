@@ -2,7 +2,34 @@
 This file is for listing all the changes to this project
 
 ## v0.2.0 (unreleased)
+### ✨ New Features
+- **Drop chance overrides** (`mob_trophies.chance_overrides`): set another chance for a mob, an entity type tag or a whole mod, as `"<mob id, #tag or @mod id> = chance"`. JEI and REI show each mob's own chance.
+- **Four new trophy sets:** Undead, Arthropods, Farm Animals and Wildlife, for a cabinet of four of their mobs.
+- **Leaderboard podium:** a leaderboard pedestal shows second and third place under the leader, in its text (and Jade and The One Probe), and as smaller statues beside the leader's.
+- **"Most Mob Trophies" leaderboard:** a new statistic, `trophypedestals:mob_trophies_collected`, kept equal to each player's ledger, is a board like any other.
+- **Collection milestones:** Collector (10 different mobs), Curator (25), Archivist (50), Grand Curator (100) and Gilded Gallery (5 gilded), with a `collection` trigger for data pack trophies.
+- **Mod sets:** four different mobs of one mod make that mod's set ("Aether II Set") with no data pack needed.
+- **Rare trophy announcements** (`mob_trophies.announce_rare`, on by default): the server is told in chat, with a gold trophy cup, when someone gets a legendary or gilded mob trophy.
+- **Owned cabinets and shelves:** whoever places one owns it; its Cabinet Settings (sneak with an empty hand on it) set who else may use it (Private, Team, Everyone) and when its set name shows (Shown, On Look, Hidden).
+- **Aim at each trophy:** each cabinet and shelf spot is aimed at by itself, through the open front only, so a trophy's text and settings no longer react through the rim, sides or back.
+- **Cleaner outlines:** cabinets, shelves and pedestals outline as clean shapes that follow their silhouettes.
+- **Ledger hints:** hovering a mob not collected yet shows where it spawns ("Found in: Plains, Forest and 3 more").
+- **`/trophypedestals trophy`:** gives a titled trophy, with the icon, rank and pedestal named.
+- **Trophy events:** `TrophyEvents.MOB_TROPHY_DROP` (change or cancel a mob trophy about to drop) and `TrophyEvents.COLLECTED` (a trophy recorded in a player's ledger) in the Java API, for mods on either loader.
+- **Client settings** (`config/trophypedestals-client`): each player can turn off trophies' flourishes, ambient sounds and moving mobs, and set how far away pedestals' displays are drawn, for a calmer or lighter trophy room.
+- **Items in cabinets and shelves:** any item that isn't a block can go on a cabinet's or shelf's spot, standing there by itself beside the trophies (a block in hand still sets the trim).
+- **Ledger search and mod filter:** the Mob Trophies Ledger has a search box (collected mobs by name, any mob by its mod's name, so it gives away nothing not yet collected), a button showing one mod's mobs at a time (its count then that mod's), and a Missing toggle showing only the mobs not collected yet.
+- **Boss trophies once** (`mob_trophies.boss_trophies_once`, off by default): a boss drops its trophy only for a player who hasn't collected it yet.
+
+### 🔧 Changes
+- Display pedestals now always open the tabbed adjust screen. A tab the server turns off (a display pedestal's Display tab by default, or a trophy's tab turned off in `trophy_settings`) shows greyed out and can't be opened; hovering it says the server turned it off and that an operator can turn it on.
+- Nothing can be placed in the space on top of a pedestal (by a player, a dispenser or another mod's machine): it's the room for what the pedestal shows. Glass or stained glass placed there closes a glass case over the pedestal instead, as using it on the pedestal does.
+- The adjust screens' corner studs sit a pixel in from the frame, and the header's pedestal is drawn larger and sharp.
+- The Leaderboard Crest's board picker has a scroll bar, like the adjust screen's and the ledger's; all three sit a pixel further in from the frame and a little shorter.
+- The README explains how to contribute a translation.
+
 ### 🐛 Fixes
+- An item under a glass case stays at its usual size instead of growing to fill the case, and ignores its display size until the glass comes off.
 - Trophy cabinet items no longer show broken, gappy or speckled icons (and dropped or held cabinets no longer come apart) in large modpacks: the item model's wooden faces now carry their own texture coordinates instead of reading past the planks' texture into its neighbours in the atlas.
 
 ## v0.1.0 Release | Nov 10, 2026

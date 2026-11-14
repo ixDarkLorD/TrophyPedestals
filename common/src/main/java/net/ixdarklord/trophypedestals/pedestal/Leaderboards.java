@@ -1,5 +1,7 @@
 package net.ixdarklord.trophypedestals.pedestal;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.ixdarklord.coolcatcore.api.event.v2.common.PlayerEvents;
 import net.ixdarklord.coolcatcore.api.event.v2.common.ServerLifecycleEvents;
 import net.ixdarklord.coolcatcore.api.event.v2.common.ServerTickEvents;
@@ -30,7 +32,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -56,7 +57,7 @@ public final class Leaderboards {
         private static final Map<Identifier, String> TITLED = Map.of(
                 Stats.MOB_KILLS, "mob_kills", Stats.PLAYER_KILLS, "player_kills", Stats.DEATHS, "deaths",
                 Stats.WALK_ONE_CM, "distance_walked", Stats.PLAY_TIME, "play_time", Stats.FISH_CAUGHT, "fish_caught",
-                Stats.JUMP, "jumps", Stats.DAMAGE_DEALT, "damage_dealt");
+                Stats.JUMP, "jumps", Stats.DAMAGE_DEALT, "damage_dealt", TrophyPedestalsMod.id("mob_trophies_collected"), "mob_trophies");
 
         public Stat<Identifier> stat() {
             // (The registry's own id, which it finds its statistic by: an equal one isn't enough.)
@@ -97,7 +98,15 @@ public final class Leaderboards {
     }
 
     /** Who leads a board, and with how much. */
-    public record Leader(String name, int value) {}
+    public record Leader(String name, int value) {
+        public static final Codec<Leader> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.STRING.fieldOf("Name").forGetter(Leader::name),
+                Codec.INT.fieldOf("Value").forGetter(Leader::value)
+        ).apply(instance, Leader::new));
+    }
+
+    /** How many lead a board: the leader and two runners-up, shown on a leaderboard pedestal's text. */
+    public static final int TOP = 3;
 
     // How often the leaders are worked out, and how often each pedestal looks at its board's, in ticks; and how long a
     // board stays worked out after the last pedestal showing it looked.
@@ -106,10 +115,10 @@ public final class Leaderboards {
     // The offline players' counts, by board, and their names; each board's best of them.
     private static final Map<UUID, Map<Identifier, Integer>> OFFLINE = new HashMap<>();
     private static final Map<UUID, String> NAMES = new HashMap<>();
-    // (Each board's best offline player, worked out when it's first asked for and kept till someone logs in or out.)
-    private static final Map<Board, Optional<Leader>> OFFLINE_BEST = new HashMap<>();
-    // Each board's leader, and when a pedestal last showed it (in server ticks).
-    private static final Map<Board, Leader> LEADERS = new HashMap<>();
+    // (Each board's best offline players, worked out when it's first asked for and kept till someone logs in or out.)
+    private static final Map<Board, List<Leader>> OFFLINE_BEST = new HashMap<>();
+    // Each board's top players, and when a pedestal last showed it (in server ticks).
+    private static final Map<Board, List<Leader>> LEADERS = new HashMap<>();
     private static final Map<Board, Integer> SHOWN_AT = new HashMap<>();
     private static boolean loaded;
 
@@ -149,7 +158,7 @@ public final class Leaderboards {
         boolean fresh = !SHOWN_AT.containsKey(board) || now - SHOWN_AT.get(board) > ACTIVE_FOR;
         SHOWN_AT.put(board, now);
         // (A board no pedestal showed lately is worked out now, rather than waiting for the next update.)
-        if (fresh) LEADERS.put(board, leader(server.getServer(), board));
+        if (fresh) LEADERS.put(board, top(server.getServer(), board));
         show(pedestal, LEADERS.get(board));
     }
 
@@ -165,11 +174,14 @@ public final class Leaderboards {
         Network.sendToPlayer(player, new OpenLeaderboardPayload(pos, current, boards));
     }
 
-    /** Puts a leader on a pedestal, if they aren't on it already. */
-    public static void show(PedestalBlockEntity pedestal, @Nullable Leader leader) {
-        String name = leader == null ? "" : leader.name();
-        int value = leader == null ? 0 : leader.value();
-        if (!name.equals(pedestal.leaderName()) || value != pedestal.leaderValue()) pedestal.setLeader(name, value);
+    /** Puts a board's top players on a pedestal (the leader, then the runners-up), if they aren't on it already. */
+    public static void show(PedestalBlockEntity pedestal, List<Leader> top) {
+        String name = top.isEmpty() ? "" : top.getFirst().name();
+        int value = top.isEmpty() ? 0 : top.getFirst().value();
+        List<Leader> runnersUp = top.size() > 1 ? List.copyOf(top.subList(1, top.size())) : List.of();
+        if (!name.equals(pedestal.leaderName()) || value != pedestal.leaderValue() || !runnersUp.equals(pedestal.runnersUp())) {
+            pedestal.setLeader(name, value, runnersUp);
+        }
     }
 
     // Once a second: each shown board's leader, from the online players' counts now and the offline players' best.
@@ -177,18 +189,28 @@ public final class Leaderboards {
         int now = server.getTickCount();
         if (now % UPDATE != 0 || SHOWN_AT.isEmpty()) return;
         SHOWN_AT.entrySet().removeIf(entry -> now - entry.getValue() > ACTIVE_FOR);
-        for (Board board : SHOWN_AT.keySet()) LEADERS.put(board, leader(server, board));
+        for (Board board : SHOWN_AT.keySet()) LEADERS.put(board, top(server, board));
     }
 
     /** Who leads this board of everyone who has played on the server, or null if no one has any of it. */
     public static @Nullable Leader leader(MinecraftServer server, Board board) {
+        List<Leader> top = top(server, board);
+        return top.isEmpty() ? null : top.getFirst();
+    }
+
+    /**
+     * The board's top {@link #TOP} of everyone who has played on the server, most first (those with none of it left
+     * out): the online players' counts now, and the offline players' best.
+     */
+    public static List<Leader> top(MinecraftServer server, Board board) {
         loadOffline(server);
-        Leader best = OFFLINE_BEST.computeIfAbsent(board, Leaderboards::bestOffline).orElse(null);
+        List<Leader> all = new ArrayList<>(OFFLINE_BEST.computeIfAbsent(board, Leaderboards::bestOffline));
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             int value = player.getStats().getValue(board.stat());
-            if (value > 0 && (best == null || value > best.value())) best = new Leader(player.getName().getString(), value);
+            if (value > 0) all.add(new Leader(player.getName().getString(), value));
         }
-        return best;
+        all.sort(Comparator.comparingInt(Leader::value).reversed());
+        return List.copyOf(all.subList(0, Math.min(TOP, all.size())));
     }
 
     // A player's counts on every board they have any of.
@@ -201,19 +223,16 @@ public final class Leaderboards {
         return counts;
     }
 
-    // A board's best of the offline players.
-    private static Optional<Leader> bestOffline(Board board) {
-        UUID best = null;
-        int most = 0;
+    // A board's best {@link #TOP} of the offline players, most first.
+    private static List<Leader> bestOffline(Board board) {
+        List<Leader> best = new ArrayList<>();
         for (Map.Entry<UUID, Map<Identifier, Integer>> entry : OFFLINE.entrySet()) {
             int value = entry.getValue().getOrDefault(board.id(), 0);
-            if (value > most) {
-                most = value;
-                best = entry.getKey();
-            }
+            String name = NAMES.getOrDefault(entry.getKey(), "");
+            if (value > 0 && !name.isEmpty()) best.add(new Leader(name, value));
         }
-        String name = best == null ? "" : NAMES.getOrDefault(best, "");
-        return name.isEmpty() ? Optional.empty() : Optional.of(new Leader(name, most));
+        best.sort(Comparator.comparingInt(Leader::value).reversed());
+        return List.copyOf(best.subList(0, Math.min(TOP, best.size())));
     }
 
     // The saved statistics of every player who has played, read once (but not of those online, counted live).

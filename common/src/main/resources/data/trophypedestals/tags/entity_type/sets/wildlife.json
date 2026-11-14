@@ -1,0 +1,26 @@
+{
+  "values": [
+    "minecraft:wolf",
+    "minecraft:fox",
+    "minecraft:panda",
+    "minecraft:polar_bear",
+    "minecraft:ocelot",
+    "minecraft:cat",
+    "minecraft:parrot",
+    "minecraft:frog",
+    "minecraft:turtle",
+    "minecraft:bat",
+    {
+      "id": "minecraft:armadillo",
+      "required": false
+    },
+    {
+      "id": "minecraft:camel",
+      "required": false
+    },
+    {
+      "id": "minecraft:sniffer",
+      "required": false
+    }
+  ]
+}

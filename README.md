@@ -40,18 +40,19 @@ statue. Then line them all up in trophy cabinets and wall shelves. It's needed *
 - **⭐ Five ranks.** Common to legendary, by how tough the mob is: each grander than the last, with outlines, flares,
   a beam, halos, a crown and sounds.
 - **🗿 Player statues.** Turn on `mob_trophies.player_trophies` and a defeated player can drop their statue, in their own skin.
-- **📖 Collect them all.** The Mob Trophies Ledger tracks every mob trophy you've had, rare gilded ones stand on gold, a cabinet of four Nether (or End, Ocean, Boss, Illager) mobs earns its set, and a leaderboard pedestal shows whoever leads a statistic as their statue.
+- **📖 Collect them all.** The Mob Trophies Ledger tracks every mob trophy you've had, rare gilded ones stand on gold, a cabinet of four Nether (or End, Ocean, Boss, Illager, Undead, Arthropod, Farm Animal, Wildlife) mobs earns its set, and a leaderboard pedestal shows whoever leads a statistic as their statue.
 - **🪟 Show them off.** Engrave a trophy's name in an anvil, close a glass case over a pedestal, or install an armor stand, dress it in a full armour set and pose it.
-- **🗄️ Cabinets and shelves.** Trophy cabinets hold four trophies and stack into tall cases; wall shelves hang on walls
+- **🗄️ Cabinets and shelves.** Trophy cabinets hold four trophies (or any items) and stack into tall cases; wall shelves hang on walls
   and join side by side. Both come in every wood, and their gold trim can be any block (an axe takes it off).
+  Each is owned by whoever placed it, who can share it with their team or everyone.
 - **🎛️ Make it yours.** Sneak and use an empty hand on a pedestal to adjust its size (up to 20 times), height,
   rotation, text, pose and animation, spin, flourishes, sounds, light, crown and redstone. Pedestals can be kept
-  private to their owner. Item display pedestals keep a simpler screen by default; turn on
-  `pedestals.display_pedestal_settings` in the server config to give them size, height, rotation and text controls too.
+  private to their owner. On item display pedestals the Display tab (size, height, rotation) and text size are off by
+  default, the tab greyed out; turn on `pedestals.display_pedestal_settings` in the server config to use them.
 - **🧰 For packs and mods.** The `trophypedestals:set_trophy` and `trophypedestals:set_mob_trophy` loot functions,
   `/trophypedestals mob_trophy`, the `TrophyPedestals`, `TrophyKinds`, `PedestalSettings` and `PedestalRarities` APIs,
   a `TrophyPedestals` KubeJS binding (NeoForge and Forge), JEI and REI pages for mob trophies and trims, what a pedestal
-  holds in Jade and The One Probe, and a trophy reward for FTB Quests. Every field, setting and API is in the
+  holds in Jade and The One Probe, and a trophy reward and a mob trophy task for FTB Quests. Every field, setting and API is in the
   [reference](docs/reference.md).
 
 ## 📦 Download
@@ -117,6 +118,14 @@ and the layout in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 Found a bug or have an idea? Open an [issue](https://github.com/ixDarkLorD/TrophyPedestals/issues), or drop by the
 [Discord](https://discord.gg/ZapGEPqm2V).
+
+## 🌐 Translations
+
+Trophy Pedestals is in English only so far, and translations are very welcome. Copy
+[`en_us.json`](common/src/main/resources/assets/trophypedestals/lang/en_us.json) to your language's file (for example
+`zh_cn.json`, `ru_ru.json`, `pt_br.json` or `de_de.json`) in the same folder, translate the values (not the keys), and
+open a pull request against any version branch: it will be copied to the others. A partial translation is fine; any
+missing line falls back to English.
 
 ## 📄 License
 
