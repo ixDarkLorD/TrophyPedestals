@@ -15,7 +15,6 @@ import me.shedaniel.rei.api.common.display.DisplaySerializer;
 import me.shedaniel.rei.api.common.entry.EntryIngredient;
 import me.shedaniel.rei.api.common.entry.EntryStack;
 import me.shedaniel.rei.api.common.entry.type.VanillaEntryTypes;
-import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.api.PedestalRarity;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophies;
@@ -57,12 +56,12 @@ public class TrophyPedestalsReiPlugin implements REIClientPlugin {
             Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
             ItemStack egg = new MobTrophyRecord(id, "", 0L, rarity.id()).icon();
             ItemStack trophy = MobTrophies.trophy(Pedestals.DEFAULT.get(), type, "", 0L, rarity);
-            registry.add(new Drop(egg, trophy, rarity));
+            registry.add(new Drop(egg, trophy, rarity, type));
         }
     }
 
     /** A mob's page: its egg, the trophy it drops, and that trophy's rank. */
-    public record Drop(ItemStack egg, ItemStack trophy, PedestalRarity rarity) implements Display {
+    public record Drop(ItemStack egg, ItemStack trophy, PedestalRarity rarity, EntityType<?> type) implements Display {
         @Override
         public List<EntryIngredient> getInputEntries() {
             return List.of(EntryIngredient.of(EntryStack.of(VanillaEntryTypes.ITEM, egg)));
@@ -120,7 +119,7 @@ public class TrophyPedestalsReiPlugin implements REIClientPlugin {
             widgets.add(Widgets.createArrow(new Point(x + 30, y)));
             widgets.add(Widgets.createSlot(new Point(x + 64, y)).entries(drop.getOutputEntries().getFirst()).markOutput());
             widgets.add(Widgets.createLabel(new Point(x, y + 22), drop.rarity().displayName().copy().withColor(drop.rarity().color())).leftAligned().noShadow());
-            double chance = TrophyPedestalsConfig.MOB_TROPHY_CHANCE.get() * 100.0;
+            double chance = MobTrophies.chance(drop.type()) * 100.0;
             widgets.add(Widgets.createLabel(new Point(x + 70, y + 22), Component.translatable("jei.trophypedestals.mob_trophy.chance",
                     String.format(Locale.ROOT, chance < 1.0 ? "%.2f" : "%.0f", chance))).leftAligned().noShadow().color(0xFF404040));
             return widgets;

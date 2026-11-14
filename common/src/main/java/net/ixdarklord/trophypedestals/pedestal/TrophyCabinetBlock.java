@@ -32,6 +32,9 @@ import java.util.Locale;
 public class TrophyCabinetBlock extends TrophyDisplayBlock {
     public static final MapCodec<TrophyCabinetBlock> CODEC = simpleCodec(TrophyCabinetBlock::new);
     public static final EnumProperty<Part> PART = EnumProperty.create("part", Part.class);
+    // Its two spots' windows on its front (pixels, facing north: the left spot is on the viewer's left, east), between
+    // its base and its top rail, inside its outer post.
+    private static final double[][] SPOTS = {{8.2, 2, 14, 14}, {2, 2, 7.8, 14}};
     /** Whether it's joined to a cabinet's like half above it, or below it (stacked: their boards meet as one divider). */
     public static final BooleanProperty UP = BlockStateProperties.UP, DOWN = BlockStateProperties.DOWN;
 
@@ -54,6 +57,11 @@ public class TrophyCabinetBlock extends TrophyDisplayBlock {
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
+    }
+
+    @Override
+    protected double[][] spots() {
+        return SPOTS;
     }
 
     @Override

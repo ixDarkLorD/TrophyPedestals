@@ -30,7 +30,12 @@ public class TrophyShelfBlock extends TrophyDisplayBlock {
     /** Whether it's joined to a shelf on its left, or on its right (as seen from its front). */
     public static final BooleanProperty LEFT = BooleanProperty.create("left"), RIGHT = BooleanProperty.create("right");
     // Its board (with its lip), its rim and its brackets, facing north (its back to the wall on its south), in pixels.
-    private static final Map<Direction, VoxelShape> SHAPES = shapes(new double[][] {{0, 6, 6, 16, 10, 16}, {0, 9, 14, 16, 12, 16}, {1, 1, 9, 3, 7, 16}, {13, 1, 9, 15, 7, 16}});
+    // Its board (with its lip), its rim and its brackets, facing north (its back to the wall on its south), in pixels:
+    // walked into; and one box round it all and its trophies, aimed at and outlined.
+    private static final Map<Direction, VoxelShape> SOLID = shapes(new double[][] {{0, 6, 6, 16, 10, 16}, {0, 9, 14, 16, 12, 16}, {1, 1, 9, 3, 7, 16}, {13, 1, 9, 15, 7, 16}});
+    private static final Map<Direction, VoxelShape> SHAPES = shapes(new double[][] {{0, 1, 6, 16, 16, 16}});
+    // Its two spots' windows on its front, over its board (pixels, facing north: the left spot is on the viewer's left).
+    private static final double[][] SPOTS = {{8.2, 10, 15.5, 16}, {0.5, 10, 7.8, 16}};
 
     public TrophyShelfBlock(Properties properties) {
         super(properties);
@@ -48,8 +53,19 @@ public class TrophyShelfBlock extends TrophyDisplayBlock {
     }
 
     @Override
+    protected double[][] spots() {
+        return SPOTS;
+    }
+
+    // One clean box round its board and its trophies, aimed at and outlined; walked into, only its board, rim and brackets.
+    @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return SHAPES.get(state.getValue(FACING));
+    }
+
+    @Override
+    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return SOLID.get(state.getValue(FACING));
     }
 
     // Hung on the solid side of the block behind it.
