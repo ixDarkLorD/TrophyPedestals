@@ -1,7 +1,7 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v0.2.0 (unreleased)
+## v0.2.0 Release | Nov 15, 2026
 ### ✨ New Features
 - **Drop chance overrides** (`mob_trophies.chance_overrides`): set another chance for a mob, an entity type tag or a whole mod, as `"<mob id, #tag or @mod id> = chance"`. JEI and REI show each mob's own chance.
 - **Four new trophy sets:** Undead, Arthropods, Farm Animals and Wildlife, for a cabinet of four of their mobs.
