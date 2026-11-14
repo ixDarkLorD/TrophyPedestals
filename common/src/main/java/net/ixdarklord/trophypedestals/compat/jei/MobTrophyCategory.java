@@ -8,7 +8,6 @@ import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import mezz.jei.api.recipe.types.IRecipeType;
-import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.api.PedestalRarity;
@@ -126,7 +125,7 @@ public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategor
         gui.getSlotDrawable().draw(graphics, WIDTH - SLOT, ROW_Y);
         Font font = Minecraft.getInstance().font;
         graphics.text(font, drop.rarity().displayName(), TEXT_X, RANK_Y, 0xFF000000 | drop.rarity().color(), false);
-        Component chance = Component.translatable("jei.trophypedestals.mob_trophy.chance", percent(TrophyPedestalsConfig.MOB_TROPHY_CHANCE.get()));
+        Component chance = Component.translatable("jei.trophypedestals.mob_trophy.chance", percent(MobTrophies.chance(drop.type())));
         graphics.text(font, chance, TEXT_X, CHANCE_Y, LABEL, false);
     }
 

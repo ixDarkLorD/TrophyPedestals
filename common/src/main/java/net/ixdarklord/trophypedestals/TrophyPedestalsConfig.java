@@ -32,6 +32,19 @@ public final class TrophyPedestalsConfig {
             .range(0.0, 1.0)
             .comment("The chance a mob a player kills drops its trophy, from 0 (never) to 1 (always). 0.01 is one in a hundred.")
             .build();
+    /**
+     * Other chances for some mobs, as {@code "<mob id, #tag or @mod id> = chance"}. A mob named by its id wins, then one
+     * of its tags, then its mod; the first matching entry of each is used, and other mobs use {@link #MOB_TROPHY_CHANCE}.
+     */
+    public static final ConfigValue<List<String>> MOB_TROPHY_CHANCE_OVERRIDES = BUILDER.stringList("chance_overrides", List.of())
+            .comment("Other drop chances for some mobs, groups of mobs or whole mods, each \"<mob id, #entity type tag or @mod id> = chance\" (0 to 1), e.g. \"minecraft:zombie = 0.001\", \"#minecraft:raiders = 0.05\" or \"@alexsmobs = 0.005\". A mob named by its id wins over one of its tags, and a tag over its mod.")
+            .build();
+    public static final ConfigValue<Boolean> BOSS_TROPHIES_ONCE = BUILDER.bool("boss_trophies_once", false)
+            .comment("Whether a boss (a mob in #trophypedestals:epic_mob_trophies or #trophypedestals:legendary_mob_trophies) drops its trophy only for a player who hasn't collected it yet. Lost ones can still be bought back from the Mob Trophies Ledger. Off by default.")
+            .build();
+    public static final ConfigValue<Boolean> ANNOUNCE_RARE = BUILDER.bool("announce_rare", true)
+            .comment("Whether the whole server is told in chat when someone gets a legendary or gilded mob trophy.")
+            .build();
     public static final ConfigValue<Boolean> PLAYER_TROPHIES = BUILDER.bool("player_trophies", false)
             .comment("Whether a player another player kills can drop a trophy pedestal showing their statue, at the same chance. Off by default.")
             .build();
@@ -146,7 +159,7 @@ public final class TrophyPedestalsConfig {
             .build();
 
     static {
-        BUILDER.pop().push("display_pedestal_settings", "Which extra tabs a display pedestal's adjust screen has. With both off (the default) it keeps its one-page screen: when its text shows, redstone, sounds and its showcase light.");
+        BUILDER.pop().push("display_pedestal_settings", "Which of a display pedestal's adjust screen settings players can change. Its Display tab shows greyed out while it's off, and its Text tab shows only when its text shows.");
     }
 
     public static final ConfigValue<Boolean> DISPLAY_PEDESTAL_DISPLAY_SETTINGS = BUILDER.bool("display", false)
@@ -185,11 +198,6 @@ public final class TrophyPedestalsConfig {
     /** Whether players can change a trophy's Pose settings (a display pedestal has none). */
     public static boolean poseSettings(boolean trophy) {
         return trophy && TROPHY_POSE_SETTINGS.get();
-    }
-
-    /** Whether a display pedestal's screen has tabs (Display or Text), rather than its one page. */
-    public static boolean tabbedDisplayPedestals() {
-        return DISPLAY_PEDESTAL_DISPLAY_SETTINGS.get() || DISPLAY_PEDESTAL_TEXT_SETTINGS.get();
     }
 
     /** How mob trophies get their rank. */

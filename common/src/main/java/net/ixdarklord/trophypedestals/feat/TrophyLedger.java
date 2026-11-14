@@ -4,22 +4,33 @@ import net.ixdarklord.coolcatcore.api.attachment.Attachment;
 import net.ixdarklord.coolcatcore.api.network.Network;
 import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
+import net.ixdarklord.trophypedestals.api.TrophyEvents;
 import net.ixdarklord.trophypedestals.network.OpenLedgerPayload;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophies;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophyRecord;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.stats.Stat;
 import net.minecraft.stats.Stats;
+import net.minecraft.util.random.Weighted;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.biome.MobSpawnSettings;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
+import java.util.WeakHashMap;
 
 /**
  * The mob trophies each player has collected, for the Mob Trophies Ledger: every mob they've had a trophy of (one dropped for
@@ -37,13 +48,51 @@ public final class TrophyLedger {
 
     private TrophyLedger() {}
 
+    // Each mob's biomes, worked out once per server (biomes don't change while it runs).
+    private static final Map<MinecraftServer, Map<Identifier, List<Identifier>>> HABITATS = new WeakHashMap<>();
+
+    /**
+     * The biomes each mob spawns in by itself (in any of the server's biomes' spawn lists, every category), by mob, the
+     * biomes in id order.
+     */
+    public static Map<Identifier, List<Identifier>> habitats(MinecraftServer server) {
+        return HABITATS.computeIfAbsent(server, from -> {
+            Map<Identifier, TreeSet<Identifier>> found = new HashMap<>();
+            from.registryAccess().lookupOrThrow(Registries.BIOME).listElements().forEach(biome -> {
+                Identifier biomeId = biome.key().identifier();
+                for (MobCategory category : MobCategory.values()) {
+                    for (Weighted<MobSpawnSettings.SpawnerData> spawn : biome.value().getMobSettings().getMobs(category).unwrap()) {
+                        found.computeIfAbsent(BuiltInRegistries.ENTITY_TYPE.getKey(spawn.value().type()), mob -> new TreeSet<>()).add(biomeId);
+                    }
+                }
+            });
+            Map<Identifier, List<Identifier>> habitats = new HashMap<>();
+            found.forEach((mob, biomes) -> habitats.put(mob, List.copyOf(biomes)));
+            return habitats;
+        });
+    }
+
     /** Loads the attachments, before {@link Feats} registers them. */
     static void init() {}
 
     /** Notes a mob trophy in the player's ledger (and, if it's gilded, among their gilded ones). */
     public static void collect(ServerPlayer player, MobTrophyRecord trophy) {
+        boolean first = trophy.gilded() ? !COLLECTED_GILDED.get(player).contains(trophy.entity()) : !COLLECTED.get(player).contains(trophy.entity());
         COLLECTED.update(player, list -> with(list, trophy.entity()));
         if (trophy.gilded()) COLLECTED_GILDED.update(player, list -> with(list, trophy.entity()));
+        syncStat(player);
+        EntityType<?> type = trophy.type();
+        if (type != null) TrophyEvents.COLLECTED.invoker().onCollected(player, type, trophy.gilded(), first);
+    }
+
+    /**
+     * Sets the player's {@code trophypedestals:mob_trophies_collected} statistic to how many mobs their ledger holds: as
+     * they collect, and as they join (for trophies collected before the statistic was).
+     */
+    public static void syncStat(ServerPlayer player) {
+        Stat<Identifier> stat = Stats.CUSTOM.get(Pedestals.MOB_TROPHIES_COLLECTED.get());
+        int collected = COLLECTED.get(player).size();
+        if (player.getStats().getValue(stat) != collected) player.getStats().setValue(player, stat, collected);
     }
 
     /** What buying back a trophy of this mob costs, in experience levels: twice as many for a gilded one. */
@@ -95,7 +144,13 @@ public final class TrophyLedger {
 
     /** Opens the player's ledger on their screen. */
     public static void open(ServerPlayer player) {
-        Network.sendToPlayer(player, new OpenLedgerPayload(COLLECTED.get(player), COLLECTED_GILDED.get(player)));
+        List<Identifier> collected = COLLECTED.get(player);
+        // (Where each mob not collected yet spawns: the ledger's hint for it.)
+        List<OpenLedgerPayload.Habitat> habitats = new ArrayList<>();
+        habitats(player.level().getServer()).forEach((mob, biomes) -> {
+            if (!collected.contains(mob)) habitats.add(new OpenLedgerPayload.Habitat(mob, biomes));
+        });
+        Network.sendToPlayer(player, new OpenLedgerPayload(collected, COLLECTED_GILDED.get(player), habitats));
     }
 
     private static List<Identifier> with(List<Identifier> list, Identifier id) {

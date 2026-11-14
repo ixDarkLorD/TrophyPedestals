@@ -4,6 +4,7 @@ import net.ixdarklord.coolcatcore.api.core.ModConstructor;
 import net.ixdarklord.coolcatcore.api.gametest.GameTests;
 import net.ixdarklord.coolcatcore.api.platform.Platform;
 import net.ixdarklord.trophypedestals.command.TrophyPedestalsCommands;
+import net.ixdarklord.trophypedestals.compat.ftb.MobTrophyTask;
 import net.ixdarklord.trophypedestals.compat.ftb.TrophyReward;
 import net.ixdarklord.trophypedestals.feat.Feats;
 import net.ixdarklord.trophypedestals.gametest.TrophyPedestalsGameTests;
@@ -45,7 +46,10 @@ public final class TrophyPedestalsMod implements ModConstructor {
         // Optional FTB Quests: a reward that gives a trophy (compat/ftb). FTB Quests keeps its reward types in a plain
         // HashMap, and mods are constructed in parallel, so registering from onConstructMod can collide with another
         // mod doing the same (a ConcurrentModificationException at startup). Common setup runs on the main thread.
-        if (Platform.isModLoaded("ftbquests")) TrophyReward.register();
+        if (Platform.isModLoaded("ftbquests")) {
+            TrophyReward.register();
+            MobTrophyTask.register();
+        }
     }
 
     public static Identifier id(String path) {
