@@ -62,7 +62,7 @@ public class PedestalBlockEntity extends BlockEntity {
     /** The slots a mannequin pedestal dresses: its armour, then its hands. */
     public static final List<EquipmentSlot> OUTFIT_SLOTS = List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET,
             EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND);
-    private static final String LEADERBOARD = "Leaderboard", LEADER_NAME = "LeaderName", LEADER_VALUE = "LeaderValue";
+    private static final String LEADERBOARD = "Leaderboard", LEADER_NAME = "LeaderName", LEADER_VALUE = "LeaderValue", RUNNERS_UP = "RunnersUp";
     private static final String DISPLAY = "Display";
     private static final String MOB_TROPHY = "MobTrophy";
     private static final String TEXT_MODE = "TextMode";
@@ -130,6 +130,8 @@ public class PedestalBlockEntity extends BlockEntity {
     private Leaderboards.@Nullable Board leaderboard;
     private String leaderName = "";
     private int leaderValue;
+    // A leaderboard's runners-up: second and third, as many as have any of it.
+    private List<Leaderboards.Leader> runnersUp = List.of();
     // A custom pedestal's material: the block it's drawn with.
     private @Nullable Identifier material;
     private ItemStack display = ItemStack.EMPTY;
@@ -218,6 +220,20 @@ public class PedestalBlockEntity extends BlockEntity {
     /** On clients, the mob made to draw a mob trophy with, or null if none is made yet. */
     public @Nullable Entity shownMob() {
         return shownMob;
+    }
+
+    // On clients, a leaderboard's runners-up's statues (second, third), and whose they are.
+    private final @Nullable Entity[] runnerUpStatues = new Entity[2];
+    private final String[] runnerUpStatueNames = {"", ""};
+
+    /** On clients, the statue made of the runner-up in this place (0 second, 1 third), if it's still theirs. */
+    public @Nullable Entity runnerUpStatue(int place, String name) {
+        return name.equals(runnerUpStatueNames[place]) ? runnerUpStatues[place] : null;
+    }
+
+    public void setRunnerUpStatue(int place, String name, @Nullable Entity statue) {
+        runnerUpStatueNames[place] = name;
+        runnerUpStatues[place] = statue;
     }
 
     public void setShownMob(@Nullable Entity mob) {
@@ -387,14 +403,25 @@ public class PedestalBlockEntity extends BlockEntity {
         leaderboard = board;
         leaderName = "";
         leaderValue = 0;
+        runnersUp = List.of();
         setChanged();
         // (Lit while it's a leaderboard, as while it shows an item.)
         refresh();
     }
 
+    /** A leaderboard's runners-up, second then third (as many as there are). */
+    public List<Leaderboards.Leader> runnersUp() {
+        return runnersUp;
+    }
+
     public void setLeader(String name, int value) {
+        setLeader(name, value, List.of());
+    }
+
+    public void setLeader(String name, int value, List<Leaderboards.Leader> runnersUp) {
         leaderName = name;
         leaderValue = value;
+        this.runnersUp = List.copyOf(runnersUp);
         setChanged();
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
@@ -856,6 +883,7 @@ public class PedestalBlockEntity extends BlockEntity {
             output.putString(LEADERBOARD, leaderboard.getSerializedName());
             output.putString(LEADER_NAME, leaderName);
             output.putInt(LEADER_VALUE, leaderValue);
+            if (!runnersUp.isEmpty()) output.store(RUNNERS_UP, Leaderboards.Leader.CODEC.listOf(), runnersUp);
         }
         if (record != null) output.store(RECORD, PedestalRecord.CODEC, record);
         if (mobTrophy != null) output.store(MOB_TROPHY, MobTrophyRecord.CODEC, mobTrophy);
@@ -920,6 +948,7 @@ public class PedestalBlockEntity extends BlockEntity {
         if (!leader.equals(leaderName)) shownMob = null;
         leaderName = leader;
         leaderValue = input.getIntOr(LEADER_VALUE, 0);
+        runnersUp = input.read(RUNNERS_UP, Leaderboards.Leader.CODEC.listOf()).orElse(List.of());
         record = input.read(RECORD, PedestalRecord.CODEC).orElse(null);
         MobTrophyRecord shown = mobTrophy;
         mobTrophy = input.read(MOB_TROPHY, MobTrophyRecord.CODEC).orElse(null);
@@ -1026,6 +1055,12 @@ public class PedestalBlockEntity extends BlockEntity {
         /** The next one, as the screen's button cycles them. */
         public Access next() {
             return values()[(ordinal() + 1) % values().length];
+        }
+
+        /** The one with this name ({@code private}, {@code team}, {@code everyone}), or null. */
+        public static @Nullable Access byName(String name) {
+            for (Access access : values()) if (access.getSerializedName().equals(name)) return access;
+            return null;
         }
 
         @Override
