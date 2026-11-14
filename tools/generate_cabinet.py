@@ -51,6 +51,18 @@ def element(frm, to, texture, front_uv=None):
     return {'from': frm, 'to': to, 'faces': faces}
 
 
+def pin_uvs(e):
+    """Gives each face without a uv the one the game would work out from where the box is now (as it does for a face
+    with none), so the box can be moved without its texture moving with it. A face left to work out its own uv from a
+    box past the block's edges reads past its texture's edges, into whichever textures sit beside it in the atlas."""
+    (x1, y1, z1), (x2, y2, z2) = e['from'], e['to']
+    auto = {'down': [x1, 16 - z2, x2, 16 - z1], 'up': [x1, z1, x2, z2], 'north': [16 - x2, 16 - y2, 16 - x1, 16 - y1],
+            'south': [x1, 16 - y2, x2, 16 - y1], 'west': [z1, 16 - y2, z2, 16 - y1], 'east': [16 - z2, 16 - y2, 16 - z1, 16 - y1]}
+    for side, face in e['faces'].items():
+        face.setdefault('uv', auto[side])
+    return e
+
+
 def corner(x, y, z):
     """A corner cap: a little gold block three pixels each way, its lower left front corner at (x, y, z), wrapped round the
     corner it guards (half a pixel proud of each face it meets), each face bevelled round a rivet."""
@@ -178,7 +190,8 @@ def main():
     both = []
     for shift, half in ((8, cabinet_half(16)), (-8, cabinet_half(0))):
         for e in half:
-            e = json.loads(json.dumps(e))
+            # Its uvs pinned where it stands in its own half, so the planks line up as the placed cabinet's do.
+            e = pin_uvs(json.loads(json.dumps(e)))
             e['from'][0] += shift
             e['to'][0] += shift
             both.append(e)
