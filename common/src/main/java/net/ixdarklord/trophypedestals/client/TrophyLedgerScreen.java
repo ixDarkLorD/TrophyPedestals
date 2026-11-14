@@ -1,51 +1,89 @@
 package net.ixdarklord.trophypedestals.client;
 
 import net.ixdarklord.coolcatcore.api.network.Network;
+import net.ixdarklord.coolcatcore.api.platform.Platform;
 import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.feat.TrophyLedger;
 import net.ixdarklord.trophypedestals.network.BuyBackTrophyPayload;
+import net.ixdarklord.trophypedestals.network.OpenLedgerPayload;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophies;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophyRecord;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractButton;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.narration.NarratedElementType;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * The Mob Trophies Ledger: every mob that can be a trophy, in the order of the mob trophies' creative tab, as a grid of their
  * icons (spawn eggs) on the pedestal screen's panel. A mob the reader has collected a trophy of shows in full, its name on
- * hover; one they haven't is a dark silhouette, "???". A gilded one has a gold corner. The header counts them.
+ * hover; one they haven't is a dark silhouette, "???". A gilded one has a gold corner. The header counts them. A search
+ * box finds collected mobs by name and any mob by its mod's name (so searching gives away no mob not yet collected), and
+ * the button beside it shows one mod's mobs at a time, the header then counting that mod's. The Missing toggle leaves
+ * only the mobs not collected yet.
  */
 public final class TrophyLedgerScreen extends Screen {
     private static final Identifier PANEL = TrophyPedestalsMod.id("pedestal/panel");
-    private static final int WIDTH = 248, MAX_HEIGHT = 236, MARGIN = 12, CELL = 22, COLUMNS = 9, GRID_TOP = 44, EDGE = 4;
+    private static final int WIDTH = 248, MAX_HEIGHT = 236, MARGIN = 12, CELL = 22, COLUMNS = 9, GRID_TOP = 60, EDGE = 4;
+    // The search row, under the header: the search box and, at its right, the Missing toggle and the mod button.
+    private static final int SEARCH_ROW = 34, MOD_BUTTON = 76, MISSING_BUTTON = 54;
+    // How many of a mob's biomes its hint names.
+    private static final int HINT_BIOMES = 3;
+    private static final Identifier SEGMENT = TrophyPedestalsMod.id("pedestal/segment");
+    private static final Identifier SEGMENT_HOVER = TrophyPedestalsMod.id("pedestal/segment_hover");
+    private static final Identifier SEGMENT_SELECTED = TrophyPedestalsMod.id("pedestal/segment_selected");
+    private static final int TEXT = 0xFFDCDCE0;
     private static final int GOLD = 0xFFF2C94C, LABEL = 0xFF9DA2A7, GROOVE_DARK = 0xFF07090E, GROOVE_LIT = 0xFF343B4E;
     private static final int SLOT = 0xFF0E121A, SLOT_HOVER = 0xFF252C3C, SHADOW = 0xE0101418;
     // The scroll bar, as the adjust screen's: its width, how far in from the panel's right edge, its thumb's least
     // height; a groove cut like the panel's dividers, and a gold thumb lit along its top and left, with grip lines.
-    private static final int BAR_WIDTH = 4, BAR_INSET = 7, MIN_THUMB = 14;
+    private static final int BAR_WIDTH = 4, BAR_INSET = 8, MIN_THUMB = 14;
+    // How much shorter than the list the scroll bar's track is, at each end.
+    private static final int BAR_TRIM = 1;
     private static final int GROOVE = 0xFF0E121A, PALE_GOLD = 0xFFFFE08A, GOLD_SHADE = 0xFFB8872B, GOLD_DEEP = 0xFF9A6A1A;
     private static final int GOLD_FRAME = 0xFFE0AC3C, GOLD_TOP = 0xFFFFF0A8, GOLD_LIT = 0xFFFFC24A;
 
+    // Every mob, and its icon; then the ones the search and mod filter leave, as the grid shows them.
+    private final List<EntityType<?>> allMobs = new ArrayList<>();
+    private final List<ItemStack> allIcons = new ArrayList<>();
     private final List<EntityType<?>> mobs = new ArrayList<>();
     private final List<ItemStack> icons = new ArrayList<>();
+    // The mods with mobs in it (by namespace), and the one shown: -1 for all of them.
+    private final List<String> mods = new ArrayList<>();
+    private int mod = -1;
+    // Whether only the mobs not collected yet show.
+    private boolean missingOnly;
+    private @Nullable EditBox search;
     private final Set<Identifier> collected, gilded;
     private int left, top, height2, scroll, maxScroll;
     // The mob picked to buy back (clicked once: a second click buys it), and whether its gilded trophy; -1 for none.
@@ -54,20 +92,34 @@ public final class TrophyLedgerScreen extends Screen {
     // While the scroll bar's thumb is held: where on it it was taken, down from its top (-1 while it isn't).
     private int dragOffset = -1;
 
-    private TrophyLedgerScreen(List<Identifier> collected, List<Identifier> gilded) {
+    // Where each mob not collected yet spawns: its hint on hover.
+    private final Map<Identifier, List<Identifier>> habitats = new HashMap<>();
+
+    private TrophyLedgerScreen(List<Identifier> collected, List<Identifier> gilded, List<OpenLedgerPayload.Habitat> habitats) {
         super(Component.translatable("item.trophypedestals.trophy_ledger"));
         this.collected = Set.copyOf(collected);
         this.gilded = Set.copyOf(gilded);
+        for (OpenLedgerPayload.Habitat habitat : habitats) this.habitats.put(habitat.mob(), habitat.biomes());
         Minecraft minecraft = Minecraft.getInstance();
         for (EntityType<?> type : MobTrophies.collectable(minecraft.level != null ? minecraft.level.enabledFeatures() : FeatureFlags.DEFAULT_FLAGS)) {
-            mobs.add(type);
-            icons.add(new MobTrophyRecord(BuiltInRegistries.ENTITY_TYPE.getKey(type), "", 0L, PedestalRarities.NONE).icon());
+            Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
+            allMobs.add(type);
+            allIcons.add(new MobTrophyRecord(id, "", 0L, PedestalRarities.NONE).icon());
+            if (!mods.contains(id.getNamespace())) mods.add(id.getNamespace());
         }
+        // (Minecraft first, then the others by name.)
+        mods.sort(Comparator.comparing((String namespace) -> !namespace.equals(Identifier.DEFAULT_NAMESPACE))
+                .thenComparing(TrophyLedgerScreen::modName, String.CASE_INSENSITIVE_ORDER));
+    }
+
+    // A mod's name, as its loader knows it, or its namespace.
+    private static String modName(String namespace) {
+        return namespace.equals(Identifier.DEFAULT_NAMESPACE) ? "Minecraft" : Platform.getModName(namespace).orElse(namespace);
     }
 
     /** Opens the ledger with what the server says the reader has collected. */
-    public static void open(List<Identifier> collected, List<Identifier> gilded) {
-        Minecraft.getInstance().setScreen(new TrophyLedgerScreen(collected, gilded));
+    public static void open(List<Identifier> collected, List<Identifier> gilded, List<OpenLedgerPayload.Habitat> habitats) {
+        Minecraft.getInstance().setScreen(new TrophyLedgerScreen(collected, gilded, habitats));
     }
 
     @Override
@@ -75,6 +127,34 @@ public final class TrophyLedgerScreen extends Screen {
         height2 = Math.min(MAX_HEIGHT, height - 2 * EDGE);
         left = Math.max(EDGE, (width - WIDTH) / 2);
         top = Math.max(EDGE, (height - height2) / 2);
+        String query = search == null ? "" : search.getValue();
+        int row = top + SEARCH_ROW, wide = WIDTH - 2 * MARGIN;
+        search = addRenderableWidget(new EditBox(font, left + MARGIN, row, wide - MOD_BUTTON - MISSING_BUTTON - 8, 16, Component.translatable("trophypedestals.ledger.search")));
+        search.setHint(Component.translatable("trophypedestals.ledger.search").withColor(LABEL));
+        search.setValue(query);
+        search.setResponder(text -> filter());
+        addRenderableWidget(new MissingButton(left + WIDTH - MARGIN - MOD_BUTTON - 4 - MISSING_BUTTON, row - 1, MISSING_BUTTON, 18));
+        addRenderableWidget(new ModButton(left + WIDTH - MARGIN - MOD_BUTTON, row - 1, MOD_BUTTON, 18));
+        filter();
+    }
+
+    // The mobs left by the search and the mod shown. A mob is found by its name only once it's collected (else it's
+    // "???"), and by its mod's name always.
+    private void filter() {
+        String query = search == null ? "" : search.getValue().trim().toLowerCase(Locale.ROOT);
+        mobs.clear();
+        icons.clear();
+        for (int i = 0; i < allMobs.size(); i++) {
+            EntityType<?> type = allMobs.get(i);
+            Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
+            if (mod >= 0 && !id.getNamespace().equals(mods.get(mod))) continue;
+            if (missingOnly && collected.contains(id)) continue;
+            if (!query.isEmpty() && !modName(id.getNamespace()).toLowerCase(Locale.ROOT).contains(query)
+                    && !(collected.contains(id) && type.getDescription().getString().toLowerCase(Locale.ROOT).contains(query))) continue;
+            mobs.add(type);
+            icons.add(allIcons.get(i));
+        }
+        picked = -1;
         int rows = (mobs.size() + COLUMNS - 1) / COLUMNS;
         maxScroll = Math.max(0, rows * CELL - (height2 - GRID_TOP - MARGIN));
         scroll = Mth.clamp(scroll, 0, maxScroll);
@@ -88,12 +168,15 @@ public final class TrophyLedgerScreen extends Screen {
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, PANEL, left, top, WIDTH, height2);
-        long count = mobs.stream().filter(type -> collected.contains(BuiltInRegistries.ENTITY_TYPE.getKey(type))).count();
-        int percent = mobs.isEmpty() ? 0 : (int) (count * 100 / mobs.size());
+        // The count: of every mob, or of the mod shown's.
+        List<EntityType<?>> counted = mod < 0 ? allMobs
+                : allMobs.stream().filter(type -> BuiltInRegistries.ENTITY_TYPE.getKey(type).getNamespace().equals(mods.get(mod))).toList();
+        long count = counted.stream().filter(type -> collected.contains(BuiltInRegistries.ENTITY_TYPE.getKey(type))).count();
+        int percent = counted.isEmpty() ? 0 : (int) (count * 100 / counted.size());
         graphics.text(font, title, left + MARGIN, top + 12, GOLD);
-        graphics.text(font, Component.translatable("trophypedestals.ledger.count", count, mobs.size(), percent), left + MARGIN, top + 23, LABEL);
-        graphics.fill(left + MARGIN, top + 36, left + WIDTH - MARGIN, top + 37, GROOVE_DARK);
-        graphics.fill(left + MARGIN, top + 37, left + WIDTH - MARGIN, top + 38, GROOVE_LIT);
+        graphics.text(font, Component.translatable("trophypedestals.ledger.count", count, counted.size(), percent), left + MARGIN, top + 23, LABEL);
+        graphics.fill(left + MARGIN, top + GRID_TOP - 6, left + WIDTH - MARGIN, top + GRID_TOP - 5, GROOVE_DARK);
+        graphics.fill(left + MARGIN, top + GRID_TOP - 5, left + WIDTH - MARGIN, top + GRID_TOP - 4, GROOVE_LIT);
     }
 
     @Override
@@ -129,6 +212,7 @@ public final class TrophyLedgerScreen extends Screen {
                 hoveredLines.add(has ? (gilded.contains(id) ? Component.translatable("trophypedestals.pedestal.gilded", mobs.get(i).getDescription())
                         : mobs.get(i).getDescription()) : Component.translatable("trophypedestals.ledger.unknown"));
                 if (has && buyBack()) buyBackLines(hoveredLines, i, gilded.contains(id));
+                if (!has) habitatLines(hoveredLines, id);
             }
         }
         graphics.disableScissor();
@@ -136,13 +220,31 @@ public final class TrophyLedgerScreen extends Screen {
         if (hoveredLines != null) graphics.setTooltipForNextFrame(font, hoveredLines.stream().map(Component::getVisualOrderText).toList(), mouseX, mouseY);
     }
 
+    // Where a mob not collected yet spawns, as a hint: "Found in: Plains, Forest, Taiga and 4 more" (up to HINT_BIOMES
+    // named), or that it isn't found spawning by itself.
+    private void habitatLines(List<Component> lines, Identifier mob) {
+        List<Identifier> biomes = habitats.getOrDefault(mob, List.of());
+        if (biomes.isEmpty()) {
+            lines.add(Component.translatable("trophypedestals.ledger.habitat.none").withStyle(ChatFormatting.DARK_GRAY));
+            return;
+        }
+        MutableComponent named = Component.empty();
+        for (int i = 0; i < Math.min(HINT_BIOMES, biomes.size()); i++) {
+            if (i > 0) named.append(", ");
+            named.append(Component.translatable(biomes.get(i).toLanguageKey("biome")));
+        }
+        Component found = biomes.size() > HINT_BIOMES
+                ? Component.translatable("trophypedestals.ledger.habitat.more", named, biomes.size() - HINT_BIOMES) : named;
+        lines.add(Component.translatable("trophypedestals.ledger.habitat", found).withStyle(ChatFormatting.GRAY));
+    }
+
     // The grid's top and bottom, where the scroll bar runs.
     private int viewTop() {
-        return top + GRID_TOP;
+        return top + GRID_TOP + BAR_TRIM;
     }
 
     private int viewBottom() {
-        return top + height2 - MARGIN;
+        return top + height2 - MARGIN - BAR_TRIM;
     }
 
     private int barX() {
@@ -263,5 +365,79 @@ public final class TrophyLedgerScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    /** Whether only the mobs not collected yet show: gold while on. */
+    private final class MissingButton extends AbstractButton {
+        MissingButton(int x, int y, int width, int height) {
+            super(x, y, width, height, Component.translatable("trophypedestals.ledger.missing"));
+            setTooltip(Tooltip.create(Component.translatable("trophypedestals.ledger.missing.tooltip")));
+        }
+
+        @Override
+        public void onPress(InputWithModifiers input) {
+            missingOnly = !missingOnly;
+            scroll = 0;
+            filter();
+        }
+
+        @Override
+        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+            Identifier sprite = missingOnly ? SEGMENT_SELECTED : isHoveredOrFocused() ? SEGMENT_HOVER : SEGMENT;
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, getX(), getY(), width, height);
+            int color = missingOnly ? PALE_GOLD : isHoveredOrFocused() ? 0xFFFFFFFF : TEXT;
+            graphics.text(font, getMessage(), getX() + (width - font.width(getMessage())) / 2, getY() + (height - 8) / 2, color);
+        }
+
+        @Override
+        protected void updateWidgetNarration(NarrationElementOutput output) {
+            defaultButtonNarrationText(output);
+        }
+    }
+
+    /** Which mod's mobs show: all, then each mod in turn, with a click (a right click goes back one). */
+    private final class ModButton extends AbstractButton {
+        ModButton(int x, int y, int width, int height) {
+            super(x, y, width, height, Component.empty());
+            setTooltip(Tooltip.create(Component.translatable("trophypedestals.ledger.mod.tooltip")));
+        }
+
+        private Component label() {
+            return mod < 0 ? Component.translatable("trophypedestals.ledger.mod.all") : Component.literal(modName(mods.get(mod)));
+        }
+
+        @Override
+        public void onPress(InputWithModifiers input) {
+            step(1);
+        }
+
+        @Override
+        public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            if (event.button() == 1 && isMouseOver(event.x(), event.y())) {
+                playDownSound(Minecraft.getInstance().getSoundManager());
+                step(-1);
+                return true;
+            }
+            return super.mouseClicked(event, doubleClick);
+        }
+
+        // From all (-1) through each mod, and round again.
+        private void step(int by) {
+            mod = Math.floorMod(mod + 1 + by, mods.size() + 1) - 1;
+            scroll = 0;
+            filter();
+        }
+
+        @Override
+        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, isHoveredOrFocused() ? SEGMENT_HOVER : SEGMENT, getX(), getY(), width, height);
+            FormattedCharSequence text = Language.getInstance().getVisualOrder(font.substrByWidth(label(), width - 8));
+            graphics.text(font, text, getX() + (width - font.width(text)) / 2, getY() + (height - 8) / 2, isHoveredOrFocused() ? 0xFFFFFFFF : TEXT);
+        }
+
+        @Override
+        protected void updateWidgetNarration(NarrationElementOutput output) {
+            output.add(NarratedElementType.TITLE, label());
+        }
     }
 }
