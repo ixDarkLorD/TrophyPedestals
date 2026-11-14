@@ -46,7 +46,7 @@ public record SetLeaderboardPayload(BlockPos pos, ResourceLocation board) implem
             return;
         }
         pedestal.setLeaderboard(chosen);
-        Leaderboards.show(pedestal, Leaderboards.leader(player.level().getServer(), chosen));
+        Leaderboards.show(pedestal, Leaderboards.top(player.level().getServer(), chosen));
         player.displayClientMessage(Component.translatable("trophypedestals.leaderboard.set", chosen.title()), true);
         player.level().playSound(null, pos, SoundEvents.ITEM_FRAME_ROTATE_ITEM, SoundSource.BLOCKS, 1.0F, 1.0F);
     }

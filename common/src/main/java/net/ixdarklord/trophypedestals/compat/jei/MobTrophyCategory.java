@@ -6,9 +6,8 @@ import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
-import mezz.jei.api.recipe.category.IRecipeCategory;
 import mezz.jei.api.recipe.RecipeType;
-import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
+import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.api.PedestalRarity;
@@ -22,7 +21,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.flag.FeatureFlags;
@@ -125,7 +123,7 @@ public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategor
         gui.getSlotDrawable().draw(graphics, WIDTH - SLOT, ROW_Y);
         Font font = Minecraft.getInstance().font;
         graphics.drawString(font, drop.rarity().displayName(), TEXT_X, RANK_Y, 0xFF000000 | drop.rarity().color(), false);
-        Component chance = Component.translatable("jei.trophypedestals.mob_trophy.chance", percent(TrophyPedestalsConfig.MOB_TROPHY_CHANCE.get()));
+        Component chance = Component.translatable("jei.trophypedestals.mob_trophy.chance", percent(MobTrophies.chance(drop.type())));
         graphics.drawString(font, chance, TEXT_X, CHANCE_Y, LABEL, false);
     }
 

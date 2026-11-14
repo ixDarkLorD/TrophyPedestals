@@ -25,9 +25,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
@@ -43,7 +41,7 @@ import java.util.Arrays;
  * Draws the trophies on a trophy cabinet half or a trophy shelf, each as it's drawn on its own pedestal, shrunk to stand
  * on the shelf: the pedestal (its item's block model), and over it what {@link PedestalRenderer} draws for a placed one,
  * its mob or icon, its rank's light, flourishes and crown, and its text frame while it's looked at, all shrunk with it.
- * Also a trim of another block than gold.
+ * A plain item (not a trophy) stands on the shelf by itself, facing out. Also a trim of another block than gold.
  */
 public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCabinetBlockEntity> {
     // How large a trophy stands on the shelf, where its foot is (the shelf's top), and how far back from the front: in a
@@ -58,6 +56,8 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
     private static final float TEXT_SIZE = 0.6F, TEXT_DEPTH = 0.3F, TEXT_GAP = 0.2F;
     // Where a completed set's name floats: just over the cabinet's top.
     private static final float SET_Y = 1.08F;
+    // How large a plain item stands on the shelf, as an item on the ground is drawn (about half a block at 1).
+    private static final float ITEM_SCALE = 0.8F;
 
     private final ItemModelResolver items;
     private final PedestalRenderer pedestals;
@@ -80,6 +80,9 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
         final float[] textZ = new float[TrophyCabinetBlockEntity.SLOTS];
         final Component[][] text = {new Component[4], new Component[4]};
         final boolean[] body = new boolean[TrophyCabinetBlockEntity.SLOTS];
+        // Whether each spot holds a plain item (drawn alone, from trophies[i], standing on its foot at itemY), not a trophy.
+        final boolean[] plain = new boolean[TrophyCabinetBlockEntity.SLOTS];
+        final float[] itemY = new float[TrophyCabinetBlockEntity.SLOTS];
         float top;
         final boolean[] shown = new boolean[TrophyCabinetBlockEntity.SLOTS];
         float turn;
@@ -123,15 +126,27 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
         extractSet(cabinet, block, state);
         for (int i = 0; i < TrophyCabinetBlockEntity.SLOTS; i++) {
             ItemStack trophy = cabinet.item(i);
+            // A plain item: by itself, standing on the shelf at its spot, its bottom on the board.
+            state.plain[i] = !trophy.isEmpty() && !Pedestals.isTrophy(trophy);
+            if (state.plain[i]) {
+                state.shown[i] = true;
+                spot.set(ACROSS[i] - 0.5F, 0.0F, depth - 0.5F).rotateY(state.turn * Mth.DEG_TO_RAD);
+                state.x[i] = spot.x + 0.5F;
+                state.z[i] = spot.z + 0.5F;
+                items.updateForTopItem(state.trophies[i], trophy, ItemDisplayContext.GROUND, cabinet.getLevel(), null, (int) cabinet.getBlockPos().asLong() + i);
+                state.itemY[i] = state.top - (float) state.trophies[i].getModelBoundingBox().minY * ITEM_SCALE;
+                continue;
+            }
             PedestalBlockEntity pedestal = cabinet.shownPedestal(i);
             state.shown[i] = pedestal != null;
             if (pedestal == null) continue;
             spot.set(ACROSS[i] - 0.5F, 0.0F, depth - 0.5F).rotateY(state.turn * Mth.DEG_TO_RAD);
             state.x[i] = spot.x + 0.5F;
             state.z[i] = spot.z + 0.5F;
-            // Its pedestal: the trophy's item without its trophy, so its plain block model.
+            // Its pedestal: the trophy's item without its trophy, so its plain block model (a plain item's, the default
+            // display pedestal).
             state.body[i] = !pedestal.getBlockState().is(Pedestals.CUSTOM.get());
-            ItemStack body = trophy.copy();
+            ItemStack body = Pedestals.isTrophy(trophy) ? trophy.copy() : new ItemStack(Pedestals.DEFAULT.get());
             body.remove(Pedestals.RECORD.get());
             body.remove(Pedestals.MOB_TROPHY.get());
             items.updateForTopItem(state.trophies[i], body, ItemDisplayContext.NONE, cabinet.getLevel(), null, (int) cabinet.getBlockPos().asLong() + i);
@@ -164,12 +179,17 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
         state.showsSet = false;
         if (!(block.getBlock() instanceof TrophyCabinetBlock) || block.getValue(TrophyCabinetBlock.PART) != TrophyCabinetBlock.Part.LEFT
                 || cabinet.getLevel() == null) return;
-        TagKey<EntityType<?>> set = TrophySets.complete(cabinet.getLevel(), cabinet);
-        if (set == null) return;
+        // (As its owner set it: always, while it's looked at, either half, or never.)
+        TrophyCabinetBlockEntity.SetName shown = cabinet.setName();
         BlockPos other = TrophyCabinetBlock.partner(cabinet.getBlockPos(), block);
+        if (shown == TrophyCabinetBlockEntity.SetName.HIDDEN) return;
+        if (shown == TrophyCabinetBlockEntity.SetName.ON_LOOK && !(Minecraft.getInstance().hitResult instanceof BlockHitResult hit
+                && hit.getType() == HitResult.Type.BLOCK && (hit.getBlockPos().equals(cabinet.getBlockPos()) || hit.getBlockPos().equals(other)))) return;
+        Component set = TrophySets.completedName(cabinet.getLevel(), cabinet);
+        if (set == null) return;
         state.showsSet = true;
         Arrays.fill(state.set.lines, null);
-        state.set.lines[1] = TrophySets.name(set).copy().withColor(0xFFC24A);
+        state.set.lines[1] = set.copy().withColor(0xFFC24A);
         state.set.rarity = PedestalRarities.LEGENDARY;
         state.set.textScale = TEXT_SIZE;
         Vector3f front = new Vector3f(0.0F, 0.0F, TEXT_DEPTH - 0.5F).rotateY(state.turn * Mth.DEG_TO_RAD);
@@ -178,10 +198,11 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
         state.setY = SET_Y;
     }
 
-    // Whether the player is looking at this spot of the block.
+    // Whether the player is looking at this spot of the block: at its trophy, through the open front (not through its
+    // rim, its sides, its back or its frame).
     private static boolean lookedAt(TrophyCabinetBlockEntity cabinet, int slot) {
         return Minecraft.getInstance().hitResult instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK
-                && hit.getBlockPos().equals(cabinet.getBlockPos()) && TrophyDisplayBlock.slot(cabinet.getBlockState(), cabinet.getBlockPos(), hit.getLocation()) == slot;
+                && hit.getBlockPos().equals(cabinet.getBlockPos()) && TrophyDisplayBlock.spotAt(cabinet.getBlockState(), cabinet.getBlockPos(), hit) == slot;
     }
 
     // The model with this block's gold faces: the shelf's, or the cabinet half's for how it's joined.
@@ -212,6 +233,15 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
         }
         for (int i = 0; i < TrophyCabinetBlockEntity.SLOTS; i++) {
             if (!state.shown[i]) continue;
+            if (state.plain[i]) {
+                poseStack.pushPose();
+                poseStack.translate(state.x[i], state.itemY[i], state.z[i]);
+                poseStack.mulPose(Axis.YP.rotationDegrees(state.turn));
+                poseStack.scale(ITEM_SCALE, ITEM_SCALE, ITEM_SCALE);
+                state.trophies[i].submit(poseStack, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
+                poseStack.popPose();
+                continue;
+            }
             if (state.body[i]) {
                 // The pedestal's model is drawn centered on its origin: on its spot, its foot on the shelf.
                 poseStack.pushPose();

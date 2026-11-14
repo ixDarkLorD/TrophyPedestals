@@ -26,11 +26,13 @@ public record AdjustDisplayedTrophyPayload(BlockPos pos, int slot, PedestalBlock
         return TYPE;
     }
 
-    /** Applies it for this player, if they're near the display and there's a trophy on that spot. */
+    /** Applies it for this player, if they're near the display, may use it, and there's a trophy on that spot. */
     public void apply(ServerPlayer player) {
         if (slot < 0 || slot >= TrophyCabinetBlockEntity.SLOTS) return;
         if (!player.level().isLoaded(pos) || player.distanceToSqr(pos.getCenter()) > REACH * REACH) return;
         if (!(player.level().getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display) || display.item(slot).isEmpty()) return;
+        // (Only for those who may use it.)
+        if (!display.canUse(player)) return;
         DisplayedTrophySettings old = display.settings(slot);
         // (Only trophies go on cabinets and shelves: each tab only if the server lets players change a trophy's, Behavior always.)
         boolean shown = TrophyPedestalsConfig.TROPHY_DISPLAY_SETTINGS.get(), text = TrophyPedestalsConfig.TROPHY_TEXT_SETTINGS.get();

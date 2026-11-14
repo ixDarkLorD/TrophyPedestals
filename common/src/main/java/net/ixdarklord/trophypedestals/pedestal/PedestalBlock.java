@@ -1,6 +1,8 @@
 package net.ixdarklord.trophypedestals.pedestal;
 
 import com.mojang.serialization.MapCodec;
+import net.ixdarklord.coolcatcore.api.event.v2.common.BlockEvents;
+import net.ixdarklord.coolcatcore.api.event.v2.core.EventResult;
 import net.ixdarklord.coolcatcore.api.network.Network;
 import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
@@ -8,8 +10,6 @@ import net.ixdarklord.trophypedestals.api.PedestalRarity;
 import net.ixdarklord.trophypedestals.client.PedestalParticles;
 import net.ixdarklord.trophypedestals.network.OpenPedestalPayload;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -86,6 +86,14 @@ public class PedestalBlock extends BaseEntityBlock {
     // With a glass case: the case too, standing on the cap and as wide as it, up to the top of the block (its upper part
     // is the shape of the block over it, a VitrineTopBlock), so no one walks into it, and it's looked at as the pedestal.
     private static final VoxelShape CASED_SHAPE = Shapes.or(SHAPE, box(2.0, 14.0, 2.0, 14.0, 16.0, 14.0));
+    // Its outline, aimed at: its base, step, column and cap as whole boxes (the cap's rim drawn as part of it), so the
+    // outline follows the pedestal's silhouette without lines inside it; with its case, the case on top.
+    private static final VoxelShape OUTLINE = Shapes.or(
+            box(0.5, 0.0, 0.5, 15.5, 1.5, 15.5),
+            box(1.5, 1.5, 1.5, 14.5, 3.0, 14.5),
+            box(4.0, 3.0, 4.0, 12.0, 12.0, 12.0),
+            box(2.0, 12.0, 2.0, 14.0, 15.0, 14.0));
+    private static final VoxelShape CASED_OUTLINE = Shapes.or(OUTLINE, box(2.0, 14.0, 2.0, 14.0, 16.0, 14.0));
 
     public PedestalBlock(Properties properties) {
         super(properties);
@@ -173,6 +181,11 @@ public class PedestalBlock extends BaseEntityBlock {
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return state.getValue(CASED) ? CASED_OUTLINE : OUTLINE;
+    }
+
+    @Override
+    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return state.getValue(CASED) ? CASED_SHAPE : SHAPE;
     }
 
@@ -181,19 +194,13 @@ public class PedestalBlock extends BaseEntityBlock {
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         // Glass, or any stained glass, closes a case of it over a pedestal showing something (anyone may close one; only
         // those who may adjust it open it).
-        if (isCaseGlass(stack) && level.getBlockEntity(pos) instanceof PedestalBlockEntity cased && !cased.glass()
-                && (cased.isTrophy() || !cased.display().isEmpty() || cased.leaderboard() != null || cased.mannequin())) {
+        if (isCaseGlass(stack) && level.getBlockEntity(pos) instanceof PedestalBlockEntity cased && caseable(cased)) {
             // (A case reaches up into the space over it, which must be free.)
             if (!level.getBlockState(pos.above()).canBeReplaced()) {
                 if (player instanceof ServerPlayer server) server.displayClientMessage(Component.translatable("trophypedestals.pedestal.no_room_for_case"), true);
                 return ItemInteractionResult.FAIL;
             }
-            if (!level.isClientSide()) {
-                cased.setGlass(true, stack.getItem() instanceof BlockItem item && item.getBlock() instanceof StainedGlassBlock stained ? stained.getColor() : null);
-                stack.consume(1, player);
-                // (Set over it as an item goes into an item frame.)
-                level.playSound(null, pos, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 1.0F, 1.0F);
-            }
+            if (!level.isClientSide()) closeCase(level, pos, cased, stack, player);
             return ItemInteractionResult.SUCCESS;
         }
         // Under glass, nothing goes on or comes off (an empty hand lifts the glass: see useWithoutItem).
@@ -254,6 +261,40 @@ public class PedestalBlock extends BaseEntityBlock {
     // Whether this click on a cased pedestal (or the case's upper part, passed on to it) is on the glass: over the cap.
     private static boolean onGlass(BlockPos pos, BlockHitResult hit) {
         return hit.getLocation().y - pos.getY() > 14.0 / 16.0 - 1.0E-4;
+    }
+
+    /**
+     * Nothing is placed in the space over an open pedestal: it's the room for what it shows (and its case). Glass placed
+     * there closes a case over the pedestal instead, as using it on the pedestal does; any other block isn't placed.
+     * (Any block item, whoever places it: a player, a dispenser, another mod's machine. A cased pedestal's space is
+     * already its case's upper part.)
+     */
+    public static void init() {
+        BlockEvents.PLACE.register((level, pos, state, placer, stack) -> {
+            BlockPos below = pos.below();
+            if (!(level.getBlockState(below).getBlock() instanceof PedestalBlock) || !(level.getBlockEntity(below) instanceof PedestalBlockEntity pedestal)) {
+                return EventResult.pass();
+            }
+            if (isCaseGlass(stack) && caseable(pedestal)) {
+                closeCase(level, below, pedestal, stack, placer instanceof LivingEntity living ? living : null);
+            } else if (placer instanceof ServerPlayer player) {
+                player.displayClientMessage(Component.translatable("trophypedestals.pedestal.nothing_on_top"), true);
+            }
+            return EventResult.interrupt();
+        });
+    }
+
+    // Whether a case can close over it: it shows something (a trophy, an item, a board or a mannequin) and has none yet.
+    private static boolean caseable(PedestalBlockEntity pedestal) {
+        return !pedestal.glass() && (pedestal.isTrophy() || !pedestal.display().isEmpty() || pedestal.leaderboard() != null || pedestal.mannequin());
+    }
+
+    // Closes a case of this glass over it, using one up (not in creative), set over it as an item goes into an item frame.
+    private static void closeCase(Level level, BlockPos pos, PedestalBlockEntity pedestal, ItemStack stack, @Nullable LivingEntity user) {
+        pedestal.setGlass(true, stack.getItem() instanceof BlockItem item && item.getBlock() instanceof StainedGlassBlock stained ? stained.getColor() : null);
+        if (user != null) stack.consume(1, user);
+        else stack.shrink(1);
+        level.playSound(null, pos, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 1.0F, 1.0F);
     }
 
     // Whether a case can be made of this: glass, or a stained glass of any colour.

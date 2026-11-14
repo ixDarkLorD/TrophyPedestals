@@ -37,6 +37,8 @@ import java.util.Optional;
  *   reaches {@code "at_least"}.</li>
  *   <li>{@code first_kill}: a player kills a mob of {@code "entity"} (an id or {@code #tag}) first, of everyone on the
  *   server ({@code "scope": "server"}, the default) or for themselves ({@code "player"}). The trophy shows the mob.</li>
+ *   <li>{@code collection}: a player's Mob Trophies Ledger holds trophies of {@code "at_least"} different mobs ({@code
+ *   "gilded": true} counts only gilded ones).</li>
  * </ul>
  */
 public record Feat(Trigger trigger, Optional<Component> title, Optional<ResourceLocation> icon, ResourceLocation rank, Optional<ResourceLocation> pedestal, boolean once) {
@@ -50,12 +52,13 @@ public record Feat(Trigger trigger, Optional<Component> title, Optional<Resource
     ).apply(instance, Feat::new));
 
     /** What earns a feat's trophy. */
-    public sealed interface Trigger permits AdvancementTrigger, StatTrigger, FirstKillTrigger {
+    public sealed interface Trigger permits AdvancementTrigger, StatTrigger, FirstKillTrigger, CollectionTrigger {
         Codec<Trigger> CODEC = Codec.STRING.partialDispatch("type", trigger -> DataResult.success(trigger.type()), type -> switch (type) {
             case "advancement" -> DataResult.success(AdvancementTrigger.CODEC);
             case "stat" -> DataResult.success(StatTrigger.CODEC);
             case "first_kill" -> DataResult.success(FirstKillTrigger.CODEC);
-            default -> DataResult.error(() -> "Unknown trigger type \"" + type + "\" (advancement, stat or first_kill)");
+            case "collection" -> DataResult.success(CollectionTrigger.CODEC);
+            default -> DataResult.error(() -> "Unknown trigger type \"" + type + "\" (advancement, stat, first_kill or collection)");
         });
 
         String type();
@@ -82,6 +85,19 @@ public record Feat(Trigger trigger, Optional<Component> title, Optional<Resource
         @Override
         public String type() {
             return "stat";
+        }
+    }
+
+    /** A player's ledger holds trophies of this many different mobs (gilded ones only, if asked). */
+    public record CollectionTrigger(int atLeast, boolean gilded) implements Trigger {
+        static final MapCodec<CollectionTrigger> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                Codec.intRange(1, Integer.MAX_VALUE).fieldOf("at_least").forGetter(CollectionTrigger::atLeast),
+                Codec.BOOL.optionalFieldOf("gilded", false).forGetter(CollectionTrigger::gilded)
+        ).apply(instance, CollectionTrigger::new));
+
+        @Override
+        public String type() {
+            return "collection";
         }
     }
 

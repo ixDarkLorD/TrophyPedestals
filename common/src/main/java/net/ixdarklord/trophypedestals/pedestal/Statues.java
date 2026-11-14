@@ -1,7 +1,6 @@
 package net.ixdarklord.trophypedestals.pedestal;
 
 import com.mojang.authlib.properties.PropertyMap;
-import java.util.Optional;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
@@ -10,6 +9,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.component.ResolvableProfile;
+
+import java.util.Optional;
 
 /**
  * A player's statue on a pedestal: a mannequin (vanilla's player-shaped figure) wearing their skin, as the look of a
