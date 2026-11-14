@@ -22,6 +22,7 @@ This file is for listing all the changes to this project
 - **Boss trophies once** (`mob_trophies.boss_trophies_once`, off by default): a boss drops its trophy only for a player who hasn't collected it yet.
 
 ### 🔧 Changes
+- Blocks with a block entity (chests, furnaces, pedestals, other mods' machines) can no longer be used as a cabinet or shelf trim, and the new `trophypedestals:no_trim` block tag lets data packs rule out others.
 - Display pedestals now always open the tabbed adjust screen. A tab the server turns off (a display pedestal's Display tab by default, or a trophy's tab turned off in `trophy_settings`) shows greyed out and can't be opened; hovering it says the server turned it off and that an operator can turn it on.
 - Nothing can be placed in the space on top of a pedestal (by a player, a dispenser or another mod's machine): it's the room for what the pedestal shows. Glass or stained glass placed there closes a glass case over the pedestal instead, as using it on the pedestal does.
 - The adjust screens' corner studs sit a pixel in from the frame, and the header's pedestal is drawn larger and sharp.

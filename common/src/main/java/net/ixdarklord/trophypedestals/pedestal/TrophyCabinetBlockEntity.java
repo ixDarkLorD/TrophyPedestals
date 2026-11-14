@@ -223,7 +223,9 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
     @Override
     protected void applyImplicitComponents(DataComponentGetter components) {
         super.applyImplicitComponents(components);
-        trim = components.get(Pedestals.TRIM_MATERIAL.get());
+        // (Only a material that can be a trim: one set on its item some other way that can't is dropped.)
+        Identifier material = components.get(Pedestals.TRIM_MATERIAL.get());
+        trim = material != null && TrophyDisplayBlock.canTrim(material) ? material : null;
     }
 
     @Override
