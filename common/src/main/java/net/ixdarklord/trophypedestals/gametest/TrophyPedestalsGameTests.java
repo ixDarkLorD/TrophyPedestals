@@ -607,6 +607,10 @@ public final class TrophyPedestalsGameTests {
         level.getBlockState(pos).useItemOn(new ItemStack(Items.COPPER_BLOCK.weathering().unaffected()), level, player, InteractionHand.MAIN_HAND, hit);
         helper.assertTrue(BuiltInRegistries.BLOCK.getKey(Blocks.COPPER_BLOCK.weathering().unaffected()).equals(shelf.trim()) && !level.getBlockState(pos).getValue(TrophyDisplayBlock.GOLD_TRIM),
                 "a block trims it with that block");
+        level.getBlockState(pos).useItemOn(new ItemStack(Items.CHEST), level, player, InteractionHand.MAIN_HAND, hit);
+        helper.assertTrue(BuiltInRegistries.BLOCK.getKey(Blocks.COPPER_BLOCK.weathering().unaffected()).equals(shelf.trim()) && !TrophyDisplayBlock.canTrim(Blocks.CHEST)
+                && !TrophyDisplayBlock.canTrim(Pedestals.DEFAULT.get()) && TrophyDisplayBlock.canTrim(Blocks.COPPER_BLOCK.weathering().unaffected()),
+                "a block with a block entity (a chest, a pedestal) is never a trim");
         List<ItemStack> drops = Block.getDrops(level.getBlockState(pos), level, pos, shelf);
         helper.assertTrue(drops.size() == 1 && BuiltInRegistries.BLOCK.getKey(Blocks.COPPER_BLOCK.weathering().unaffected()).equals(drops.getFirst().get(Pedestals.TRIM_MATERIAL.get())),
                 "broken, it keeps its trim: " + drops);
