@@ -1,6 +1,7 @@
 package net.ixdarklord.trophypedestals.network;
 
 import net.ixdarklord.coolcatcore.api.network.Network;
+import net.ixdarklord.trophypedestals.client.CabinetScreen;
 import net.ixdarklord.trophypedestals.client.LeaderboardScreen;
 import net.ixdarklord.trophypedestals.client.PedestalScreen;
 import net.ixdarklord.trophypedestals.client.TrophyLedgerScreen;
@@ -28,7 +29,11 @@ public final class TrophyPedestalsNetwork {
         Network.registerServerbound(BuyBackTrophyPayload.class, (payload, context) -> context.queue(() -> {
             if (context.getPlayer() instanceof ServerPlayer player) payload.apply(player);
         }));
-        Network.registerClientbound(OpenLedgerPayload.class, (payload, context) -> TrophyLedgerScreen.open(payload.collected(), payload.gilded()));
+        Network.registerClientbound(OpenLedgerPayload.class, (payload, context) -> TrophyLedgerScreen.open(payload.collected(), payload.gilded(), payload.habitats()));
+        Network.registerClientbound(OpenCabinetPayload.class, (payload, context) -> CabinetScreen.open(payload));
+        Network.registerServerbound(AdjustCabinetPayload.class, (payload, context) -> context.queue(() -> {
+            if (context.getPlayer() instanceof ServerPlayer player) payload.apply(player);
+        }));
         Network.registerClientbound(OpenDisplayedTrophyPayload.class, (payload, context) -> PedestalScreen.openDisplayed(payload.pos(), payload.slot()));
         Network.registerServerbound(AdjustDisplayedTrophyPayload.class, (payload, context) -> context.queue(() -> {
             if (context.getPlayer() instanceof ServerPlayer player) payload.apply(player);

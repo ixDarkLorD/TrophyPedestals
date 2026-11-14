@@ -2,7 +2,6 @@ package net.ixdarklord.trophypedestals.pedestal;
 
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.api.TrophyKinds;
-import net.ixdarklord.trophypedestals.compat.component.DataComponents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
@@ -35,6 +34,11 @@ public final class PedestalInfo {
             lines.add(pedestal.leaderboard().title());
             lines.add(pedestal.leaderName().isEmpty() ? Component.translatable("trophypedestals.leaderboard.no_leader").withStyle(ChatFormatting.GRAY)
                     : Component.translatable("trophypedestals.info.leader", pedestal.leaderName(), pedestal.leaderboard().format(pedestal.leaderValue())).withStyle(ChatFormatting.GRAY));
+            for (int place = 0; place < pedestal.runnersUp().size(); place++) {
+                Leaderboards.Leader runnerUp = pedestal.runnersUp().get(place);
+                lines.add(Component.translatable("trophypedestals.leaderboard.place." + (place + 2), runnerUp.name(),
+                        pedestal.leaderboard().format(runnerUp.value())).withStyle(ChatFormatting.DARK_GRAY));
+            }
         } else if (pedestal.mannequin()) {
             lines.add(Component.translatable("trophypedestals.info.mannequin"));
         } else if (!pedestal.display().isEmpty()) {

@@ -1,6 +1,5 @@
 package net.ixdarklord.trophypedestals.pedestal;
 
-import java.util.function.Supplier;
 import net.ixdarklord.coolcatcore.api.network.codec.ByteBufCodecs;
 import net.ixdarklord.coolcatcore.api.registry.BlockEntityTypes;
 import net.ixdarklord.coolcatcore.api.registry.CreativeTabs;
@@ -15,6 +14,7 @@ import net.ixdarklord.trophypedestals.compat.component.Components;
 import net.ixdarklord.trophypedestals.compat.component.DataComponentRegister;
 import net.ixdarklord.trophypedestals.compat.component.DataComponentType;
 import net.ixdarklord.trophypedestals.compat.component.DataComponents;
+import net.ixdarklord.trophypedestals.feat.TrophyLedger;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -112,6 +113,13 @@ public final class Pedestals {
     private static final DataComponentRegister COMPONENTS = DataComponentRegister.create(TrophyPedestalsMod.MOD_ID);
     private static final DeferredRegister<LootItemFunctionType> LOOT_FUNCTIONS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.LOOT_FUNCTION_TYPE);
     private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.CREATIVE_MODE_TAB);
+    private static final DeferredRegister<ResourceLocation> STATS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.CUSTOM_STAT);
+
+    /**
+     * The {@code trophypedestals:mob_trophies_collected} statistic: how many different mobs a player's Mob Trophies Ledger
+     * holds (kept in step with it: see {@link TrophyLedger}), so it's a leaderboard too ("Most Mob Trophies").
+     */
+    public static final RegistryEntry<ResourceLocation> MOB_TROPHIES_COLLECTED = STATS.register("mob_trophies_collected", () -> TrophyPedestalsMod.id("mob_trophies_collected"));
 
     public static final Supplier<DataComponentType<PedestalRecord>> RECORD = COMPONENTS.register("pedestal",
             () -> DataComponentType.<PedestalRecord>builder().persistent(PedestalRecord.CODEC).networkSynchronized(PedestalRecord.STREAM_CODEC).build());
@@ -240,7 +248,9 @@ public final class Pedestals {
         BLOCK_ENTITIES.register();
         LOOT_FUNCTIONS.register();
         TABS.register();
+        STATS.register();
         MobTrophies.init();
+        PedestalBlock.init();
     }
 
     /** Whether this item is a trophy of either kind (an achievement's, or a mob's). */
