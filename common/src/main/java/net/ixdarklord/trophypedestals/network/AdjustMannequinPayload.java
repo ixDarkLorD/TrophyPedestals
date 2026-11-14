@@ -5,9 +5,9 @@ import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * From a client's adjustment screen, for a mannequin pedestal (one with an armor stand installed): whether it shows as a

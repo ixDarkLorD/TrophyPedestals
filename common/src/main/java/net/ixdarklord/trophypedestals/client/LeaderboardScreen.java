@@ -34,6 +34,14 @@ public final class LeaderboardScreen extends Screen {
     private static final int WIDTH = 260, MAX_HEIGHT = 236, MARGIN = 12, ROW = 20, LIST_TOP = 60, EDGE = 4;
     private static final int GOLD = 0xFFF2C94C, LABEL = 0xFF9DA2A7, TEXT = 0xFFDCDCE0, VALUE = 0xFFFFE08A;
     private static final int GROOVE_DARK = 0xFF07090E, GROOVE_LIT = 0xFF343B4E, SLOT = 0xFF0E121A, SLOT_HOVER = 0xFF252C3C;
+    // The scroll bar, as the adjust screen's and the ledger's: its width, how far in from the panel's right edge, its
+    // thumb's least height, and the room kept between it and the rows; a groove cut like the panel's dividers, and a gold
+    // thumb lit along its top and left, with grip lines.
+    private static final int BAR_WIDTH = 4, BAR_INSET = 8, MIN_THUMB = 14, BAR_GAP = 3;
+    // How much shorter than the list the scroll bar's track is, at each end.
+    private static final int BAR_TRIM = 1;
+    private static final int GROOVE = 0xFF0E121A, PALE_GOLD = 0xFFFFE08A, GOLD_SHADE = 0xFFB8872B, GOLD_DEEP = 0xFF9A6A1A;
+    private static final int GOLD_FRAME = 0xFFE0AC3C, GOLD_TOP = 0xFFFFF0A8, GOLD_LIT = 0xFFFFC24A;
 
     private record Row(Leaderboards.Board board, Component title, String leader, int value) {}
 
@@ -43,6 +51,8 @@ public final class LeaderboardScreen extends Screen {
     private final List<Row> shown = new ArrayList<>();
     private EditBox search;
     private int left, top, height2, scroll, maxScroll;
+    // While the scroll bar's thumb is held: where on it it was taken, down from its top (-1 while it isn't).
+    private int dragOffset = -1;
 
     private LeaderboardScreen(OpenLeaderboardPayload payload) {
         super(Component.translatable("trophypedestals.leaderboard.picker"));
@@ -103,7 +113,7 @@ public final class LeaderboardScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-        int x0 = left + MARGIN, x1 = left + WIDTH - MARGIN, y0 = top + LIST_TOP, bottom = y0 + listHeight();
+        int x0 = left + MARGIN, x1 = rowsRight(), y0 = top + LIST_TOP, bottom = y0 + listHeight();
         graphics.enableScissor(left, y0, left + WIDTH, bottom);
         for (int i = 0; i < shown.size(); i++) {
             int y = y0 + i * ROW - scroll;
@@ -123,6 +133,7 @@ public final class LeaderboardScreen extends Screen {
             graphics.text(font, leader, leaderX, y + 5, row.leader().isEmpty() ? LABEL : VALUE);
         }
         graphics.disableScissor();
+        if (maxScroll > 0) scrollBar(graphics, mouseX, mouseY);
         if (shown.isEmpty()) graphics.centeredText(font, Component.translatable("trophypedestals.leaderboard.none_found"), left + WIDTH / 2, y0 + 8, LABEL);
     }
 
@@ -135,9 +146,78 @@ public final class LeaderboardScreen extends Screen {
         return Language.getInstance().getVisualOrder(FormattedText.composite(cut, CommonComponents.ELLIPSIS));
     }
 
+    // Where the rows end: at the panel's margin, or before the scroll bar while there is one.
+    private int rowsRight() {
+        return maxScroll > 0 ? barX() - 1 - BAR_GAP : left + WIDTH - MARGIN;
+    }
+
+    private int barX() {
+        return left + WIDTH - BAR_INSET - BAR_WIDTH;
+    }
+
+    private int thumbHeight() {
+        int track = listHeight() - 2 * BAR_TRIM - 2;
+        return Math.max(MIN_THUMB, track * track / (track + maxScroll));
+    }
+
+    private int thumbY() {
+        return top + LIST_TOP + BAR_TRIM + 1 + (listHeight() - 2 * BAR_TRIM - 2 - thumbHeight()) * scroll / Math.max(1, maxScroll);
+    }
+
+    private boolean overBar(double mouseX, double mouseY) {
+        int y0 = top + LIST_TOP;
+        return maxScroll > 0 && mouseX >= barX() - 1 && mouseX < barX() + BAR_WIDTH + 1 && mouseY >= y0 && mouseY < y0 + listHeight();
+    }
+
+    // Scrolls so the thumb's top is where the mouse is, less where on the thumb it was taken.
+    private void dragThumb(double mouseY) {
+        int travel = listHeight() - 2 * BAR_TRIM - 2 - thumbHeight();
+        scroll = travel <= 0 ? 0 : Mth.clamp((int) Math.round((mouseY - dragOffset - (top + LIST_TOP + BAR_TRIM + 1)) * maxScroll / travel), 0, maxScroll);
+    }
+
+    // The groove (a dark rim, lit along its bottom and right) and the gold thumb in it, brighter while hovered or held.
+    private void scrollBar(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        int x = barX(), y0 = top + LIST_TOP + BAR_TRIM, y1 = top + LIST_TOP + listHeight() - BAR_TRIM;
+        graphics.fill(x - 1, y0 - 1, x + BAR_WIDTH + 1, y1 + 1, GROOVE_LIT);
+        graphics.fill(x - 1, y0 - 1, x + BAR_WIDTH, y1, GROOVE_DARK);
+        graphics.fill(x, y0, x + BAR_WIDTH, y1, GROOVE);
+        int ty = thumbY(), th = thumbHeight();
+        boolean lit = dragOffset >= 0 || (mouseX >= x && mouseX < x + BAR_WIDTH && mouseY >= ty && mouseY < ty + th);
+        graphics.fill(x, ty, x + BAR_WIDTH, ty + th, GOLD_DEEP);
+        graphics.fill(x, ty, x + BAR_WIDTH - 1, ty + th - 1, lit ? GOLD_TOP : PALE_GOLD);
+        graphics.fill(x + 1, ty + 1, x + BAR_WIDTH - 1, ty + th - 1, lit ? GOLD_LIT : GOLD_FRAME);
+        int mid = ty + th / 2;
+        for (int line = -2; line <= 2; line += 2) graphics.fill(x + 1, mid + line, x + BAR_WIDTH - 1, mid + line + 1, GOLD_SHADE);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        if (dragOffset >= 0) {
+            dragThumb(event.y());
+            return true;
+        }
+        return super.mouseDragged(event, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (dragOffset >= 0 && event.button() == 0) {
+            dragOffset = -1;
+            return true;
+        }
+        return super.mouseReleased(event);
+    }
+
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        int x0 = left + MARGIN, x1 = left + WIDTH - MARGIN, y0 = top + LIST_TOP, bottom = y0 + listHeight();
+        // The scroll bar: its thumb taken where it's clicked, or (clicked above or below it) moved there by its middle.
+        if (event.button() == 0 && overBar(event.x(), event.y())) {
+            int ty = thumbY(), th = thumbHeight();
+            dragOffset = event.y() >= ty && event.y() < ty + th ? (int) event.y() - ty : th / 2;
+            dragThumb(event.y());
+            return true;
+        }
+        int x0 = left + MARGIN, x1 = rowsRight(), y0 = top + LIST_TOP, bottom = y0 + listHeight();
         double mouseX = event.x(), mouseY = event.y();
         if (mouseX >= x0 && mouseX < x1 && mouseY >= y0 && mouseY < bottom) {
             int index = (int) ((mouseY - y0 + scroll) / ROW);
