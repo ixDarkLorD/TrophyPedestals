@@ -1,0 +1,9 @@
+{
+  "trigger": {
+    "type": "collection",
+    "at_least": 5,
+    "gilded": true
+  },
+  "icon": "minecraft:gold_block",
+  "rank": "epic"
+}

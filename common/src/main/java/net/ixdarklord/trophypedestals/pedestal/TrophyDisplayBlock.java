@@ -1,9 +1,11 @@
 package net.ixdarklord.trophypedestals.pedestal;
 import net.ixdarklord.coolcatcore.api.network.Network;
+import net.ixdarklord.trophypedestals.network.OpenCabinetPayload;
 import net.ixdarklord.trophypedestals.network.OpenDisplayedTrophyPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -35,6 +37,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -54,12 +57,19 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
     public static final BooleanProperty GOLD_TRIM = BooleanProperty.create("gold_trim");
     /** The trim material that is the model's own gold: a gold block's. */
     public static final ResourceLocation GOLD = BuiltInRegistries.BLOCK.getKey(Blocks.GOLD_BLOCK);
-    // Half a block deep, its back against the wall (and its gold a pixel proud): a cabinet's shape, facing each way.
+    // Half a block deep, its back against the wall (and its gold a pixel proud): a cabinet's solid shape, facing each way.
     private static final Map<Direction, VoxelShape> HALF_DEEP = shapes(new double[][] {{0, 0, 7, 16, 16, 16}});
 
     protected TrophyDisplayBlock(Properties properties) {
         super(properties);
     }
+
+    /**
+     * The windows of its two spots (0 on the viewer's left, 1 on their right) on its front face, in pixels as the
+     * north-facing model has them ({@code x0, y0, x1, y1}): where its trophies are seen through its open front, so a spot
+     * is aimed at only through that, never through its frame, sides or back.
+     */
+    protected abstract double[][] spots();
 
     // Drawn by its model (a block with a block entity draws nothing unless it says so).
     @Override
@@ -70,6 +80,29 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return HALF_DEEP.get(state.getValue(FACING));
+    }
+
+    /**
+     * The spot aimed at: 0 or 1, or -1 when it's none of them (its frame, a side, its back, its top). Only a hit on its
+     * front face counts, inside a spot's window.
+     */
+    public static int spotAt(BlockState state, BlockPos pos, BlockHitResult hit) {
+        if (!(state.getBlock() instanceof TrophyDisplayBlock display) || hit.getDirection() != state.getValue(FACING)) return -1;
+        Vec3 at = hit.getLocation();
+        // Across its front, in the north-facing model's pixels, as the blockstate turns it; and up.
+        double wx = (at.x - pos.getX()) * 16.0, wz = (at.z - pos.getZ()) * 16.0, y = (at.y - pos.getY()) * 16.0;
+        double x = switch (state.getValue(FACING)) {
+            case SOUTH -> 16.0 - wx;
+            case EAST -> wz;
+            case WEST -> 16.0 - wz;
+            default -> wx;
+        };
+        double[][] spots = display.spots();
+        for (int i = 0; i < spots.length; i++) {
+            double[] window = spots[i];
+            if (x >= window[0] && x <= window[2] && y >= window[1] && y <= window[3]) return i;
+        }
+        return -1;
     }
 
     // Lit inside as the open air around it is: smooth lighting doesn't darken the faces within it (the underside of a
@@ -134,6 +167,39 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display && display.trim() != null) {
             level.setBlock(pos, state.setValue(GOLD_TRIM, GOLD.equals(display.trim())), Block.UPDATE_ALL);
         }
+        // Its owner: who placed it (both halves of a cabinet).
+        if (!level.isClientSide() && placer instanceof Player player) {
+            for (TrophyCabinetBlockEntity part : parts(level, pos, level.getBlockState(pos))) part.setOwner(player.getUUID());
+        }
+    }
+
+    /** This block's own block entity and, for a cabinet, its other half's. */
+    public static List<TrophyCabinetBlockEntity> parts(Level level, BlockPos pos, BlockState state) {
+        List<TrophyCabinetBlockEntity> parts = new ArrayList<>();
+        if (level.getBlockEntity(pos) instanceof TrophyCabinetBlockEntity own) parts.add(own);
+        if (state.getBlock() instanceof TrophyCabinetBlock && level.getBlockEntity(TrophyCabinetBlock.partner(pos, state)) instanceof TrophyCabinetBlockEntity other) {
+            parts.add(other);
+        }
+        return parts;
+    }
+
+    // Opens its settings screen for its owner (and operators); anyone else is told it isn't theirs.
+    private static boolean openSettings(TrophyCabinetBlockEntity display, Player player) {
+        if (!display.canChangeAccess(player)) {
+            if (player instanceof ServerPlayer server) server.displayClientMessage(Component.translatable("trophypedestals.cabinet.not_yours"), true);
+            return false;
+        }
+        if (player instanceof ServerPlayer server) {
+            Network.sendToPlayer(server, new OpenCabinetPayload(display.getBlockPos(), display.access().getSerializedName(), display.setName().getSerializedName()));
+        }
+        return true;
+    }
+
+    // Whether the player may use it; if not, they're told whose it is not to use.
+    private static boolean mayUse(TrophyCabinetBlockEntity display, Player player) {
+        if (display.canUse(player)) return true;
+        if (player instanceof ServerPlayer server) server.displayClientMessage(Component.translatable("trophypedestals.cabinet.not_yours"), true);
+        return false;
     }
 
     // Its trophies drop as it's broken (1.21.1 block entities hear nothing of it).
@@ -161,17 +227,20 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
         return facing.getCounterClockWise();
     }
 
-    /** The spot a point is over: 0 on the viewer's left, 1 on their right. */
+    /** The half a point is over: 0 on the viewer's left, 1 on their right (see {@link #spotAt} for the spot aimed at). */
     public static int slot(BlockState state, BlockPos pos, Vec3 at) {
         Direction right = right(state.getValue(FACING));
         double across = (at.x - pos.getX() - 0.5) * right.getStepX() + (at.z - pos.getZ() - 0.5) * right.getStepZ();
         return across < 0.0 ? 0 : 1;
     }
 
-    // A trophy in hand goes onto the spot used, if it's free; a block in hand makes its trim of that block.
+    // A trophy, or any item that isn't a block, goes onto the spot used, if it's free (a plain item stands there by
+    // itself); a block in hand makes its trim of that block.
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!(level.getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display)) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        // (All of it is for those who may use it.)
+        if (!mayUse(display, player)) return ItemInteractionResult.FAIL;
         // An axe takes its trim off.
         if (stack.getItem() instanceof AxeItem) {
             if (display.trim() == null) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
@@ -191,8 +260,9 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
             }
             return ItemInteractionResult.SUCCESS;
         }
-        if (!Pedestals.isTrophy(stack)) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        int slot = slot(state, pos, hit.getLocation());
+        // (Onto the spot aimed at, through its open front: none, aiming at its frame.)
+        int slot = spotAt(state, pos, hit);
+        if (!holds(stack) || slot < 0) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (!display.item(slot).isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (!level.isClientSide()) {
             display.setItem(slot, stack.copyWithCount(1));
@@ -202,17 +272,21 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
         return ItemInteractionResult.SUCCESS;
     }
 
-    // An empty hand takes the trophy on the spot used; sneaking, it opens that trophy's adjust screen.
+    // An empty hand takes the trophy on the spot aimed at; sneaking, it opens that trophy's adjust screen, or, aimed at
+    // anything else of it (its frame, an empty spot), its own settings, for its owner.
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!(level.getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display)) return InteractionResult.PASS;
-        int slot = slot(state, pos, hit.getLocation());
+        int slot = spotAt(state, pos, hit);
         if (player.isSecondaryUseActive()) {
-            if (display.item(slot).isEmpty()) return InteractionResult.PASS;
+            // (Sneaking on anything but a trophy: the cabinet's own settings, for its owner.)
+            if (slot < 0 || !Pedestals.isTrophy(display.item(slot))) return openSettings(display, player) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+            if (!mayUse(display, player)) return InteractionResult.FAIL;
             if (player instanceof ServerPlayer server) Network.sendToPlayer(server, new OpenDisplayedTrophyPayload(pos, slot));
             return InteractionResult.SUCCESS;
         }
-        if (display.item(slot).isEmpty()) return InteractionResult.PASS;
+        if (slot < 0 || display.item(slot).isEmpty()) return InteractionResult.PASS;
+        if (!mayUse(display, player)) return InteractionResult.FAIL;
         if (!level.isClientSide()) {
             ItemStack taken = display.item(slot);
             display.setItem(slot, ItemStack.EMPTY);
@@ -220,6 +294,11 @@ public abstract class TrophyDisplayBlock extends BaseEntityBlock {
             level.playSound(null, pos, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS, 1.0F, 1.0F);
         }
         return InteractionResult.SUCCESS;
+    }
+
+    /** Whether a spot can hold this: a trophy, or any item that isn't a block (a block in hand is for its trim). */
+    public static boolean holds(ItemStack stack) {
+        return Pedestals.isTrophy(stack) || !stack.isEmpty() && !(stack.getItem() instanceof BlockItem);
     }
 
     @Override

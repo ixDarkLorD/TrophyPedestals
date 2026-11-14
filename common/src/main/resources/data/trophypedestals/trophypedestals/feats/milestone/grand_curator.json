@@ -1,0 +1,8 @@
+{
+  "trigger": {
+    "type": "collection",
+    "at_least": 100
+  },
+  "icon": "trophypedestals:trophy_ledger",
+  "rank": "legendary"
+}

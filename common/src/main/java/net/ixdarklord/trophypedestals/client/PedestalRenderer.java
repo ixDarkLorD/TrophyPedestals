@@ -14,7 +14,6 @@ import net.ixdarklord.trophypedestals.api.TrophyKinds;
 import net.ixdarklord.trophypedestals.api.client.PedestalEffect;
 import net.ixdarklord.trophypedestals.api.client.PedestalEffects;
 import net.ixdarklord.trophypedestals.compat.ARGB;
-import net.ixdarklord.trophypedestals.compat.render.ArmedEntityRenderState;
 import net.ixdarklord.trophypedestals.compat.render.AvatarRenderState;
 import net.ixdarklord.trophypedestals.compat.render.BlockEntityRenderState;
 import net.ixdarklord.trophypedestals.compat.render.CameraRenderState;
@@ -33,6 +32,7 @@ import net.ixdarklord.trophypedestals.compat.render.PedestalOverlays;
 import net.ixdarklord.trophypedestals.compat.render.SquidRenderState;
 import net.ixdarklord.trophypedestals.compat.render.SubmitNodeCollector;
 import net.ixdarklord.trophypedestals.compat.render.WitherRenderState;
+import net.ixdarklord.trophypedestals.pedestal.Leaderboards;
 import net.ixdarklord.trophypedestals.pedestal.MobLooks;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophyRecord;
 import net.ixdarklord.trophypedestals.pedestal.PedestalBlock;
@@ -69,7 +69,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
@@ -172,6 +171,10 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     // A mob trophy's mob: where its feet float (a little over the cap), and the most room it takes before it's shrunk to fit:
     // how far out from its middle it may reach as it turns (inside the hologram's outlines and its light), and how tall.
     private static final float MOB_FLOOR = 1.17F, MOB_REACH = 0.3F, MOB_HEIGHT = 0.85F;
+    // A leaderboard's podium: its runners-up's statues beside its leader's (second on its left, third on its right), as
+    // large against the leader's, as far to the side and back, and as far lower (or, below 0, higher), in blocks.
+    private static final float[] PODIUM_SIZE = {0.62F, 0.56F}, PODIUM_SIDE = {-0.3F, 0.3F}, PODIUM_DROP = {-0.04F, 0.0F};
+    private static final float PODIUM_BACK = 0.06F;
     // How far a mob whose model can't be measured (one drawn without a model of parts, as the ender dragon is) is taken
     // to reach, against its hitbox's width: half of it, as its wings spread about that far, then halved again so it may
     // take twice the usual room (its wingtips over the pedestal's edges). Taking its hitbox's corner drew the dragon tiny.
@@ -229,9 +232,9 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     // How far behind its text the panel sits, in its own units.
     private static final float PANEL_DEPTH = -0.05F;
 
-    // How far off a custom pedestal's body is drawn (as far as most players see blocks), and the rest of a pedestal (as
-    // far as block entities usually are).
-    private static final int BODY_DISTANCE = 256, DISPLAY_DISTANCE = 64;
+    // How far off a custom pedestal's body is drawn (as far as most players see blocks). The rest of a pedestal is drawn
+    // as far as the player's display_distance (64 blocks unless they change it, as far as block entities usually are).
+    private static final int BODY_DISTANCE = 256;
 
     // Mobs that couldn't be made or drawn outside a world (some mods'), shown by their icon instead.
     private static final Set<EntityType<?>> UNDRAWABLE = ConcurrentHashMap.newKeySet();
@@ -311,6 +314,40 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         }
     }
 
+    // A leaderboard's podium: its runners-up's statues, each made once (and again when someone else takes its place),
+    // standing still, smaller than the leader's. None under glass (the case is fitted to the leader alone).
+    private static void extractPodium(PedestalBlockEntity pedestal, State state, float partialTicks) {
+        Arrays.fill(state.podium, null);
+        if (pedestal.leaderboard() == null || state.mob == null || pedestal.glass()) return;
+        List<Leaderboards.Leader> runnersUp = pedestal.runnersUp();
+        for (int place = 0; place < Math.min(2, runnersUp.size()); place++) {
+            String name = runnersUp.get(place).name();
+            Entity statue = pedestal.runnerUpStatue(place, name);
+            if (statue == null) {
+                statue = EntityRenderStates.create(Statues.FIGURE, pedestal.getLevel());
+                if (statue == null) continue;
+                DrawnMobs.numbered(statue);
+                MobLooks.apply(statue, Statues.look(name), pedestal.getLevel().registryAccess());
+                statue.setPos(Vec3.atBottomCenterOf(pedestal.getBlockPos()).add(0.0, MOB_FLOOR, 0.0));
+                statue.setYRot(0.0F);
+                if (statue instanceof LivingEntity living) {
+                    living.setYBodyRot(0.0F);
+                    living.setYHeadRot(0.0F);
+                }
+                pedestal.setRunnerUpStatue(place, name, statue);
+            }
+            EntityRenderState shown = EntityRenderStates.extract(statue, partialTicks);
+            shown.lightCoords = FULL_BRIGHT;
+            shown.shadowRadius = 0.0F;
+            shown.shadowPieces.clear();
+            shown.nameTag = null;
+            shown.ageInTicks = 0.0F;
+            idle(shown, 0.0F);
+            state.podium[place] = shown;
+            state.podiumScale[place] = state.mobScale * PODIUM_SIZE[place];
+        }
+    }
+
     private static @Nullable EntityRenderState makeMob(PedestalBlockEntity pedestal, EntityType<?> type, Supplier<CompoundTag> look,
                                                        State state, float partialTicks, float time) {
         Entity mob = pedestal.shownMob();
@@ -352,13 +389,15 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         shown.shadowRadius = 0.0F;
         shown.shadowPieces.clear();
         shown.nameTag = null;
-        // One that doesn't animate holds the pose it has at its first moment.
-        shown.ageInTicks = pedestal.animates() ? time : 0.0F;
+        // One that doesn't animate holds the pose it has at its first moment (as every one does for a player who turns
+        // moving mobs off).
+        boolean moving = pedestal.animates() && TrophyPedestalsClientConfig.MOVING_MOBS.get();
+        shown.ageInTicks = moving ? time : 0.0F;
         idle(shown, shown.ageInTicks);
         if (pedestal.showsStatue()) pose(shown, pedestal.statuePose());
         if (shown instanceof SquidRenderState squid) tumble(squid, pedestal.getBlockPos(), shown.ageInTicks);
         // Playing its chosen animation on loop (a frozen one holds still whichever is chosen).
-        if (pedestal.animates()) MobAnimations.play(mob, shown, pedestal.animation(), time);
+        if (moving) MobAnimations.play(mob, shown, pedestal.animation(), time);
         if (pedestal.glass()) {
             // Under glass: fitted inside the case, standing where it does, by the most it has reached as it's posed and
             // animated (its limbs, and anything in its hands: a mannequin's raised sword stays inside too), raised or
@@ -698,6 +737,9 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         @Nullable PedestalEffect effect;
         // A mob trophy's mob, and how much it's shrunk to fit over the pedestal.
         @Nullable EntityRenderState mob;
+        // A leaderboard's runners-up's statues, second and third (null for none), and the size each is drawn at.
+        final @Nullable EntityRenderState[] podium = new EntityRenderState[2];
+        final float[] podiumScale = new float[2];
         // A lying statue's fit and placing: how much more it's shrunk, and how far it's moved up and back, in its own units.
         float lieScale = 1.0F, lieY, lieZ;
         // Whether it's a custom pedestal, whose body is drawn here, and the block it's made of.
@@ -815,7 +857,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         state.material = pedestal.material();
         // A display shown larger or higher is seen from farther off, so it's drawn, in detail, from as much farther.
         double farther = reach(pedestal);
-        if (cameraPosition.distanceToSqr(Vec3.atCenterOf(pedestal.getBlockPos())) > sq(Math.min(BODY_DISTANCE, DISPLAY_DISTANCE * farther))) {
+        if (cameraPosition.distanceToSqr(Vec3.atCenterOf(pedestal.getBlockPos())) > sq(Math.min(BODY_DISTANCE, TrophyPedestalsClientConfig.DISPLAY_DISTANCE.get() * farther))) {
             state.shown = false;
             return;
         }
@@ -835,7 +877,8 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         if (!state.shown) return;
         boolean ranked = state.trophy && !PedestalRarities.isNone(pedestal.rarity());
         state.rarity = ranked ? PedestalRarities.get(pedestal.rarity()) : DISPLAY;
-        state.effects = pedestal.effects();
+        // (Off too for a player who turns flourishes off.)
+        state.effects = pedestal.effects() && TrophyPedestalsClientConfig.FLOURISHES.get();
         state.showcaseLight = pedestal.light();
         state.effect = ranked ? PedestalEffects.of(state.rarity) : null;
         float time = pedestal.getLevel().getGameTime() + partialTicks;
@@ -860,6 +903,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         else if (pedestal.leaderboard() != null && !pedestal.leaderName().isEmpty())
             state.mob = extractMob(pedestal, Statues.FIGURE, () -> Statues.look(pedestal.leaderName()), state, partialTicks, time);
         else state.mob = null;
+        extractPodium(pedestal, state, partialTicks);
         if (state.mob != null) {
             items.updateForTopItem(state.icon, ItemStack.EMPTY, ItemDisplayContext.GROUND, pedestal.getLevel(), null, 0);
             Entity mob = pedestal.shownMob();
@@ -903,10 +947,9 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             // Raised into its showcase light (and shrunk only if it can't fit there): see fitToCone.
             float reachPerScale = (float) Math.hypot(Math.max(-box.minX, box.maxX), Math.max(-box.minZ, box.maxZ));
             if (pedestal.glass()) {
-                // Under glass: fitted inside the case, as wide as it reaches when it turns and as tall as it is.
-                // (As large as the case lets it be, up to GLASS_ITEM_GROW times its usual size, standing on the cap.)
-                state.iconScale = fitInCase(ICON_SCALE * GLASS_ITEM_GROW, reachPerScale, (float) (box.maxY - box.minY), bottom, pedestal.pitch() != 0.0F || pedestal.roll() != 0.0F)
-                        * Math.min(1.0F, pedestal.scale());
+                // Under glass: at its usual size (its own size kept for when the glass comes off), shrunk only if it
+                // wouldn't fit the case, as wide as it reaches when it turns and as tall as it is.
+                state.iconScale = fitInCase(ICON_SCALE, reachPerScale, (float) (box.maxY - box.minY), bottom, pedestal.pitch() != 0.0F || pedestal.roll() != 0.0F);
             } else {
                 float[] fitted = fitToCone(state, state.rarity != DISPLAY, ICON_SCALE * state.size, reachPerScale, (float) (box.maxY - box.minY) / 2.0F, bottom);
                 state.iconScale = fitted[0];
@@ -999,11 +1042,17 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
                 state.lines[2] = mobTrophy.slain() ? mobTrophy.slainLine() : null;
                 state.lines[3] = mobTrophy.slain() ? mobTrophy.date().copy().withStyle(ChatFormatting.GRAY) : null;
             } else if (pedestal.leaderboard() != null) {
-                // A leaderboard: its board, in gold, then its leader and their count (or that no one leads it yet).
-                state.lines[1] = pedestal.leaderboard().title().copy().withColor(0xFFC24A);
-                state.lines[2] = pedestal.leaderName().isEmpty() ? Component.translatable("trophypedestals.leaderboard.no_leader")
-                        : Component.literal(pedestal.leaderName());
-                state.lines[3] = pedestal.leaderName().isEmpty() ? null : pedestal.leaderboard().format(pedestal.leaderValue()).copy().withStyle(ChatFormatting.GRAY);
+                // A leaderboard: its board, in gold, then its leader and their count (or that no one leads it yet), and
+                // under them the runners-up, second and third, fainter.
+                Leaderboards.Board board = pedestal.leaderboard();
+                state.lines[0] = board.title().copy().withColor(0xFFC24A);
+                state.lines[1] = pedestal.leaderName().isEmpty() ? Component.translatable("trophypedestals.leaderboard.no_leader")
+                        : Component.translatable("trophypedestals.info.leader", pedestal.leaderName(), board.format(pedestal.leaderValue()));
+                List<Leaderboards.Leader> runnersUp = pedestal.runnersUp();
+                for (int place = 0; place < 2; place++) {
+                    state.lines[2 + place] = place >= runnersUp.size() ? null : Component.translatable("trophypedestals.leaderboard.place." + (place + 2),
+                            runnersUp.get(place).name(), board.format(runnersUp.get(place).value())).withStyle(ChatFormatting.GRAY);
+                }
             } else {
                 // A displayed item that was named shows its name, on the line just over it.
                 state.lines[3] = pedestal.display().get(DataComponents.CUSTOM_NAME);
@@ -1039,6 +1088,21 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             poseStack.translate(0.0F, state.lieY, state.lieZ);
             EntityRenderStates.submit(state.mob, camera, 0.0, 0.0, 0.0, poseStack, collector);
             poseStack.popPose();
+            // A leaderboard's runners-up, beside its leader, a little lower and back: turning and floating with it.
+            for (int place = 0; place < state.podium.length; place++) {
+                EntityRenderState runnerUp = state.podium[place];
+                if (runnerUp == null) continue;
+                poseStack.pushPose();
+                float runnerScale = state.podiumScale[place] * state.rise;
+                poseStack.translate(0.5F, MOB_FLOOR + state.lift + state.bob - (1.0F - state.rise) * RISE_DROP, 0.5F);
+                poseStack.mulPose(Axis.YP.rotationDegrees(state.turn));
+                poseStack.translate(PODIUM_SIDE[place] * state.rise, -PODIUM_DROP[place], -PODIUM_BACK);
+                poseStack.mulPose(Axis.YP.rotationDegrees(modelTurn(runnerUp)));
+                poseStack.scale(runnerScale, runnerScale, runnerScale);
+                poseStack.translate(0.0F, -sink(runnerUp), 0.0F);
+                EntityRenderStates.submit(runnerUp, camera, 0.0, 0.0, 0.0, poseStack, collector);
+                poseStack.popPose();
+            }
         }
         submitWell(state, poseStack, collector);
         if (state.glass) submitGlass(state, poseStack, collector);
@@ -1122,7 +1186,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static final float GLASS_CASE_HALF = 6.0F / 16.0F, CAP_TOP = 14.0F / 16.0F;
     // How far inside the glass what it shows is kept, all round; the gap left over and under it, so it floats in the case
     // (bobbing within it); where it stands (that gap over the cap); and how much larger than usual an item may be drawn.
-    private static final float GLASS_CASE_MARGIN = 0.04F, GLASS_GAP = 0.14F, GLASS_FLOOR = CAP_TOP + GLASS_GAP, GLASS_ITEM_GROW = 2.0F;
+    private static final float GLASS_CASE_MARGIN = 0.04F, GLASS_GAP = 0.14F, GLASS_FLOOR = CAP_TOP + GLASS_GAP;
 
     // Tips what it shows by its pitch (about its own side to side) and then its roll (about the way it faces), round its
     // middle, this far over where it's drawn from.

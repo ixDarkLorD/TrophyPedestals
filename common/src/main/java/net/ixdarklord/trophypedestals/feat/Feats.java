@@ -10,6 +10,7 @@ import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.api.PedestalRarity;
+import net.ixdarklord.trophypedestals.api.TrophyEvents;
 import net.ixdarklord.trophypedestals.api.TrophyKind;
 import net.ixdarklord.trophypedestals.api.TrophyKinds;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophies;
@@ -76,6 +77,11 @@ public final class Feats {
         TrophyKinds.register(ADVANCEMENT, new TitledKind());
         PlayerEvents.ADVANCEMENT_EARNED.register(Feats::onAdvancement);
         PlayerEvents.JOIN.register(Feats::onJoin);
+        PlayerEvents.JOIN.register(TrophyLedger::syncStat);
+        // (A trophy collected may reach a collection milestone.)
+        TrophyEvents.COLLECTED.register((player, mob, gilded, first) -> {
+            if (first) checkCollection(player);
+        });
         PlayerEvents.END_TICK.register(player -> {
             if (player instanceof ServerPlayer server && server.tickCount % STAT_CHECK == 0) checkStats(server);
         });
@@ -121,10 +127,30 @@ public final class Feats {
         if (!TrophyPedestalsConfig.FEAT_TROPHIES.get() || feats.isEmpty()) return;
         List<ResourceLocation> granted = GRANTED.get(player);
         for (Map.Entry<ResourceLocation, Feat> entry : feats.entrySet()) {
-            if (!(entry.getValue().trigger() instanceof Feat.StatTrigger trigger) || granted.contains(entry.getKey())) continue;
-            Stat<?> stat = stat(trigger);
-            if (stat != null && player.getStats().getValue(stat) >= trigger.atLeast()) grant(player, entry.getKey(), entry.getValue(), null);
+            if (granted.contains(entry.getKey())) continue;
+            if (entry.getValue().trigger() instanceof Feat.StatTrigger trigger) {
+                Stat<?> stat = stat(trigger);
+                if (stat != null && player.getStats().getValue(stat) >= trigger.atLeast()) grant(player, entry.getKey(), entry.getValue(), null);
+            } else if (entry.getValue().trigger() instanceof Feat.CollectionTrigger trigger && collected(player, trigger)) {
+                grant(player, entry.getKey(), entry.getValue(), null);
+            }
         }
+    }
+
+    /** A trophy recorded in a player's ledger: the collection milestones it reaches. */
+    public static void checkCollection(ServerPlayer player) {
+        if (!TrophyPedestalsConfig.FEAT_TROPHIES.get() || feats.isEmpty()) return;
+        List<ResourceLocation> granted = GRANTED.get(player);
+        for (Map.Entry<ResourceLocation, Feat> entry : feats.entrySet()) {
+            if (!granted.contains(entry.getKey()) && entry.getValue().trigger() instanceof Feat.CollectionTrigger trigger && collected(player, trigger)) {
+                grant(player, entry.getKey(), entry.getValue(), null);
+            }
+        }
+    }
+
+    // Whether the player's ledger holds as many different mobs as the trigger asks (gilded ones, if it asks for those).
+    private static boolean collected(ServerPlayer player, Feat.CollectionTrigger trigger) {
+        return (trigger.gilded() ? TrophyLedger.COLLECTED_GILDED : TrophyLedger.COLLECTED).get(player).size() >= trigger.atLeast();
     }
 
     /** A mob killed by a player: the first kills it's first for. */

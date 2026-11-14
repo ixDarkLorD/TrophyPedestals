@@ -1,0 +1,83 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/compat/ftb/MobTrophyTask.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/compat/ftb/MobTrophyTask.java
+@@ -1,7 +1,6 @@
+ package net.ixdarklord.trophypedestals.compat.ftb;
+ 
+-import de.marhali.json5.Json5Object;
+-import dev.ftb.mods.ftblibrary.client.config.EditableConfigGroup;
++import dev.ftb.mods.ftblibrary.config.ConfigGroup;
+ import dev.ftb.mods.ftblibrary.icon.Icon;
+ import dev.ftb.mods.ftblibrary.icon.ItemIcon;
+ import dev.ftb.mods.ftbquests.quest.Quest;
+@@ -17,6 +16,7 @@
+ import net.ixdarklord.trophypedestals.pedestal.Pedestals;
+ import net.minecraft.core.HolderLookup;
+ import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.network.RegistryFriendlyByteBuf;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.resources.ResourceLocation;
+@@ -31,7 +31,8 @@
+  * An FTB Quests task done once the player has collected mob trophies, as their Mob Trophies Ledger records them: one of a
+  * mob the pack maker names, or a number of different mobs' (any mob, with no mob named). It can ask for gilded ones
+  * only. Pack makers pick it as "Mob Trophy" in the quest editor. Checked on login and every few ticks, so trophies
+- * collected before the quest was added count too. Only loaded when FTB Quests is.
++ * collected before the quest was added count too. Only loaded when FTB Quests is. (1.21.1's FTB Quests saves a task to a
++ * tag and edits it in a config group: the same fields as 26.1.2's.)
+  */
+ public final class MobTrophyTask extends AbstractBooleanTask {
+     private static TaskType type;
+@@ -77,19 +78,19 @@
+     }
+ 
+     @Override
+-    public void writeData(Json5Object json, HolderLookup.Provider provider) {
+-        super.writeData(json, provider);
+-        json.addProperty("mob", mob);
+-        json.addProperty("count", count);
+-        json.addProperty("gilded", gilded);
++    public void writeData(CompoundTag nbt, HolderLookup.Provider provider) {
++        super.writeData(nbt, provider);
++        nbt.putString("mob", mob);
++        nbt.putInt("count", count);
++        nbt.putBoolean("gilded", gilded);
+     }
+ 
+     @Override
+-    public void readData(Json5Object json, HolderLookup.Provider provider) {
+-        super.readData(json, provider);
+-        mob = json.has("mob") ? json.get("mob").getAsString() : "";
+-        count = json.has("count") ? Math.max(1, json.get("count").getAsInt()) : 1;
+-        gilded = json.has("gilded") && json.get("gilded").getAsBoolean();
++    public void readData(CompoundTag nbt, HolderLookup.Provider provider) {
++        super.readData(nbt, provider);
++        mob = nbt.contains("mob") ? nbt.getString("mob") : "";
++        count = nbt.contains("count") ? Math.max(1, nbt.getInt("count")) : 1;
++        gilded = nbt.getBoolean("gilded");
+     }
+ 
+     @Override
+@@ -109,7 +110,7 @@
+     }
+ 
+     @Override
+-    public void fillConfigGroup(EditableConfigGroup config) {
++    public void fillConfigGroup(ConfigGroup config) {
+         super.fillConfigGroup(config);
+         config.addString("mob", mob, value -> mob = value, "");
+         config.addInt("count", count, value -> count = value, 1, 1, 10_000);
+@@ -129,12 +130,12 @@
+ 
+     // The mob's trophy, as the creative tab shows it (gilded, if the task asks for that); the ledger for any mob.
+     @Override
+-    public Icon<?> getAltIcon() {
++    public Icon getAltIcon() {
+         ResourceLocation id = mobId();
+         EntityType<?> entity = id == null ? null : BuiltInRegistries.ENTITY_TYPE.getOptional(id).orElse(null);
+         if (entity == null) return super.getAltIcon();
+         PedestalRarity rarity = MobTrophies.rarity(entity);
+         ItemStack trophy = MobTrophies.trophy(Pedestals.DEFAULT.get(), entity, "", 0L, rarity != null ? rarity : PedestalRarities.COMMON);
+-        return ItemIcon.ofItemStack(gilded ? MobTrophies.gild(trophy) : trophy);
++        return ItemIcon.getItemIcon(gilded ? MobTrophies.gild(trophy) : trophy);
+     }
+ }

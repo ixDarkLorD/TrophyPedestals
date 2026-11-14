@@ -176,7 +176,7 @@ RENAMES = [
     (r"\b(?:minecraft|Minecraft\.getInstance\(\))\.getItemModelResolver\(\)", "ItemModelResolver.INSTANCE"),
     (r"\b(?:minecraft|Minecraft\.getInstance\(\))\.getEntityRenderDispatcher\(\)\.(submit|extractEntity)\(",
      lambda m: "EntityRenderStates." + ("submit" if m.group(1) == "submit" else "extract") + "("),
-    (r"\b(\w+)\.create\((pedestal\.getLevel\(\)|minecraft\.level)\)", r"EntityRenderStates.create(\1, \2)"),
+    (r"\b((?:\w+\.)*\w+)\.create\((pedestal\.getLevel\(\)|minecraft\.level)\)", r"EntityRenderStates.create(\1, \2)"),
     (r"\bLivingEntityRenderer<\?, \?, \?>", "LivingEntityRenderer<?, ?>"),
     # A block entity renderer here draws in one call: it fills its state and draws it there (see block_entity_render).
     (r"    @Override\n    public ((?:\w+\.)?State createRenderState\(\)|void extractRenderState\(|void submit\(State state, )", r"    public \1"),

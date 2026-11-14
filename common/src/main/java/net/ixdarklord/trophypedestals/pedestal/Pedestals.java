@@ -8,6 +8,7 @@ import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.api.PedestalRarity;
 import net.ixdarklord.trophypedestals.api.TrophyKinds;
+import net.ixdarklord.trophypedestals.feat.TrophyLedger;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -107,6 +108,13 @@ public final class Pedestals {
     private static final DeferredRegister<DataComponentType<?>> COMPONENTS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.DATA_COMPONENT_TYPE);
     private static final DeferredRegister<LootItemFunctionType<?>> LOOT_FUNCTIONS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.LOOT_FUNCTION_TYPE);
     private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.CREATIVE_MODE_TAB);
+    private static final DeferredRegister<ResourceLocation> STATS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.CUSTOM_STAT);
+
+    /**
+     * The {@code trophypedestals:mob_trophies_collected} statistic: how many different mobs a player's Mob Trophies Ledger
+     * holds (kept in step with it: see {@link TrophyLedger}), so it's a leaderboard too ("Most Mob Trophies").
+     */
+    public static final RegistryEntry<ResourceLocation> MOB_TROPHIES_COLLECTED = STATS.register("mob_trophies_collected", () -> TrophyPedestalsMod.id("mob_trophies_collected"));
 
     public static final RegistryEntry<DataComponentType<PedestalRecord>> RECORD = COMPONENTS.register("pedestal",
             () -> DataComponentType.<PedestalRecord>builder().persistent(PedestalRecord.CODEC).networkSynchronized(PedestalRecord.STREAM_CODEC).build());
@@ -235,7 +243,9 @@ public final class Pedestals {
         BLOCK_ENTITIES.register();
         LOOT_FUNCTIONS.register();
         TABS.register();
+        STATS.register();
         MobTrophies.init();
+        PedestalBlock.init();
     }
 
     /** Whether this item is a trophy of either kind (an achievement's, or a mob's). */
