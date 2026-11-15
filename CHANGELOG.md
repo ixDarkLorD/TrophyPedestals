@@ -1,7 +1,7 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v0.2.1 (unreleased)
+## v0.2.1 Release | Nov 16, 2026
 ### ✨ New Features
 - **Looting raises the trophy chance:** each level of Looting on the weapon adds half the chance again (`mob_trophies.looting_bonus`, 0.5), so Looting III makes a trophy two and a half times as likely.
 - **Trophy Hunter enchantment:** a one-level enchantment for swords and axes (modded ones too), found in enchanting tables, loot and trades. Packs can allow it on other tools, such as pickaxes, by adding them to the `trophypedestals:enchantable/trophy_hunter` item tag. With the new `mob_trophies.require_enchantment` on (off by default), mob trophies drop only from a weapon that has it.
