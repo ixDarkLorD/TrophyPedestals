@@ -39,8 +39,8 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * {@code /trophypedestals mob_trophy} and {@code /trophypedestals trophy}: hand out mob trophies and titled trophies, for
- * functions and operators (game master level).
+ * {@code /trophypedestals mob_trophy} and {@code /trophypedestals trophy}: hand out mob trophies and titled trophies,
+ * for functions and operators (game master level).
  */
 public final class TrophyPedestalsCommands {
     private static final DynamicCommandExceptionType NOT_A_PEDESTAL = new DynamicCommandExceptionType(
@@ -49,10 +49,8 @@ public final class TrophyPedestalsCommands {
             id -> Component.translatable("commands.trophypedestals.unknown_rarity", String.valueOf(id)));
     private static final DynamicCommandExceptionType NOT_A_MOB = new DynamicCommandExceptionType(
             id -> Component.translatable("commands.trophypedestals.mob_trophy.not_mob", String.valueOf(id)));
-    /** The stone and wood pedestals, for other mods' commands that take one too. */
     public static final SuggestionProvider<CommandSourceStack> PEDESTALS = (context, builder) ->
             SharedSuggestionProvider.suggestResource(Pedestals.BLOCKS_BY_STONE.values().stream().map(entry -> BuiltInRegistries.BLOCK.getKey(entry.get())), builder);
-    /** Every rarity, for other mods' commands that take one too. */
     public static final SuggestionProvider<CommandSourceStack> RARITIES = (context, builder) ->
             SharedSuggestionProvider.suggestResource(PedestalRarities.all().stream().map(PedestalRarity::id), builder);
     private static final SuggestionProvider<CommandSourceStack> ENTITIES = (context, builder) ->
@@ -76,7 +74,6 @@ public final class TrophyPedestalsCommands {
                                 .executes(ctx -> mobTrophy(ctx, IdentifierArgument.getId(ctx, "pedestal"), null))
                                 .then(Commands.argument("rarity", IdentifierArgument.id()).suggests(RARITIES)
                                         .executes(ctx -> mobTrophy(ctx, IdentifierArgument.getId(ctx, "pedestal"), IdentifierArgument.getId(ctx, "rarity"))))))));
-        // A titled trophy: "/trophypedestals trophy @p \"Dragon Slayer\" minecraft:dragon_head legendary".
         root.then(Commands.literal("trophy").then(Commands.argument("targets", EntityArgument.players())
                 .then(Commands.argument("title", StringArgumentType.string()).executes(ctx -> trophy(ctx, null, null, null))
                         .then(Commands.argument("icon", IdentifierArgument.id()).suggests(ITEMS)
@@ -89,11 +86,6 @@ public final class TrophyPedestalsCommands {
         dispatcher.register(root);
     }
 
-    /**
-     * A titled trophy for each target, as a quest's Trophy reward makes one: the title given, showing the item named (a
-     * gold ingot unless one is), of the rank named (rare unless one is), on the default pedestal or the one named,
-     * recorded as earned by the target, now.
-     */
     private static int trophy(CommandContext<CommandSourceStack> ctx, @Nullable Identifier iconId, @Nullable Identifier rarityId, @Nullable Identifier pedestalId)
             throws CommandSyntaxException {
         String title = StringArgumentType.getString(ctx, "title");
@@ -101,7 +93,6 @@ public final class TrophyPedestalsCommands {
         if (!BuiltInRegistries.ITEM.containsKey(icon)) throw NOT_AN_ITEM.create(icon);
         Identifier rank = rarityId == null ? PedestalRarities.RARE.id() : rarity(rarityId).id();
         PedestalBlock pedestal = pedestalId == null ? Pedestals.DEFAULT.get() : pedestal(pedestalId);
-        // (Its subject: the title, as an id, so the same title given twice is the same trophy.)
         Identifier subject = TrophyPedestalsMod.id("command/" + title.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_.-]+", "_"));
         Collection<ServerPlayer> targets = EntityArgument.getPlayers(ctx, "targets");
         for (ServerPlayer player : targets) {
@@ -114,13 +105,10 @@ public final class TrophyPedestalsCommands {
         return targets.size();
     }
 
-    // A mob trophy for each target, as if they'd just slain the mob, shown as it spawns, on the default pedestal or the one
-    // named, ranked by the mob's toughness or as named.
     private static int mobTrophy(CommandContext<CommandSourceStack> ctx, @Nullable Identifier pedestalId, @Nullable Identifier rarityId)
             throws CommandSyntaxException {
         Identifier entityId = IdentifierArgument.getId(ctx, "entity");
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(entityId).orElse(null);
-        // Only a living mob that could drop one (not a player, an armor stand or an item).
         if (type == null || !(type.create(ctx.getSource().getLevel(), EntitySpawnReason.COMMAND) instanceof LivingEntity mob) || !MobTrophies.droppable(mob)) {
             throw NOT_A_MOB.create(entityId);
         }
@@ -135,14 +123,12 @@ public final class TrophyPedestalsCommands {
         return targets.size();
     }
 
-    /** The pedestal block named, or a command error if it isn't one. */
     public static PedestalBlock pedestal(Identifier id) throws CommandSyntaxException {
         PedestalBlock named = Pedestals.pedestal(id);
         if (named == null) throw NOT_A_PEDESTAL.create(id);
         return named;
     }
 
-    /** The rarity named (a bare name, read as minecraft:epic, being one of this mod's), or a command error if there's none. */
     public static PedestalRarity rarity(Identifier id) throws CommandSyntaxException {
         PedestalRarity named = PedestalRarities.find(id);
         if (named == null && id.getNamespace().equals(Identifier.DEFAULT_NAMESPACE)) named = PedestalRarities.find(TrophyPedestalsMod.id(id.getPath()));

@@ -15,10 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 
-/**
- * Common mod constructor (CoolCatLib). Fabric lists it under the {@code coolcatlib:common} entrypoint, and
- * NeoForge's {@code TrophyPedestalsNeoForge} passes it to {@code common(...)}.
- */
+/** Common mod constructor (CoolCatLib). */
 public final class TrophyPedestalsMod implements ModConstructor {
     public static final String MOD_ID = "trophypedestals";
     public static final String MOD_NAME = "Trophy Pedestals";
@@ -33,7 +30,6 @@ public final class TrophyPedestalsMod implements ModConstructor {
         Feats.init();
         Leaderboards.init();
         TrophyPedestalsCommands.init();
-        // Optional FTB Quests: a reward that gives a trophy (compat/ftb).
 
         if (GameTests.isEnabled()) {
             LOGGER.info("Registered game tests {}", GameTests.register(MOD_ID, TrophyPedestalsGameTests.class));

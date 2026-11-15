@@ -34,34 +34,26 @@ import java.util.TreeSet;
 import java.util.WeakHashMap;
 
 /**
- * The mob trophies each player has collected, for the Mob Trophies Ledger: every mob they've had a trophy of (one dropped for
- * them, or a first kill), and the ones they've had a gilded trophy of. Kept on the player, through death.
+ * The mob trophies each player has collected, for the Mob Trophies Ledger: every mob they've had a trophy of (one
+ * dropped for them, or a first kill), and the ones they've had a gilded trophy of.
  */
 public final class TrophyLedger {
-    /** The mobs a player has had a trophy of, by id. */
     public static final Attachment<List<Identifier>> COLLECTED = Feats.ATTACHMENTS.builder("ledger", Identifier.CODEC.listOf(), List.<Identifier>of())
             .copyOnDeath()
             .build();
-    /** The mobs a player has had a gilded trophy of. */
     public static final Attachment<List<Identifier>> COLLECTED_GILDED = Feats.ATTACHMENTS.builder("ledger_gilded", Identifier.CODEC.listOf(), List.<Identifier>of())
             .copyOnDeath()
             .build();
 
     private TrophyLedger() {}
 
-    // Each mob's biomes, worked out once per server (biomes don't change while it runs).
     private static final Map<MinecraftServer, Map<Identifier, List<Identifier>>> HABITATS = new WeakHashMap<>();
 
-    /**
-     * The biomes each mob spawns in by itself (in any of the server's biomes' spawn lists, every category), by mob, the
-     * biomes in id order.
-     */
     public static Map<Identifier, List<Identifier>> habitats(MinecraftServer server) {
         return HABITATS.computeIfAbsent(server, from -> {
             Map<Identifier, TreeSet<Identifier>> found = new HashMap<>();
             from.registryAccess().lookupOrThrow(Registries.BIOME).listElements().forEach(biome -> {
                 Identifier biomeId = biome.key().identifier();
-                // (A biome's spawn lists are one of its environment attributes here, laid over none.)
                 MobSpawnSettings spawns = biome.value().getAttributes().applyModifier(EnvironmentAttributes.NATURAL_MOB_SPAWNS, MobSpawnSettings.EMPTY);
                 for (MobCategory category : MobCategory.values()) {
                     for (Weighted<MobSpawnSettings.SpawnerData> spawn : spawns.getMobsToSpawn(category).unwrap()) {
@@ -75,10 +67,8 @@ public final class TrophyLedger {
         });
     }
 
-    /** Loads the attachments, before {@link Feats} registers them. */
     static void init() {}
 
-    /** Notes a mob trophy in the player's ledger (and, if it's gilded, among their gilded ones). */
     public static void collect(ServerPlayer player, MobTrophyRecord trophy) {
         boolean first = trophy.gilded() ? !COLLECTED_GILDED.get(player).contains(trophy.entity()) : !COLLECTED.get(player).contains(trophy.entity());
         COLLECTED.update(player, list -> with(list, trophy.entity()));
@@ -88,26 +78,16 @@ public final class TrophyLedger {
         if (type != null) TrophyEvents.COLLECTED.invoker().onCollected(player, type, trophy.gilded(), first);
     }
 
-    /**
-     * Sets the player's {@code trophypedestals:mob_trophies_collected} statistic to how many mobs their ledger holds: as
-     * they collect, and as they join (for trophies collected before the statistic was).
-     */
     public static void syncStat(ServerPlayer player) {
         Stat<Identifier> stat = Stats.CUSTOM.get(Pedestals.MOB_TROPHIES_COLLECTED.get());
         int collected = COLLECTED.get(player).size();
         if (player.getStats().getValue(stat) != collected) player.getStats().setValue(player, stat, collected);
     }
 
-    /** What buying back a trophy of this mob costs, in experience levels: twice as many for a gilded one. */
     public static int buyBackCost(boolean gilded) {
         return TrophyPedestalsConfig.LEDGER_BUY_BACK_LEVELS.get() * (gilded ? 2 : 1);
     }
 
-    /**
-     * Buys back a trophy of this mob (a gilded one, if {@code gilded}) for the player, from their ledger: one they've
-     * collected, and don't carry already, for {@link #buyBackCost} levels (free in creative). It's theirs, slain by them
-     * now, of the rank a new one would drop at. Tells them why not if it can't be bought; true if it was.
-     */
     public static boolean buyBack(ServerPlayer player, Identifier mob, boolean gilded) {
         if (!TrophyPedestalsConfig.LEDGER_BUY_BACK.get()) return false;
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(mob).orElse(null);
@@ -136,7 +116,6 @@ public final class TrophyLedger {
         return true;
     }
 
-    // Whether the player carries a trophy of this mob already (in their inventory, or a gilded one).
     private static boolean carries(ServerPlayer player, Identifier mob) {
         for (ItemStack stack : player.getInventory()) {
             MobTrophyRecord record = stack.get(Pedestals.MOB_TROPHY.get());
@@ -145,10 +124,8 @@ public final class TrophyLedger {
         return false;
     }
 
-    /** Opens the player's ledger on their screen. */
     public static void open(ServerPlayer player) {
         List<Identifier> collected = COLLECTED.get(player);
-        // (Where each mob not collected yet spawns: the ledger's hint for it.)
         List<OpenLedgerPayload.Habitat> habitats = new ArrayList<>();
         habitats(player.level().getServer()).forEach((mob, biomes) -> {
             if (!collected.contains(mob)) habitats.add(new OpenLedgerPayload.Habitat(mob, biomes));
