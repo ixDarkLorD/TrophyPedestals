@@ -11,7 +11,6 @@ public final class CameraRenderState {
     public @Nullable Quaternionf orientation;
     public Vec3 pos = Vec3.ZERO;
 
-    /** The game's camera as it is this frame. */
     public static CameraRenderState of(Camera camera) {
         CameraRenderState state = new CameraRenderState();
         state.orientation = new Quaternionf(camera.rotation());
@@ -19,7 +18,6 @@ public final class CameraRenderState {
         return state;
     }
 
-    /** The game's own camera this frame. */
     public static CameraRenderState current() {
         return of(Minecraft.getInstance().gameRenderer.getMainCamera());
     }

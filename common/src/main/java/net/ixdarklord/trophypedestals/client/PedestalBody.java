@@ -38,10 +38,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A custom pedestal's body, drawn with the textures of the block it's made of: the pedestal's own shape (the faces of
- * {@code models/block/pedestal_template_chiseled.json}, its gold carving included), its top, bottom and sides taken from
- * that block's model (and tinted as the block is, a leaf's green, say), its gold trim and the dark lens in its well as on
- * every pedestal. Each face is shaded as a block's would be. The shape and each material's textures are read once, and
- * again after the resources reload.
+ * {@code models/block/pedestal_template_chiseled.json}, its gold carving included), its top, bottom and sides taken
+ * from that block's model (and tinted as the block is, a leaf's green, say), its gold trim and the dark lens in its
+ * well as on every pedestal.
  */
 public final class PedestalBody {
     private static final ResourceLocation TEMPLATE = TrophyPedestalsMod.id("models/block/pedestal_template_fluted.json");
@@ -49,21 +48,16 @@ public final class PedestalBody {
     private static final ResourceLocation WELL_IMPRINT = TrophyPedestalsMod.id("block/pedestal/well_imprint");
     private static final ResourceLocation LENS = TrophyPedestalsMod.id("block/pedestal/lens");
     private static final ResourceLocation FLUTES = TrophyPedestalsMod.id("block/pedestal/column_flutes");
-    // A pedestal with no material, or one no longer in the game, is drawn as stone.
     private static final Block FALLBACK = Blocks.STONE;
-    // Faces turned to the light: as a block's are shaded.
     private static final float SHADE_UP = 1.0F, SHADE_DOWN = 0.5F, SHADE_NORTH_SOUTH = 0.8F, SHADE_EAST_WEST = 0.6F;
 
-    // What the shape and textures were read for: the models of the last resource load (known by its missing model).
     private static @Nullable BakedModel readFor;
     private static List<Face> faces = List.of();
     private static final Map<Block, Look> LOOKS = new ConcurrentHashMap<>();
-    // The gold faces of the trophy displays' models, by model, for trims of other blocks.
     private static final Map<ResourceLocation, List<Face>> TRIMS = new ConcurrentHashMap<>();
 
     private PedestalBody() {}
 
-    /** Draws a custom pedestal's body, of this material (stone for none), in this light. */
     public static void submit(@Nullable ResourceLocation material, PoseStack poseStack, SubmitNodeCollector collector, int light) {
         reread();
         if (faces.isEmpty()) return;
@@ -72,13 +66,11 @@ public final class PedestalBody {
         collector.submitCustomGeometry(poseStack, RenderType.entityCutout(TextureAtlas.LOCATION_BLOCKS), (pose, consumer) -> {
             for (Face face : faces) if (!face.texture.overlay()) face(consumer, pose, face, look, light);
         });
-        // The well's shading and the column's flutes are see-through, drawn over the material.
         collector.submitCustomGeometry(poseStack, Sheets.translucentCullBlockSheet(), (pose, consumer) -> {
             for (Face face : faces) if (face.texture.overlay()) face(consumer, pose, face, look, light);
         });
     }
 
-    // After the resources reload, the shapes and textures are read again.
     private static void reread() {
         BakedModel models = Minecraft.getInstance().getModelManager().getMissingModel();
         if (models == readFor) return;
@@ -88,18 +80,12 @@ public final class PedestalBody {
         TRIMS.clear();
     }
 
-    /**
-     * Draws a trophy display's trim made of a block: the gold faces of its model ({@code model}, a model file's id, as
-     * {@code trophypedestals:models/block/trophy_shelf.json}) in that block's textures (its top on the faces turned up, its
-     * bottom on those turned down, a side on the rest), each pixel where the gold's would be, in this light.
-     */
     public static void submitTrim(ResourceLocation model, ResourceLocation material, PoseStack poseStack, SubmitNodeCollector collector, int light) {
         reread();
         List<Face> trim = TRIMS.computeIfAbsent(model, PedestalBody::readFaces);
         if (trim.isEmpty()) return;
         Block block = BuiltInRegistries.BLOCK.getOptional(material).orElse(FALLBACK);
         Look look = LOOKS.computeIfAbsent(block, PedestalBody::look);
-        // (The gold trim, a trimmed item's when it's gold, in the gold trim's own texture.)
         boolean gold = material.equals(TrophyDisplayBlock.GOLD);
         collector.submitCustomGeometry(poseStack, RenderType.entityCutout(TextureAtlas.LOCATION_BLOCKS), (pose, consumer) -> {
             for (Face face : trim) {
@@ -122,8 +108,6 @@ public final class PedestalBody {
         }
     }
 
-    // A material's textures and tints, from its block's model: its top's, bottom's and a side's, or its particle texture
-    // for a face it doesn't have (a model that isn't a whole block).
     private static Look look(Block block) {
         BlockState state = block.defaultBlockState();
         BakedModel model = Minecraft.getInstance().getBlockRenderer().getBlockModel(state);
@@ -145,15 +129,12 @@ public final class PedestalBody {
         return quad == null ? fallback : quad.getSprite();
     }
 
-    // The face's tint, as the block's own colors give it (white for one that isn't tinted).
     private static int tint(@Nullable BakedQuad quad, BlockState state) {
         if (quad == null || !quad.isTinted()) return 0xFFFFFF;
         int color = Minecraft.getInstance().getBlockColors().getColor(state, null, null, quad.getTintIndex());
         return color == -1 ? 0xFFFFFF : color & 0xFFFFFF;
     }
 
-    // A model's shape: every face of its boxes (those of the textures drawn here), turned as each box is, in the block's
-    // units.
     private static List<Face> readFaces(ResourceLocation template) {
         try (Reader reader = Minecraft.getInstance().getResourceManager().getResourceOrThrow(template).openAsReader()) {
             JsonObject model = JsonParser.parseReader(reader).getAsJsonObject();
@@ -179,8 +160,6 @@ public final class PedestalBody {
         }
     }
 
-    // A face's corners (top left, bottom left, bottom right, top right, as seen from outside) and their texture
-    // coordinates, as a block model lays them.
     private static Face face(Direction direction, float[] f, float[] t, float[] uv, Texture texture, @Nullable JsonObject rotation) {
         float[][] corners = switch (direction) {
             case NORTH -> new float[][] {{t[0], t[1], f[2]}, {t[0], f[1], f[2]}, {f[0], f[1], f[2]}, {f[0], t[1], f[2]}};
@@ -210,7 +189,6 @@ public final class PedestalBody {
         return face;
     }
 
-    // Turns a corner about the box's rotation origin and axis, as a block model turns an element.
     private static void turn(Vector3f corner, JsonObject rotation) {
         float[] origin = triple(rotation.getAsJsonArray("origin"));
         float angle = rotation.get("angle").getAsFloat() * Mth.DEG_TO_RAD;
@@ -231,12 +209,9 @@ public final class PedestalBody {
         return new float[] {array.get(0).getAsFloat(), array.get(1).getAsFloat(), array.get(2).getAsFloat(), array.get(3).getAsFloat()};
     }
 
-    // The template's textures: the material's faces, the gold trim, the well's shading, the lens's glass and the column's
-    // flutes.
     private enum Texture {
         TOP, BOTTOM, SIDE, COLUMN, GOLD, WELL_IMPRINT, LENS, FLUTES;
 
-        // Whether it's see-through shading over the material, drawn after it.
         boolean overlay() {
             return this == WELL_IMPRINT || this == FLUTES;
         }

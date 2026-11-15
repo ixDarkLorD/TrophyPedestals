@@ -18,8 +18,8 @@ import java.util.function.Consumer;
 
 /**
  * A trimmed trophy cabinet's or shelf's trim on its item, drawn in its material as the placed block's is
- * ({@link PedestalBody#submitTrim}): the {@code trophypedestals:display_trim} special item model, over the bare model in the
- * display's item definition. Its {@code model} is the model file whose gold faces it draws.
+ * ({@link PedestalBody#submitTrim}): the {@code trophypedestals:display_trim} special item model, over the bare model
+ * in the display's item definition.
  */
 public final class DisplayTrimItemRenderer implements SpecialModelRenderer<ResourceLocation> {
     public static final ResourceLocation TYPE = TrophyPedestalsMod.id("display_trim");
@@ -49,7 +49,6 @@ public final class DisplayTrimItemRenderer implements SpecialModelRenderer<Resou
         output.accept(new Vector3f(1.0F, 1.0F, 1.0F));
     }
 
-    /** @param model the model file whose gold faces are the trim, as {@code trophypedestals:models/block/trophy_shelf.json} */
     public record Unbaked(ResourceLocation model) implements SpecialModelRenderer.Unbaked<ResourceLocation> {
         public static final MapCodec<Unbaked> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 ResourceLocation.CODEC.fieldOf("model").forGetter(Unbaked::model)

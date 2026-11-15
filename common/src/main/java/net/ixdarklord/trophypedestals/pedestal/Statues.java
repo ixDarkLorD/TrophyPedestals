@@ -14,21 +14,17 @@ import java.util.Optional;
 
 /**
  * A player's statue on a pedestal: a mannequin (vanilla's player-shaped figure) wearing their skin, as the look of a
- * mob trophy ({@link MobLooks}). A tier's trophy unlocked by a player can show theirs in place of its icon, and a
- * player another player kills can drop a trophy of theirs.
+ * mob trophy ({@link MobLooks}).
  */
 public final class Statues {
-    /** The figure a statue is: vanilla's mannequin. */
     public static final EntityType<?> FIGURE = EntityType.PLAYER;
 
     private Statues() {}
 
-    /** A statue of the player by this name: their skin's looked up as the statue is drawn (the default skin until then). */
     public static CompoundTag look(String name) {
         return look(new ResolvableProfile(Optional.of(name), Optional.empty(), new PropertyMap()));
     }
 
-    /** A statue of this player, wearing the skin they have now, named after them. */
     public static CompoundTag look(Player player) {
         CompoundTag look = look(new ResolvableProfile(player.getGameProfile()));
         look.putString("CustomName", Component.Serializer.toJson(Component.literal(player.getName().getString()), RegistryAccess.EMPTY));
@@ -39,7 +35,6 @@ public final class Statues {
         CompoundTag look = new CompoundTag();
         Tag encoded = ResolvableProfile.CODEC.encodeStart(NbtOps.INSTANCE, profile).result().orElse(null);
         if (encoded != null) look.put("profile", encoded);
-        // Shown without the mannequin's own label, and standing still.
         look.putBoolean("hide_description", true);
         look.putBoolean("immovable", true);
         return look;

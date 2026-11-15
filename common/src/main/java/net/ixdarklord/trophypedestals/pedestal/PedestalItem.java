@@ -7,9 +7,7 @@ import net.minecraft.world.level.block.Block;
 
 import java.util.Optional;
 
-/**
- * A pedestal's item. A ranked trophy's tooltip shows its rank as a badge after its name ({@link TrophyTooltip}).
- */
+/** A pedestal's item. */
 public class PedestalItem extends BlockItem {
     public PedestalItem(Block block, Properties properties) {
         super(block, properties);

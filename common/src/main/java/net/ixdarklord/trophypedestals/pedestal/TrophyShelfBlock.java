@@ -20,20 +20,13 @@ import java.util.Map;
 
 /**
  * A trophy shelf: a wooden board half a block deep hung on a wall on two brackets, with a short rim along its back,
- * trimmed in gold, holding two trophies side by side against the rim. It goes only on the side of a solid block, facing
- * out from it, and falls when that block goes. Shelves side by side facing the same way (of any wood) join into one
- * long shelf, with corner caps only at its ends.
+ * trimmed in gold, holding two trophies side by side against the rim.
  */
 public class TrophyShelfBlock extends TrophyDisplayBlock {
     public static final MapCodec<TrophyShelfBlock> CODEC = simpleCodec(TrophyShelfBlock::new);
-    /** Whether it's joined to a shelf on its left, or on its right (as seen from its front). */
     public static final BooleanProperty LEFT = BooleanProperty.create("left"), RIGHT = BooleanProperty.create("right");
-    // Its board (with its lip), its rim and its brackets, facing north (its back to the wall on its south), in pixels.
-    // Its board (with its lip), its rim and its brackets, facing north (its back to the wall on its south), in pixels:
-    // walked into; and one box round it all and its trophies, aimed at and outlined.
     private static final Map<Direction, VoxelShape> SOLID = shapes(new double[][] {{0, 6, 6, 16, 10, 16}, {0, 9, 14, 16, 12, 16}, {1, 1, 9, 3, 7, 16}, {13, 1, 9, 15, 7, 16}});
     private static final Map<Direction, VoxelShape> SHAPES = shapes(new double[][] {{0, 1, 6, 16, 16, 16}});
-    // Its two spots' windows on its front, over its board (pixels, facing north: the left spot is on the viewer's left).
     private static final double[][] SPOTS = {{8.2, 10, 15.5, 16}, {0.5, 10, 7.8, 16}};
 
     public TrophyShelfBlock(Properties properties) {
@@ -56,7 +49,6 @@ public class TrophyShelfBlock extends TrophyDisplayBlock {
         return SPOTS;
     }
 
-    // One clean box round its board and its trophies, aimed at and outlined; walked into, only its board, rim and brackets.
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return SHAPES.get(state.getValue(FACING));
@@ -67,7 +59,6 @@ public class TrophyShelfBlock extends TrophyDisplayBlock {
         return SOLID.get(state.getValue(FACING));
     }
 
-    // Hung on the solid side of the block behind it.
     @Override
     protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         Direction facing = state.getValue(FACING);
@@ -75,19 +66,16 @@ public class TrophyShelfBlock extends TrophyDisplayBlock {
         return level.getBlockState(wall).isFaceSturdy(level, wall, facing);
     }
 
-    // Whether a block is a shelf facing the same way, to join to.
     private static boolean joins(BlockState state, BlockState other) {
         return other.getBlock() instanceof TrophyShelfBlock && other.getValue(FACING) == state.getValue(FACING);
     }
 
-    // Joined to the shelves beside it.
     private static BlockState joined(BlockState state, LevelReader level, BlockPos pos) {
         Direction right = right(state.getValue(FACING));
         return state.setValue(RIGHT, joins(state, level.getBlockState(pos.relative(right))))
                 .setValue(LEFT, joins(state, level.getBlockState(pos.relative(right.getOpposite()))));
     }
 
-    // On the wall clicked, or failing that the nearest wall the player faces that it can hang on; never on a floor.
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         for (Direction looking : context.getNearestLookingDirections()) {
@@ -98,7 +86,6 @@ public class TrophyShelfBlock extends TrophyDisplayBlock {
         return null;
     }
 
-    // Its wall gone, it falls (dropping itself and its trophies).
     @Override
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbor, LevelAccessor level, BlockPos pos,
                                      BlockPos neighborPos) {

@@ -17,10 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 
-/**
- * Common mod constructor (CoolCatLib). Fabric lists it under the {@code coolcatlib:common} entrypoint, and
- * NeoForge's {@code TrophyPedestalsNeoForge} passes it to {@code common(...)}.
- */
+/** Common mod constructor (CoolCatLib). */
 public final class TrophyPedestalsMod implements ModConstructor {
     public static final String MOD_ID = "trophypedestals";
     public static final String MOD_NAME = "Trophy Pedestals";
@@ -43,9 +40,6 @@ public final class TrophyPedestalsMod implements ModConstructor {
 
     @Override
     public void onCommonSetup() {
-        // Optional FTB Quests: a reward that gives a trophy (compat/ftb). FTB Quests keeps its reward types in a plain
-        // HashMap, and mods are constructed in parallel, so registering from onConstructMod can collide with another
-        // mod doing the same (a ConcurrentModificationException at startup). Common setup runs on the main thread.
         if (Platform.isModLoaded("ftbquests")) {
             TrophyReward.register();
             MobTrophyTask.register();

@@ -9,7 +9,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-/** The Mob Trophies Ledger: used, it opens the book of every mob trophy, with those its reader has collected filled in. */
+/**
+ * The Mob Trophies Ledger: used, it opens the book of every mob trophy, with those its reader has collected filled in.
+ */
 public class TrophyLedgerItem extends Item {
     public TrophyLedgerItem(Properties properties) {
         super(properties);

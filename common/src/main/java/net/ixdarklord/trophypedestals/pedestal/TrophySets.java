@@ -19,16 +19,13 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Sets of mob trophies: a trophy cabinet whose four spots all hold trophies of different mobs from one set (Nether, End,
- * Ocean, Bosses, Illagers, Undead, Arthropods, Farm Animals, Wildlife) shows the set's name over it in a gold frame. A
- * set is an entity type tag under {@code trophypedestals:sets/}, so data packs can add their own ({@code
- * data/<ns>/tags/entity_type/...} under that path in the {@code trophypedestals} namespace) or change these. Four
- * different mobs of one mod (not Minecraft's own) make that mod's set too, with no tag needed ("Aether II Set").
+ * Sets of mob trophies: a trophy cabinet whose four spots all hold trophies of different mobs from one set (Nether,
+ * End, Ocean, Bosses, Illagers, Undead, Arthropods, Farm Animals, Wildlife) shows the set's name over it in a gold
+ * frame.
  */
 public final class TrophySets {
     private TrophySets() {}
 
-    /** The set (by its tag) a whole cabinet (this half and its partner) makes, or null if it makes none. */
     public static @Nullable TagKey<EntityType<?>> complete(Level level, TrophyCabinetBlockEntity cabinet) {
         List<EntityType<?>> mobs = mobs(level, cabinet);
         if (mobs == null) return null;
@@ -39,10 +36,6 @@ public final class TrophySets {
         return found.orElse(null);
     }
 
-    /**
-     * The name of the set a whole cabinet makes, or null if it makes none: its tag's, or, with no tag's, its mod's when
-     * all four are one mod's (not Minecraft's own: its mobs have the sets above).
-     */
     public static @Nullable Component completedName(Level level, TrophyCabinetBlockEntity cabinet) {
         TagKey<EntityType<?>> set = complete(level, cabinet);
         if (set != null) return name(set);
@@ -50,7 +43,6 @@ public final class TrophySets {
         return mod == null ? null : Component.translatable("trophypedestals.set.mod", Platform.getModName(mod).orElse(mod));
     }
 
-    /** The mod whose set these four mobs make: all one mod's, not Minecraft's; null if they make none. */
     public static @Nullable String modSet(@Nullable List<EntityType<?>> mobs) {
         if (mobs == null || mobs.isEmpty()) return null;
         String mod = BuiltInRegistries.ENTITY_TYPE.getKey(mobs.getFirst()).getNamespace();
@@ -58,7 +50,6 @@ public final class TrophySets {
         return mobs.stream().allMatch(type -> BuiltInRegistries.ENTITY_TYPE.getKey(type).getNamespace().equals(mod)) ? mod : null;
     }
 
-    // The four mobs a whole cabinet holds trophies of, all different; null if a spot holds no mob trophy, or two match.
     private static @Nullable List<EntityType<?>> mobs(Level level, TrophyCabinetBlockEntity cabinet) {
         BlockPos other = TrophyCabinetBlock.partner(cabinet.getBlockPos(), cabinet.getBlockState());
         if (!(level.getBlockEntity(other) instanceof TrophyCabinetBlockEntity partner)) return null;
@@ -76,13 +67,11 @@ public final class TrophySets {
         return distinct.size() == mobs.size() ? mobs : null;
     }
 
-    /** Whether this tag is a set: {@code trophypedestals:sets/...}. */
     public static boolean isSet(TagKey<EntityType<?>> tag) {
         ResourceLocation id = tag.location();
         return id.getNamespace().equals(TrophyPedestalsMod.MOD_ID) && id.getPath().startsWith("sets/");
     }
 
-    /** A set's name: the lang key {@code trophypedestals.set.<name>}, or its name if it has none ("Nether Set"). */
     public static Component name(TagKey<EntityType<?>> set) {
         String name = set.location().getPath().substring("sets/".length());
         return Component.translatableWithFallback("trophypedestals.set." + name.replace('/', '.'), name + " set");
