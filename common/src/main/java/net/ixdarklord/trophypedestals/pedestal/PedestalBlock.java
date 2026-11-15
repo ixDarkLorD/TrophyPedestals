@@ -51,29 +51,14 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * A pedestal: a fluted column between gold bands, on a stepped plinth under a cap with a raised plate. One given for
- * recording an achievement (a tier unlocked, say) holds its icon, turning and glowing above it, with who unlocked it and when floating over it
- * ({@link PedestalBlockEntity}), and on clients its light rises in a spiral ({@code client/PedestalParticles}); a crafted
- * one takes an item to display, put on with it in hand and taken back with an empty one. Sneaking and using it with an
- * empty hand switches its text between always shown and shown while looked at. One block for each stone
- * ({@link Pedestals.Material}).
- */
+/** A pedestal: a fluted column between gold bands, on a stepped plinth under a cap with a raised plate. */
 public class PedestalBlock extends BaseEntityBlock {
     public static final MapCodec<PedestalBlock> CODEC = simpleCodec(PedestalBlock::new);
     public static final int MAX_RANK = 5;
-    /** Whether it holds something (a trophy's icon or a displayed item), whose hologram lights the area round it. */
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
-    /**
-     * Its trophy's rank, 0 for none (a display, or a trophy with no rank) up to 5 (legendary, and any grander), which
-     * sets how strongly it lights the area round it while lit.
-     */
     public static final IntegerProperty RANK = IntegerProperty.create("rank", 0, MAX_RANK);
-    /** Whether a glass case closes over it, which is solid: its shape takes in the case. */
     public static final BooleanProperty CASED = BooleanProperty.create("cased");
-    /** How tall a glass case is over the cap, in blocks: every case the same, the pedestal and its case within two blocks. */
     public static final float CASE_HEIGHT = 1.1F;
-    /** How strong its light is while lit, at each rank: a display's 10, up to a legendary trophy's full 15. */
     private static final int[] LIGHT_BY_RANK = {10, 11, 12, 13, 14, 15};
     private static final VoxelShape SHAPE = Shapes.or(
             box(0.5, 0.0, 0.5, 15.5, 1.5, 15.5),
@@ -84,11 +69,7 @@ public class PedestalBlock extends BaseEntityBlock {
             box(3.0, 14.0, 12.0, 13.0, 15.0, 13.0),
             box(3.0, 14.0, 4.0, 4.0, 15.0, 12.0),
             box(12.0, 14.0, 4.0, 13.0, 15.0, 12.0));
-    // With a glass case: the case too, standing on the cap and as wide as it, up to the top of the block (its upper part
-    // is the shape of the block over it, a VitrineTopBlock), so no one walks into it, and it's looked at as the pedestal.
     private static final VoxelShape CASED_SHAPE = Shapes.or(SHAPE, box(2.0, 14.0, 2.0, 14.0, 16.0, 14.0));
-    // Its outline, aimed at: its base, step, column and cap as whole boxes (the cap's rim drawn as part of it), so the
-    // outline follows the pedestal's silhouette without lines inside it; with its case, the case on top.
     private static final VoxelShape OUTLINE = Shapes.or(
             box(0.5, 0.0, 0.5, 15.5, 1.5, 15.5),
             box(1.5, 1.5, 1.5, 14.5, 3.0, 14.5),
@@ -106,15 +87,12 @@ public class PedestalBlock extends BaseEntityBlock {
         builder.add(LIT, RANK, CASED);
     }
 
-    // A trophy lights up as it's placed (its record is on the item), as strongly as its rank says.
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         BlockState state = super.getStateForPlacement(context);
         return state == null ? null : state.setValue(LIT, Pedestals.isTrophy(context.getItemInHand())).setValue(RANK, rank(Pedestals.rarity(context.getItemInHand())));
     }
 
-    // A lit pedestal with no rank in its state may be a trophy placed before pedestals' light followed their rank: now and
-    // then it checks, and takes its rank's light.
     @Override
     protected boolean isRandomlyTicking(BlockState state) {
         return state.getValue(LIT) && state.getValue(RANK) == 0;
@@ -125,18 +103,15 @@ public class PedestalBlock extends BaseEntityBlock {
         if (level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) pedestal.syncLight();
     }
 
-    /** How strongly a pedestal in this state lights the area round it. */
     public static int light(BlockState state) {
         return state.getValue(LIT) ? LIGHT_BY_RANK[state.getValue(RANK)] : 0;
     }
 
-    /** The {@link #RANK} a trophy of this rarity has: 0 for none, its rank up to {@link #MAX_RANK}. */
     public static int rank(@Nullable Identifier rarity) {
         if (rarity == null || PedestalRarities.isNone(rarity)) return 0;
         return Mth.clamp(PedestalRarities.get(rarity).rank(), 1, MAX_RANK);
     }
 
-    // A trophy announces its rank as it's placed, with its rank's sound for everyone near.
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
@@ -150,7 +125,6 @@ public class PedestalBlock extends BaseEntityBlock {
         if (sound != null) level.playSound(null, pos, SoundEvent.createVariableRangeEvent(sound.id()), SoundSource.BLOCKS, sound.volume(), sound.pitch());
     }
 
-    // Its redstone signal, kept on its block entity for its redstone setting (and sent to clients, which draw by it).
     @Override
     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighbor, @Nullable Orientation orientation, boolean moved) {
         super.neighborChanged(state, level, pos, neighbor, orientation, moved);
@@ -178,13 +152,9 @@ public class PedestalBlock extends BaseEntityBlock {
         return state.getValue(CASED) ? CASED_SHAPE : SHAPE;
     }
 
-    // An item in hand goes on display on a crafted pedestal with nothing on it.
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        // Glass, or any stained glass, closes a case of it over a pedestal showing something (anyone may close one; only
-        // those who may adjust it open it).
         if (isCaseGlass(stack) && level.getBlockEntity(pos) instanceof PedestalBlockEntity cased && caseable(cased)) {
-            // (A case reaches up into the space over it, which must be free.)
             if (!level.getBlockState(pos.above()).canBeReplaced()) {
                 if (player instanceof ServerPlayer server) server.sendOverlayMessage(Component.translatable("trophypedestals.pedestal.no_room_for_case"));
                 return InteractionResult.FAIL;
@@ -192,10 +162,7 @@ public class PedestalBlock extends BaseEntityBlock {
             if (!level.isClientSide()) closeCase(level, pos, cased, stack, player);
             return InteractionResult.SUCCESS;
         }
-        // Under glass, nothing goes on or comes off (an empty hand lifts the glass: see useWithoutItem).
         if (level.getBlockEntity(pos) instanceof PedestalBlockEntity closed && closed.glass()) return InteractionResult.TRY_WITH_EMPTY_HAND;
-        // An armor stand on an empty display pedestal is installed on it, making it a mannequin pedestal (its adjust
-        // screen then has Model and Pose tabs).
         if (stack.is(Items.ARMOR_STAND) && level.getBlockEntity(pos) instanceof PedestalBlockEntity stand && !stand.isTrophy()
                 && stand.display().isEmpty() && stand.leaderboard() == null && !stand.mannequin()) {
             if (!level.isClientSide()) {
@@ -205,8 +172,6 @@ public class PedestalBlock extends BaseEntityBlock {
             }
             return InteractionResult.SUCCESS;
         }
-        // Once it's a mannequin, armour goes to its slot and anything else to its hands (a shield to its off hand),
-        // swapping with what was there.
         if (level.getBlockEntity(pos) instanceof PedestalBlockEntity dressed && !dressed.isTrophy() && dressed.display().isEmpty()
                 && dressed.leaderboard() == null && !stack.isEmpty()) {
             EquipmentSlot slot = mannequinSlot(stack, dressed);
@@ -220,16 +185,11 @@ public class PedestalBlock extends BaseEntityBlock {
                 return InteractionResult.SUCCESS;
             }
         }
-        // A Leaderboard Crest on an empty display pedestal, or a leaderboard, opens the board picker: every board, who
-        // leads each now, and a search bar. Picking one shows it there (a new leaderboard takes the crest: see
-        // SetLeaderboardPayload).
         if (stack.is(Pedestals.LEADERBOARD_CREST.get()) && level.getBlockEntity(pos) instanceof PedestalBlockEntity board
                 && !board.isTrophy() && board.display().isEmpty() && !board.mannequin() && !player.isSecondaryUseActive()) {
             if (player instanceof ServerPlayer server) Leaderboards.openPicker(server, pos, board);
             return InteractionResult.SUCCESS;
         }
-        // (An empty hand goes on to useWithoutItem: the adjustment screen, or taking an item back.) Nothing goes on a
-        // leaderboard.
         if (stack.isEmpty() || level.getBlockEntity(pos) instanceof PedestalBlockEntity shown && shown.leaderboard() != null || !(level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) || pedestal.isTrophy() || !pedestal.display().isEmpty()) {
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
@@ -241,23 +201,15 @@ public class PedestalBlock extends BaseEntityBlock {
         return InteractionResult.SUCCESS;
     }
 
-    // The pop of picking something up, as the game makes it: taking an item off a pedestal, or lifting its glass.
     private static void pop(Level level, BlockPos pos) {
         RandomSource random = level.getRandom();
         level.playSound(null, pos, SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((random.nextFloat() - random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
     }
 
-    // Whether this click on a cased pedestal (or the case's upper part, passed on to it) is on the glass: over the cap.
     private static boolean onGlass(BlockPos pos, BlockHitResult hit) {
         return hit.getLocation().y - pos.getY() > 14.0 / 16.0 - 1.0E-4;
     }
 
-    /**
-     * Nothing is placed in the space over an open pedestal: it's the room for what it shows (and its case). Glass placed
-     * there closes a case over the pedestal instead, as using it on the pedestal does; any other block isn't placed.
-     * (Any block item, whoever places it: a player, a dispenser, another mod's machine. A cased pedestal's space is
-     * already its case's upper part.)
-     */
     public static void init() {
         BlockEvents.PLACE.register((level, pos, state, placer, stack) -> {
             BlockPos below = pos.below();
@@ -273,12 +225,10 @@ public class PedestalBlock extends BaseEntityBlock {
         });
     }
 
-    // Whether a case can close over it: it shows something (a trophy, an item, a board or a mannequin) and has none yet.
     private static boolean caseable(PedestalBlockEntity pedestal) {
         return !pedestal.glass() && (pedestal.isTrophy() || !pedestal.display().isEmpty() || pedestal.leaderboard() != null || pedestal.mannequin());
     }
 
-    // Closes a case of this glass over it, using one up (not in creative), set over it as an item goes into an item frame.
     private static void closeCase(Level level, BlockPos pos, PedestalBlockEntity pedestal, ItemStack stack, @Nullable LivingEntity user) {
         pedestal.setGlass(true, stack.getItem() instanceof BlockItem item && item.getBlock() instanceof StainedGlassBlock stained ? stained.getColor() : null);
         if (user != null) stack.consume(1, user);
@@ -286,13 +236,10 @@ public class PedestalBlock extends BaseEntityBlock {
         level.playSound(null, pos, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 1.0F, 1.0F);
     }
 
-    // Whether a case can be made of this: glass, or a stained glass of any colour.
     private static boolean isCaseGlass(ItemStack stack) {
         return stack.is(Items.GLASS) || stack.getItem() instanceof BlockItem item && item.getBlock() instanceof StainedGlassBlock;
     }
 
-    // A comparator reads what it shows: its rank, 1 (none, or common) to 5 (legendary), while it shows something; 0 while
-    // it's empty, or hidden by redstone (it's lit exactly while it shows something).
     @Override
     protected boolean hasAnalogOutputSignal(BlockState state) {
         return true;
@@ -303,13 +250,10 @@ public class PedestalBlock extends BaseEntityBlock {
         return comparatorSignal(state);
     }
 
-    /** What a comparator reads from a pedestal in this state. */
     public static int comparatorSignal(BlockState state) {
         return state.getValue(LIT) ? Math.max(1, state.getValue(RANK)) : 0;
     }
 
-    // Where this goes on a mannequin pedestal's armor stand: armour to its own slot, anything else to its main hand (a
-    // shield, and what goes in an off hand, to that); null on a pedestal with no armor stand (it goes on display as usual).
     private static @Nullable EquipmentSlot mannequinSlot(ItemStack stack, PedestalBlockEntity pedestal) {
         if (!pedestal.mannequin()) return null;
         Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
@@ -318,23 +262,16 @@ public class PedestalBlock extends BaseEntityBlock {
         return slot == EquipmentSlot.OFFHAND || stack.is(Items.SHIELD) ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND;
     }
 
-    // Sneaking with an empty hand opens its adjustment screen (its text and display size), for those allowed to; otherwise
-    // a displayed item comes back off it into the player's hands, unless the server turned that off (pedestals.take_items:
-    // a server setting, sent to the clients, so both sides agree).
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!(level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal)) return InteractionResult.PASS;
         if (player.isSecondaryUseActive()) {
-            // Sneaking with an empty hand on a glass case's glass lifts it off, for those who may adjust the pedestal (on
-            // the pedestal under it, it opens the adjust screen as on any pedestal).
             if (pedestal.glass() && onGlass(pos, hit)) {
                 if (player instanceof ServerPlayer server) {
                     if (pedestal.canAdjust(server)) {
                         ItemStack glass = pedestal.glassItem();
                         pedestal.setGlass(false, null);
                         if (!player.getInventory().add(glass)) player.drop(glass, false);
-                        // (Taken off whole, with the sound of taking an item out of an item frame: the breaking sound is for
-                        // breaking it.)
                         level.playSound(null, pos, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS, 1.0F, 1.0F);
                     } else {
                         server.sendOverlayMessage(Component.translatable("trophypedestals.pedestal.not_yours", pedestal.ownerName()));
@@ -344,7 +281,6 @@ public class PedestalBlock extends BaseEntityBlock {
             }
             if (player instanceof ServerPlayer server) {
                 if (pedestal.locked()) {
-                    // Locked by a mod: refused with its message, or silently.
                     if (pedestal.refusal() != null) {
                         server.sendOverlayMessage(pedestal.refusal());
                         level.playSound(null, pos, SoundEvents.VILLAGER_NO, SoundSource.BLOCKS, 0.5F, 1.0F);
@@ -358,12 +294,10 @@ public class PedestalBlock extends BaseEntityBlock {
             }
             return InteractionResult.SUCCESS;
         }
-        // Under glass, an empty hand takes nothing off (a mob trophy still makes its sound): the glass is lifted first.
         if (pedestal.glass()) {
             if (pedestal.mobTrophy() != null && !level.isClientSide() && pedestal.sounds()) MobTrophies.playSound(level, pos, pedestal);
             return InteractionResult.SUCCESS;
         }
-        // A mannequin's whole outfit comes back off it; then, with nothing on it, its armor stand.
         if (pedestal.mannequin() && TrophyPedestalsConfig.PEDESTAL_TAKE_ITEMS.get()) {
             if (!level.isClientSide()) {
                 boolean dressed = false;
@@ -384,7 +318,6 @@ public class PedestalBlock extends BaseEntityBlock {
             }
             return InteractionResult.SUCCESS;
         }
-        // A leaderboard's crest comes back off it, as a displayed item does.
         if (pedestal.leaderboard() != null && TrophyPedestalsConfig.PEDESTAL_TAKE_ITEMS.get()) {
             if (!level.isClientSide()) {
                 pedestal.setLeaderboard(null);
@@ -394,7 +327,6 @@ public class PedestalBlock extends BaseEntityBlock {
             }
             return InteractionResult.SUCCESS;
         }
-        // A mob trophy plays its mob's sound (now and then: not more than once a second).
         if (pedestal.mobTrophy() != null) {
             if (!level.isClientSide() && pedestal.sounds()) MobTrophies.playSound(level, pos, pedestal);
             return InteractionResult.SUCCESS;
@@ -414,8 +346,6 @@ public class PedestalBlock extends BaseEntityBlock {
         return new PedestalBlockEntity(pos, state);
     }
 
-    // Ticks on clients for the particles, and on the server for a mob trophy to count its slayer's kills (every so
-    // often: see MobTrophies.grow).
     @Override
     public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return level.isClientSide() ? createTickerHelper(type, Pedestals.BLOCK_ENTITY.get(), PedestalBlock::clientTick)

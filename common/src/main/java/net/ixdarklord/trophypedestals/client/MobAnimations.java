@@ -31,41 +31,22 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The animations a mob (or a player's statue) on a pedestal can play on loop, found from the mob itself rather than a
- * fixed list. Its renderer's state and model are looked into once per kind of mob, and each candidate is tried on the
- * model: only those that actually move it are listed. Candidates are:
- * <ul>
- *     <li>walking and running (its walk cycle), and attacking (a swing, for an armed or golem-like mob);</li>
- *     <li>its own keyframe animations, from its render state's {@code AnimationState}s (a warden's roar, a camel's
- *     sitting), looped over their own length;</li>
- *     <li>its own on/off states, from its render state's flags (a fox sitting or sleeping, a zombie's raised arms);</li>
- *     <li>its own poses, from its render state's choices (a parrot's flying and dancing).</li>
- * </ul>
- * Names come from the game's own field names ("isSitting" as "sitting"), shown through {@code trophypedestals.animation.<id>}
- * or made readable.
+ * fixed list.
  */
 public final class MobAnimations {
-    // How fast the walk cycle goes walking and running (vanilla's limb swing speed, 0 to 1).
     private static final float WALK_SPEED = 0.5F, RUN_SPEED = 1.0F;
-    // An attack's swing and the rest after it, in ticks.
     private static final int SWING = 10, SWING_PERIOD = 20;
-    // How long one of a mob's own animations is taken to last when its model doesn't say, and the rest between plays of
-    // one that doesn't loop by itself, in ticks.
     private static final int UNKNOWN_LENGTH = 60, REST = 10;
     private static final String STATE_SUFFIX = "AnimationState";
-    // The render states whose fields aren't a mob's own (where it is, how it's lit, what it wears): their flags and
-    // choices aren't offered.
     private static final Set<Class<?>> SHARED_STATES = Set.of(EntityRenderState.class, LivingEntityRenderState.class,
             ArmedEntityRenderState.class, HumanoidRenderState.class, AvatarRenderState.class);
-    // How far a part must move or turn for a candidate to count as moving the model.
     private static final float MOVED = 1.0E-3F;
 
     private static final Map<EntityType<?>, List<Animation>> FOUND = new ConcurrentHashMap<>();
 
     private MobAnimations() {}
 
-    /** One a mob can play: its name, how it's played, and what it sets. */
     public record Animation(String id, Kind kind, @Nullable Field field, @Nullable Object value, int period) {
-        /** Its name for players: {@code trophypedestals.animation.<id>}, or the name made readable ("sit_pose" as "Sit Pose"). */
         public Component name() {
             return MobAnimations.name(id);
         }
@@ -73,7 +54,6 @@ public final class MobAnimations {
 
     enum Kind { IDLE, WALK, RUN, SWING, GOLEM_SWING, KEYFRAME, FLAG, CHOICE }
 
-    /** A name for players: {@code trophypedestals.animation.<id>}, or the name made readable. */
     public static Component name(String id) {
         StringBuilder readable = new StringBuilder();
         for (String word : id.split("_")) {
@@ -84,15 +64,10 @@ public final class MobAnimations {
         return Component.translatableWithFallback("trophypedestals.animation." + id, readable.toString());
     }
 
-    /** What this mob can play, idle first; just idle for one that can't be looked into. */
     public static List<Animation> of(Entity mob) {
         return FOUND.computeIfAbsent(mob.getType(), type -> find(mob));
     }
 
-    /**
-     * Plays the named animation on what's drawn of the mob, at {@code time} (in ticks): its own keyframe animations other
-     * than that one stopped. One it doesn't have plays as idle.
-     */
     public static void play(Entity mob, EntityRenderState shown, String id, float time) {
         List<Animation> animations = of(mob);
         Animation chosen = null;
@@ -106,7 +81,6 @@ public final class MobAnimations {
             }
             apply(chosen, shown, time);
         } catch (ReflectiveOperationException | RuntimeException e) {
-            // (Looked into once already; one that turns out not to play is left standing.)
         }
     }
 
@@ -138,8 +112,6 @@ public final class MobAnimations {
         }
     }
 
-    // --- Finding them ---
-
     private static List<Animation> find(Entity mob) {
         List<Animation> found = new ArrayList<>();
         found.add(new Animation(PedestalBlockEntity.IDLE, Kind.IDLE, null, null, 1));
@@ -151,11 +123,9 @@ public final class MobAnimations {
             for (Animation candidate : candidates) {
                 if (candidate.kind() == Kind.KEYFRAME && candidate.id().equals(PedestalBlockEntity.IDLE)) ownIdle = candidate;
             }
-            // A mob's own idle animation plays as Idle.
             if (ownIdle != null) found.set(0, ownIdle);
             for (Animation candidate : candidates) {
                 if (candidate == ownIdle || found.stream().anyMatch(a -> a.id().equals(candidate.id()))) continue;
-                // Keyframe animations are always the mob's own; the rest are listed only if they move its model.
                 if (candidate.kind() == Kind.KEYFRAME || model == null || moves(mob, model, candidate)) found.add(candidate);
             }
         } catch (RuntimeException | LinkageError e) {
@@ -164,7 +134,6 @@ public final class MobAnimations {
         return List.copyOf(found);
     }
 
-    // Everything the mob might play, before trying them on its model.
     private static List<Animation> candidates(Entity mob, @Nullable Model<?> model) {
         EntityRenderState shown = Minecraft.getInstance().getEntityRenderDispatcher().extractEntity(mob, 0.0F);
         List<Animation> walking = new ArrayList<>(), keyframes = new ArrayList<>(), flags = new ArrayList<>(), choices = new ArrayList<>();
@@ -202,12 +171,10 @@ public final class MobAnimations {
         return all;
     }
 
-    // Ids must be short and plain (they're saved on the pedestal).
     private static void add(List<Animation> list, Animation animation) {
         if (animation.id().matches("[a-z0-9_]{1,32}")) list.add(animation);
     }
 
-    // Whether the candidate moves the mob's model away from how it stands: tried once on a fresh copy of what's drawn.
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static boolean moves(Entity mob, Model<?> model, Animation candidate) {
         try {
@@ -216,7 +183,6 @@ public final class MobAnimations {
             raw.setupAnim(still);
             float[] before = pose(model);
             EntityRenderState moving = Minecraft.getInstance().getEntityRenderDispatcher().extractEntity(mob, 0.0F);
-            // A moment into it, where a swing or a step has moved something.
             moving.ageInTicks = SWING / 2.0F;
             apply(candidate, moving, SWING / 2.0F);
             raw.setupAnim(moving);
@@ -230,7 +196,6 @@ public final class MobAnimations {
         }
     }
 
-    // Every part's place, turn, size and visibility, one after another.
     private static float[] pose(Model<?> model) {
         List<ModelPart> parts = model.allParts();
         float[] pose = new float[parts.size() * 10];
@@ -250,8 +215,6 @@ public final class MobAnimations {
         return pose;
     }
 
-    // How long one of the mob's own animations takes before it plays again, in ticks: its model's keyframe animation of
-    // the same name ("roar" for "roarAnimationState"), with a rest after one that doesn't loop by itself.
     private static int period(@Nullable Model<?> model, String base) {
         if (model == null) return UNKNOWN_LENGTH;
         try {
@@ -274,7 +237,6 @@ public final class MobAnimations {
         return UNKNOWN_LENGTH;
     }
 
-    // "sitPose" as "sit_pose".
     private static String snake(String camel) {
         return camel.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(Locale.ROOT);
     }
