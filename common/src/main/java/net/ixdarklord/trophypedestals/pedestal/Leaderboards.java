@@ -37,42 +37,28 @@ import java.util.stream.Stream;
 
 /**
  * Leaderboard pedestals: a display pedestal given a Leaderboard Crest shows whoever on the server leads one statistic
- * (most mob kills, longest played...), as their statue in their own skin, with the board's name, theirs and their count.
- * Everyone who has played counts, online or not, and it updates live.
- *
- * <p>Kept cheap however many pedestals there are: the players who are offline are read from their saved statistics once,
- * as the server starts (and taken from the game as each logs out); once a second, the server looks at the online
- * players' counts for only the boards some loaded pedestal shows, and keeps each board's leader; each pedestal just
- * compares its leader with that, and sends an update only when it changes.
+ * (most mob kills, longest played...), as their statue in their own skin, with the board's name, theirs and their
+ * count.
  */
 public final class Leaderboards {
-    /**
-     * What a leaderboard ranks: one of the game's own statistics (its "custom" ones: mob kills, distance walked, time
-     * played... and any a mod adds), by id. A few have titles of their own ("Most Mob Kills"); the rest are "Top: <its
-     * name>".
-     */
     public record Board(Identifier id) implements StringRepresentable {
         public static final Board MOB_KILLS = new Board(Stats.MOB_KILLS);
-        // The boards with a title of their own, by the name their title's lang key takes (as boards were once saved).
         private static final Map<Identifier, String> TITLED = Map.of(
                 Stats.MOB_KILLS, "mob_kills", Stats.PLAYER_KILLS, "player_kills", Stats.DEATHS, "deaths",
                 Stats.WALK_ONE_CM, "distance_walked", Stats.PLAY_TIME, "play_time", Stats.FISH_CAUGHT, "fish_caught",
                 Stats.JUMP, "jumps", Stats.DAMAGE_DEALT, "damage_dealt", TrophyPedestalsMod.id("mob_trophies_collected"), "mob_trophies");
 
         public Stat<Identifier> stat() {
-            // (The registry's own id, which it finds its statistic by: an equal one isn't enough.)
             Identifier registered = BuiltInRegistries.CUSTOM_STAT.getValue(id);
             return Stats.CUSTOM.get(registered != null ? registered : id);
         }
 
-        /** Its title on the pedestal: "Most Mob Kills", or "Top: <the statistic's name>". */
         public Component title() {
             String titled = TITLED.get(id);
             return titled != null ? Component.translatable("trophypedestals.leaderboard." + titled)
                     : Component.translatable("trophypedestals.leaderboard.top", Component.translatable("stat." + id.toLanguageKey()));
         }
 
-        /** A count of it, as the game's statistics screen writes it (a distance in km, a time in hours...). */
         public Component format(int value) {
             return Component.literal(stat().format(value));
         }
@@ -82,14 +68,12 @@ public final class Leaderboards {
             return id.toString();
         }
 
-        /** The board saved under this name: a statistic's id, or one of the names boards were once saved by. */
         public static @Nullable Board byName(String name) {
             for (Map.Entry<Identifier, String> titled : TITLED.entrySet()) if (titled.getValue().equals(name)) return new Board(titled.getKey());
             Identifier id = Identifier.tryParse(name);
             return id != null && BuiltInRegistries.CUSTOM_STAT.containsKey(id) ? new Board(id) : null;
         }
 
-        /** Every board: those with titles of their own first, then the rest by id. */
         public static List<Board> all() {
             return BuiltInRegistries.CUSTOM_STAT.keySet().stream()
                     .sorted(Comparator.comparing((Identifier id) -> !TITLED.containsKey(id)).thenComparing(Identifier::toString))
@@ -97,7 +81,6 @@ public final class Leaderboards {
         }
     }
 
-    /** Who leads a board, and with how much. */
     public record Leader(String name, int value) {
         public static final Codec<Leader> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.STRING.fieldOf("Name").forGetter(Leader::name),
@@ -105,19 +88,13 @@ public final class Leaderboards {
         ).apply(instance, Leader::new));
     }
 
-    /** How many lead a board: the leader and two runners-up, shown on a leaderboard pedestal's text. */
     public static final int TOP = 3;
 
-    // How often the leaders are worked out, and how often each pedestal looks at its board's, in ticks; and how long a
-    // board stays worked out after the last pedestal showing it looked.
     private static final int UPDATE = 20, ACTIVE_FOR = 100;
 
-    // The offline players' counts, by board, and their names; each board's best of them.
     private static final Map<UUID, Map<Identifier, Integer>> OFFLINE = new HashMap<>();
     private static final Map<UUID, String> NAMES = new HashMap<>();
-    // (Each board's best offline players, worked out when it's first asked for and kept till someone logs in or out.)
     private static final Map<Board, List<Leader>> OFFLINE_BEST = new HashMap<>();
-    // Each board's top players, and when a pedestal last showed it (in server ticks).
     private static final Map<Board, List<Leader>> LEADERS = new HashMap<>();
     private static final Map<Board, Integer> SHOWN_AT = new HashMap<>();
     private static boolean loaded;
@@ -126,7 +103,6 @@ public final class Leaderboards {
 
     public static void init() {
         ServerTickEvents.END.register(Leaderboards::update);
-        // A player logging out: their counts kept as they leave; logging in: counted live instead.
         PlayerEvents.LEAVE.register(player -> {
             if (!loaded) return;
             OFFLINE.put(player.getUUID(), counts(player.getStats()));
@@ -147,22 +123,16 @@ public final class Leaderboards {
         });
     }
 
-    /**
-     * A leaderboard pedestal's tick: every {@link #UPDATE} ticks (each on its own beat), it marks its board as shown and
-     * takes its leader, if they changed.
-     */
     public static void tick(Level level, BlockPos pos, PedestalBlockEntity pedestal) {
         Board board = pedestal.leaderboard();
         if (board == null || (level.getGameTime() + pos.asLong()) % UPDATE != 0 || !(level instanceof ServerLevel server)) return;
         int now = server.getServer().getTickCount();
         boolean fresh = !SHOWN_AT.containsKey(board) || now - SHOWN_AT.get(board) > ACTIVE_FOR;
         SHOWN_AT.put(board, now);
-        // (A board no pedestal showed lately is worked out now, rather than waiting for the next update.)
         if (fresh) LEADERS.put(board, top(server.getServer(), board));
         show(pedestal, LEADERS.get(board));
     }
 
-    /** Opens the board picker for this pedestal: every board, and who leads each now. */
     public static void openPicker(ServerPlayer player, BlockPos pos, PedestalBlockEntity pedestal) {
         MinecraftServer server = player.level().getServer();
         List<OpenLeaderboardPayload.Status> boards = new ArrayList<>();
@@ -174,7 +144,6 @@ public final class Leaderboards {
         Network.sendToPlayer(player, new OpenLeaderboardPayload(pos, current, boards));
     }
 
-    /** Puts a board's top players on a pedestal (the leader, then the runners-up), if they aren't on it already. */
     public static void show(PedestalBlockEntity pedestal, List<Leader> top) {
         String name = top.isEmpty() ? "" : top.getFirst().name();
         int value = top.isEmpty() ? 0 : top.getFirst().value();
@@ -184,7 +153,6 @@ public final class Leaderboards {
         }
     }
 
-    // Once a second: each shown board's leader, from the online players' counts now and the offline players' best.
     private static void update(MinecraftServer server) {
         int now = server.getTickCount();
         if (now % UPDATE != 0 || SHOWN_AT.isEmpty()) return;
@@ -192,16 +160,11 @@ public final class Leaderboards {
         for (Board board : SHOWN_AT.keySet()) LEADERS.put(board, top(server, board));
     }
 
-    /** Who leads this board of everyone who has played on the server, or null if no one has any of it. */
     public static @Nullable Leader leader(MinecraftServer server, Board board) {
         List<Leader> top = top(server, board);
         return top.isEmpty() ? null : top.getFirst();
     }
 
-    /**
-     * The board's top {@link #TOP} of everyone who has played on the server, most first (those with none of it left
-     * out): the online players' counts now, and the offline players' best.
-     */
     public static List<Leader> top(MinecraftServer server, Board board) {
         loadOffline(server);
         List<Leader> all = new ArrayList<>(OFFLINE_BEST.computeIfAbsent(board, Leaderboards::bestOffline));
@@ -213,7 +176,6 @@ public final class Leaderboards {
         return List.copyOf(all.subList(0, Math.min(TOP, all.size())));
     }
 
-    // A player's counts on every board they have any of.
     private static Map<Identifier, Integer> counts(ServerStatsCounter stats) {
         Map<Identifier, Integer> counts = new HashMap<>();
         for (Identifier id : BuiltInRegistries.CUSTOM_STAT) {
@@ -223,7 +185,6 @@ public final class Leaderboards {
         return counts;
     }
 
-    // A board's best {@link #TOP} of the offline players, most first.
     private static List<Leader> bestOffline(Board board) {
         List<Leader> best = new ArrayList<>();
         for (Map.Entry<UUID, Map<Identifier, Integer>> entry : OFFLINE.entrySet()) {
@@ -235,7 +196,6 @@ public final class Leaderboards {
         return List.copyOf(best.subList(0, Math.min(TOP, best.size())));
     }
 
-    // The saved statistics of every player who has played, read once (but not of those online, counted live).
     private static void loadOffline(MinecraftServer server) {
         if (loaded) return;
         loaded = true;

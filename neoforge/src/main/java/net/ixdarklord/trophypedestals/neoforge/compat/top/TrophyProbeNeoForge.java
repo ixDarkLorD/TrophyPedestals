@@ -18,10 +18,7 @@ import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;
 
 import java.util.function.Function;
 
-/**
- * Adds what a looked-at pedestal holds to The One Probe ({@link PedestalInfo}). TOP takes its providers through
- * NeoForge's inter-mod messages, which CoolCatLib doesn't wrap; only loaded when TOP is installed.
- */
+/** Adds what a looked-at pedestal holds to The One Probe ({@link PedestalInfo}). */
 public final class TrophyProbeNeoForge implements IProbeInfoProvider {
     private static final Identifier ID = TrophyPedestalsMod.id("pedestal");
 

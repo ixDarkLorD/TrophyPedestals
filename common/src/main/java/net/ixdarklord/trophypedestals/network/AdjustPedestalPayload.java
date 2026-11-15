@@ -10,10 +10,11 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * From a client's adjustment screen: when the pedestal at {@code pos} shows its text, how large its item or mob is, how
- * far it's moved up, whether it turns, how far its text is moved up, its yaw, pitch and roll, whether its flourishes show, how
- * it answers redstone, whether it makes its sounds, whether a mob trophy's mob moves, and whether an achievement trophy shows
- * its unlocker's statue, the pose a statue takes, and the animation its mob or statue plays, how large its text is, whether a legendary one wears its crown (and its crown's size and place), whether its
- * showcase light shows, and who else may adjust it.
+ * far it's moved up, whether it turns, how far its text is moved up, its yaw, pitch and roll, whether its flourishes
+ * show, how it answers redstone, whether it makes its sounds, whether a mob trophy's mob moves, and whether an
+ * achievement trophy shows its unlocker's statue, the pose a statue takes, and the animation its mob or statue plays,
+ * how large its text is, whether a legendary one wears its crown (and its crown's size and place), whether its showcase
+ * light shows, and who else may adjust it.
  */
 public record AdjustPedestalPayload(BlockPos pos, PedestalBlockEntity.TextMode textMode, float scale, float height, boolean spins, float textHeight,
                                     float yaw, float pitch, float roll, boolean effects, PedestalBlockEntity.RedstoneMode redstone, boolean sounds,
@@ -22,7 +23,6 @@ public record AdjustPedestalPayload(BlockPos pos, PedestalBlockEntity.TextMode t
                                     boolean light, PedestalBlockEntity.Access access)
         implements CustomPacketPayload {
     public static final Type<AdjustPedestalPayload> TYPE = new Type<>(TrophyPedestalsMod.id("adjust_pedestal"));
-    // How near the pedestal the player must be, in blocks.
     private static final double REACH = 8.0;
 
     @Override
@@ -30,12 +30,9 @@ public record AdjustPedestalPayload(BlockPos pos, PedestalBlockEntity.TextMode t
         return TYPE;
     }
 
-    /** Applies it for this player, if they're near the pedestal and allowed to adjust it. */
     public void apply(ServerPlayer player) {
         if (!player.level().isLoaded(pos) || player.distanceToSqr(Vec3.atCenterOf(pos)) > REACH * REACH) return;
         if (!(player.level().getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) || !pedestal.canAdjust(player)) return;
-        // Each of the screen's tabs only if the server lets players change it, a trophy's or a display pedestal's
-        // (Behavior always).
         boolean trophy = pedestal.isTrophy();
         if (TrophyPedestalsConfig.displaySettings(trophy)) {
             pedestal.setScale(scale);
@@ -60,7 +57,6 @@ public record AdjustPedestalPayload(BlockPos pos, PedestalBlockEntity.TextMode t
         pedestal.setSounds(sounds);
         pedestal.setCrown(crown);
         pedestal.setLight(light);
-        // (Who else may adjust it is its owner's (or an operator's) to choose.)
         if (pedestal.canChangeAccess(player) && pedestal.access() != access) pedestal.setAccess(access);
     }
 }
