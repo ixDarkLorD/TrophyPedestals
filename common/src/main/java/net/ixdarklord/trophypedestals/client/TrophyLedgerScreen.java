@@ -45,19 +45,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The Mob Trophies Ledger: every mob that can be a trophy, in the order of the mob trophies' creative tab, as a grid of their
- * icons (spawn eggs) on the pedestal screen's panel. A mob the reader has collected a trophy of shows in full, its name on
- * hover; one they haven't is a dark silhouette, "???". A gilded one has a gold corner. The header counts them. A search
- * box finds collected mobs by name and any mob by its mod's name (so searching gives away no mob not yet collected), and
- * the button beside it shows one mod's mobs at a time, the header then counting that mod's. The Missing toggle leaves
- * only the mobs not collected yet.
+ * The Mob Trophies Ledger: every mob that can be a trophy, in the order of the mob trophies' creative tab, as a grid of
+ * their icons (spawn eggs) on the pedestal screen's panel.
  */
 public final class TrophyLedgerScreen extends Screen {
     private static final Identifier PANEL = TrophyPedestalsMod.id("pedestal/panel");
     private static final int WIDTH = 248, MAX_HEIGHT = 236, MARGIN = 12, CELL = 22, COLUMNS = 9, GRID_TOP = 60, EDGE = 4;
-    // The search row, under the header: the search box and, at its right, the Missing toggle and the mod button.
     private static final int SEARCH_ROW = 34, MOD_BUTTON = 76, MISSING_BUTTON = 54;
-    // How many of a mob's biomes its hint names.
     private static final int HINT_BIOMES = 3;
     private static final Identifier SEGMENT = TrophyPedestalsMod.id("pedestal/segment");
     private static final Identifier SEGMENT_HOVER = TrophyPedestalsMod.id("pedestal/segment_hover");
@@ -65,34 +59,25 @@ public final class TrophyLedgerScreen extends Screen {
     private static final int TEXT = 0xFFDCDCE0;
     private static final int GOLD = 0xFFF2C94C, LABEL = 0xFF9DA2A7, GROOVE_DARK = 0xFF07090E, GROOVE_LIT = 0xFF343B4E;
     private static final int SLOT = 0xFF0E121A, SLOT_HOVER = 0xFF252C3C, SHADOW = 0xE0101418;
-    // The scroll bar, as the adjust screen's: its width, how far in from the panel's right edge, its thumb's least
-    // height; a groove cut like the panel's dividers, and a gold thumb lit along its top and left, with grip lines.
     private static final int BAR_WIDTH = 4, BAR_INSET = 8, MIN_THUMB = 14;
-    // How much shorter than the list the scroll bar's track is, at each end.
     private static final int BAR_TRIM = 1;
     private static final int GROOVE = 0xFF0E121A, PALE_GOLD = 0xFFFFE08A, GOLD_SHADE = 0xFFB8872B, GOLD_DEEP = 0xFF9A6A1A;
     private static final int GOLD_FRAME = 0xFFE0AC3C, GOLD_TOP = 0xFFFFF0A8, GOLD_LIT = 0xFFFFC24A;
 
-    // Every mob, and its icon; then the ones the search and mod filter leave, as the grid shows them.
     private final List<EntityType<?>> allMobs = new ArrayList<>();
     private final List<ItemStack> allIcons = new ArrayList<>();
     private final List<EntityType<?>> mobs = new ArrayList<>();
     private final List<ItemStack> icons = new ArrayList<>();
-    // The mods with mobs in it (by namespace), and the one shown: -1 for all of them.
     private final List<String> mods = new ArrayList<>();
     private int mod = -1;
-    // Whether only the mobs not collected yet show.
     private boolean missingOnly;
     private @Nullable EditBox search;
     private final Set<Identifier> collected, gilded;
     private int left, top, height2, scroll, maxScroll;
-    // The mob picked to buy back (clicked once: a second click buys it), and whether its gilded trophy; -1 for none.
     private int picked = -1;
     private boolean pickedGilded;
-    // While the scroll bar's thumb is held: where on it it was taken, down from its top (-1 while it isn't).
     private int dragOffset = -1;
 
-    // Where each mob not collected yet spawns: its hint on hover.
     private final Map<Identifier, List<Identifier>> habitats = new HashMap<>();
 
     private TrophyLedgerScreen(List<Identifier> collected, List<Identifier> gilded, List<OpenLedgerPayload.Habitat> habitats) {
@@ -101,23 +86,21 @@ public final class TrophyLedgerScreen extends Screen {
         this.gilded = Set.copyOf(gilded);
         for (OpenLedgerPayload.Habitat habitat : habitats) this.habitats.put(habitat.mob(), habitat.biomes());
         Minecraft minecraft = Minecraft.getInstance();
-        for (EntityType<?> type : MobTrophies.collectable(minecraft.level != null ? minecraft.level.enabledFeatures() : FeatureFlags.DEFAULT_FLAGS)) {
+        for (EntityType<?> type : MobTrophies.collectable(minecraft.level != null ? minecraft.level.enabledFeatures() : FeatureFlags.DEFAULT_FLAGS,
+                type -> this.collected.contains(BuiltInRegistries.ENTITY_TYPE.getKey(type)))) {
             Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
             allMobs.add(type);
             allIcons.add(new MobTrophyRecord(id, "", 0L, PedestalRarities.NONE).icon());
             if (!mods.contains(id.getNamespace())) mods.add(id.getNamespace());
         }
-        // (Minecraft first, then the others by name.)
         mods.sort(Comparator.comparing((String namespace) -> !namespace.equals(Identifier.DEFAULT_NAMESPACE))
                 .thenComparing(TrophyLedgerScreen::modName, String.CASE_INSENSITIVE_ORDER));
     }
 
-    // A mod's name, as its loader knows it, or its namespace.
     private static String modName(String namespace) {
         return namespace.equals(Identifier.DEFAULT_NAMESPACE) ? "Minecraft" : Platform.getModName(namespace).orElse(namespace);
     }
 
-    /** Opens the ledger with what the server says the reader has collected. */
     public static void open(List<Identifier> collected, List<Identifier> gilded, List<OpenLedgerPayload.Habitat> habitats) {
         Minecraft.getInstance().setScreen(new TrophyLedgerScreen(collected, gilded, habitats));
     }
@@ -138,8 +121,6 @@ public final class TrophyLedgerScreen extends Screen {
         filter();
     }
 
-    // The mobs left by the search and the mod shown. A mob is found by its name only once it's collected (else it's
-    // "???"), and by its mod's name always.
     private void filter() {
         String query = search == null ? "" : search.getValue().trim().toLowerCase(Locale.ROOT);
         mobs.clear();
@@ -168,7 +149,6 @@ public final class TrophyLedgerScreen extends Screen {
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, PANEL, left, top, WIDTH, height2);
-        // The count: of every mob, or of the mod shown's.
         List<EntityType<?>> counted = mod < 0 ? allMobs
                 : allMobs.stream().filter(type -> BuiltInRegistries.ENTITY_TYPE.getKey(type).getNamespace().equals(mods.get(mod))).toList();
         long count = counted.stream().filter(type -> collected.contains(BuiltInRegistries.ENTITY_TYPE.getKey(type))).count();
@@ -193,14 +173,11 @@ public final class TrophyLedgerScreen extends Screen {
             boolean over = mouseX >= x && mouseX < x + CELL - 2 && mouseY >= y && mouseY < y + CELL - 2 && mouseY >= y0 && mouseY < bottom;
             graphics.fill(x, y, x + CELL - 2, y + CELL - 2, over ? SLOT_HOVER : SLOT);
             graphics.item(icons.get(i), x + 2, y + 2);
-            // Not collected: a dark silhouette.
             if (!has) graphics.fill(x + 2, y + 2, x + 18, y + 18, SHADOW);
-            // Gilded: a gold corner.
             if (gilded.contains(id)) {
                 graphics.fill(x + CELL - 6, y, x + CELL - 2, y + 1, GOLD);
                 graphics.fill(x + CELL - 3, y, x + CELL - 2, y + 4, GOLD);
             }
-            // Picked to buy back: a gold outline.
             if (i == picked) {
                 graphics.fill(x - 1, y - 1, x + CELL - 1, y, GOLD);
                 graphics.fill(x - 1, y + CELL - 2, x + CELL - 1, y + CELL - 1, GOLD);
@@ -220,8 +197,6 @@ public final class TrophyLedgerScreen extends Screen {
         if (hoveredLines != null) graphics.setTooltipForNextFrame(font, hoveredLines.stream().map(Component::getVisualOrderText).toList(), mouseX, mouseY);
     }
 
-    // Where a mob not collected yet spawns, as a hint: "Found in: Plains, Forest, Taiga and 4 more" (up to HINT_BIOMES
-    // named), or that it isn't found spawning by itself.
     private void habitatLines(List<Component> lines, Identifier mob) {
         List<Identifier> biomes = habitats.getOrDefault(mob, List.of());
         if (biomes.isEmpty()) {
@@ -238,7 +213,6 @@ public final class TrophyLedgerScreen extends Screen {
         lines.add(Component.translatable("trophypedestals.ledger.habitat", found).withStyle(ChatFormatting.GRAY));
     }
 
-    // The grid's top and bottom, where the scroll bar runs.
     private int viewTop() {
         return top + GRID_TOP + BAR_TRIM;
     }
@@ -264,13 +238,11 @@ public final class TrophyLedgerScreen extends Screen {
         return maxScroll > 0 && mouseX >= barX() - 1 && mouseX < barX() + BAR_WIDTH + 1 && mouseY >= viewTop() && mouseY < viewBottom();
     }
 
-    // Scrolls so the thumb's top is where the mouse is, less where on the thumb it was taken.
     private void dragThumb(double mouseY) {
         int travel = viewBottom() - viewTop() - 2 - thumbHeight();
         scroll = travel <= 0 ? 0 : Mth.clamp((int) Math.round((mouseY - dragOffset - (viewTop() + 1)) * maxScroll / travel), 0, maxScroll);
     }
 
-    // The groove (a dark rim, lit along its bottom and right) and the gold thumb in it, brighter while hovered or held.
     private void scrollBar(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int x = barX(), y0 = viewTop(), y1 = viewBottom();
         graphics.fill(x - 1, y0 - 1, x + BAR_WIDTH + 1, y1 + 1, GROOVE_LIT);
@@ -303,12 +275,10 @@ public final class TrophyLedgerScreen extends Screen {
         return super.mouseReleased(event);
     }
 
-    // Whether the server lets trophies be bought back.
     private static boolean buyBack() {
         return TrophyPedestalsConfig.LEDGER_BUY_BACK.get();
     }
 
-    // How to buy it back, and what it costs (red while the reader has too few levels); once picked, the click that buys it.
     private void buyBackLines(List<Component> lines, int index, boolean hasGilded) {
         Minecraft minecraft = Minecraft.getInstance();
         boolean creative = minecraft.player != null && minecraft.player.isCreative();
@@ -322,10 +292,8 @@ public final class TrophyLedgerScreen extends Screen {
         if (hasGilded) lines.add(Component.translatable("trophypedestals.ledger.buy_back.gilded_hint", TrophyLedger.buyBackCost(true)).withStyle(ChatFormatting.DARK_GRAY));
     }
 
-    // A collected mob clicked: picked to buy back, and bought on a second click (sneak-click for its gilded trophy).
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        // The scroll bar: its thumb taken where it's clicked, or (clicked above or below it) moved there by its middle.
         if (event.button() == 0 && overBar(event.x(), event.y())) {
             int ty = thumbY(), th = thumbHeight();
             dragOffset = event.y() >= ty && event.y() < ty + th ? (int) event.y() - ty : th / 2;
@@ -367,7 +335,6 @@ public final class TrophyLedgerScreen extends Screen {
         return false;
     }
 
-    /** Whether only the mobs not collected yet show: gold while on. */
     private final class MissingButton extends AbstractButton {
         MissingButton(int x, int y, int width, int height) {
             super(x, y, width, height, Component.translatable("trophypedestals.ledger.missing"));
@@ -395,7 +362,6 @@ public final class TrophyLedgerScreen extends Screen {
         }
     }
 
-    /** Which mod's mobs show: all, then each mod in turn, with a click (a right click goes back one). */
     private final class ModButton extends AbstractButton {
         ModButton(int x, int y, int width, int height) {
             super(x, y, width, height, Component.empty());
@@ -421,7 +387,6 @@ public final class TrophyLedgerScreen extends Screen {
             return super.mouseClicked(event, doubleClick);
         }
 
-        // From all (-1) through each mod, and round again.
         private void step(int by) {
             mod = Math.floorMod(mod + 1 + by, mods.size() + 1) - 1;
             scroll = 0;

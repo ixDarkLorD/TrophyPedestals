@@ -7,10 +7,7 @@ import net.ixdarklord.trophypedestals.client.PedestalScreen;
 import net.ixdarklord.trophypedestals.client.TrophyLedgerScreen;
 import net.minecraft.server.level.ServerPlayer;
 
-/**
- * Registers the payloads, on both sides as CoolCatLib requires. The clientbound receivers run on the client only, so
- * the client classes they name are never loaded on a dedicated server.
- */
+/** Registers the payloads, on both sides as CoolCatLib requires. */
 public final class TrophyPedestalsNetwork {
     private TrophyPedestalsNetwork() {}
 

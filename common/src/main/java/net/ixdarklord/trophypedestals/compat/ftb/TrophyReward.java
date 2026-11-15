@@ -26,8 +26,7 @@ import java.util.Optional;
 
 /**
  * An FTB Quests reward that gives a trophy made as it's claimed: titled as the pack maker writes it, showing the item
- * they name, of the rank they pick, recorded as earned by the player who claims it, now. Pack makers pick it as
- * "Trophy" in the quest editor. Only loaded when FTB Quests is.
+ * they name, of the rank they pick, recorded as earned by the player who claims it, now.
  */
 public final class TrophyReward extends Reward {
     private static RewardType type;

@@ -15,7 +15,6 @@ public final class TrophyPedestalsNeoForge extends NeoForgeModEntrypoint {
         super(container);
         this.common(TrophyPedestalsMod::new);
         this.client(() -> TrophyPedestalsClient::new);
-        // Optional The One Probe: registered through NeoForge's inter-mod messages (compat/top).
         if (ModList.get().isLoaded("theoneprobe")) TrophyProbeNeoForge.register(container.getEventBus());
     }
 }

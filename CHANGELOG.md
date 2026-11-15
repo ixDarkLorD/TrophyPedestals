@@ -1,6 +1,19 @@
 # Changelog
 This file is for listing all the changes to this project
 
+## v0.2.1 (unreleased)
+### ✨ New Features
+- **Looting raises the trophy chance:** each level of Looting on the weapon adds half the chance again (`mob_trophies.looting_bonus`, 0.5), so Looting III makes a trophy two and a half times as likely.
+- **Trophy Hunter enchantment:** a one-level enchantment for swords, axes and maces (modded ones too), found in enchanting tables, loot and trades. Packs can allow it on other tools, such as pickaxes, by adding them to the `trophypedestals:enchantable/trophy_hunter` item tag. With the new `mob_trophies.require_enchantment` on (off by default), mob trophies drop only from a weapon that has it.
+- **KubeGroovy support** (NeoForge 26.1.2): Groovy server scripts get `$TrophyPedestals` and `$TrophyPedestalsEvents`, the same binding and events as on KubeJS.
+
+### 🔧 Changes
+- **Drop chances:** mob trophies drop a little more often, `mob_trophies.chance` now 0.015 by default (about one kill in 67) instead of 0.01, and bosses (the epic and legendary mob trophy tags) have their own, higher chance, the new `mob_trophies.boss_chance` (0.15, about one in seven). A config file already written keeps its own `chance`.
+- **`mob_trophies.all_mobs`** (on by default, as before) chooses whether every mob, every mod's included, has a trophy. Turned off, a pack with many mods' mobs isn't flooded with them: only Minecraft's own mobs have trophies, and the ones a pack adds to the new `trophypedestals:mob_trophies` entity type tag or names (by id, `#tag` or `@mod id`) in `mob_trophies.chance_overrides` with a chance above 0. A change applies when the world or server next starts, and its description warns that in large packs it can give unexpected results. Only those mobs drop trophies and are listed in the Mobs creative tab, JEI, REI and the ledger; the ledger still lists any mob its reader has already collected, and the Mobs tab follows a change to `chance_overrides` at once.
+
+### 🐛 Fixes
+- In a pack with many mods' mobs, most of the "Trophy Pedestals: Mobs" creative tab no longer shows empty slots: one mod's mob failing to draw left the inventory's item drawing out of place for every item after it. A mob that fails to draw now shows its spawn egg instead, on a trophy item or a placed pedestal (where it could crash the game before).
+
 ## v0.2.0 Release | Nov 15, 2026
 ### ✨ New Features
 - **Drop chance overrides** (`mob_trophies.chance_overrides`): set another chance for a mob, an entity type tag or a whole mod, as `"<mob id, #tag or @mod id> = chance"`. JEI and REI show each mob's own chance.

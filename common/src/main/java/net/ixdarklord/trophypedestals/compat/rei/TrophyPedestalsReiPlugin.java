@@ -35,8 +35,7 @@ import java.util.Optional;
 
 /**
  * REI's "Mob Trophies" pages, as JEI's: each mob that can be a trophy (its spawn egg), the trophy a player who slays it
- * can drop, its rank and the chance. Fabric loads it through the {@code rei_client} entrypoint; on NeoForge, an annotated
- * subclass in the neoforge module does.
+ * can drop, its rank and the chance.
  */
 public class TrophyPedestalsReiPlugin implements REIClientPlugin {
     public static final CategoryIdentifier<Drop> MOB_TROPHIES = CategoryIdentifier.of(TrophyPedestalsMod.id("mob_trophies"));
@@ -60,7 +59,6 @@ public class TrophyPedestalsReiPlugin implements REIClientPlugin {
         }
     }
 
-    /** A mob's page: its egg, the trophy it drops, and that trophy's rank. */
     public record Drop(ItemStack egg, ItemStack trophy, PedestalRarity rarity, EntityType<?> type) implements Display {
         @Override
         public List<EntryIngredient> getInputEntries() {
@@ -82,7 +80,6 @@ public class TrophyPedestalsReiPlugin implements REIClientPlugin {
             return Optional.empty();
         }
 
-        // (Made on the client from the game's own mobs: never sent or saved.)
         @Override
         public DisplaySerializer<? extends Display> getSerializer() {
             return null;

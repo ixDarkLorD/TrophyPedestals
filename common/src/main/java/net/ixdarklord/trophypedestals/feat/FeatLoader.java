@@ -18,7 +18,7 @@ import java.util.Map;
 
 /**
  * Reads {@code data/<namespace>/trophypedestals/feats/*.json} on world load and {@code /reload}, and hands them to
- * {@link Feats}. A file that can't be read is logged with its pack and path, and skipped.
+ * {@link Feats}.
  */
 public final class FeatLoader extends SimplePreparableReloadListener<Map<Identifier, Feat>> {
     public static final Identifier ID = TrophyPedestalsMod.id("feats");

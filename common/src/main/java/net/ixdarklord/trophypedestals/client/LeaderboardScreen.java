@@ -26,19 +26,14 @@ import java.util.Locale;
 
 /**
  * The board picker a Leaderboard Crest opens: every leaderboard (one for each of the game's statistics), who leads each
- * now and with how much, filtered by a search bar (by a board's title or its leader). Clicking one shows it on the
- * pedestal. The board the pedestal shows now is in gold.
+ * now and with how much, filtered by a search bar (by a board's title or its leader).
  */
 public final class LeaderboardScreen extends Screen {
     private static final Identifier PANEL = TrophyPedestalsMod.id("pedestal/panel");
     private static final int WIDTH = 260, MAX_HEIGHT = 236, MARGIN = 12, ROW = 20, LIST_TOP = 60, EDGE = 4;
     private static final int GOLD = 0xFFF2C94C, LABEL = 0xFF9DA2A7, TEXT = 0xFFDCDCE0, VALUE = 0xFFFFE08A;
     private static final int GROOVE_DARK = 0xFF07090E, GROOVE_LIT = 0xFF343B4E, SLOT = 0xFF0E121A, SLOT_HOVER = 0xFF252C3C;
-    // The scroll bar, as the adjust screen's and the ledger's: its width, how far in from the panel's right edge, its
-    // thumb's least height, and the room kept between it and the rows; a groove cut like the panel's dividers, and a gold
-    // thumb lit along its top and left, with grip lines.
     private static final int BAR_WIDTH = 4, BAR_INSET = 8, MIN_THUMB = 14, BAR_GAP = 3;
-    // How much shorter than the list the scroll bar's track is, at each end.
     private static final int BAR_TRIM = 1;
     private static final int GROOVE = 0xFF0E121A, PALE_GOLD = 0xFFFFE08A, GOLD_SHADE = 0xFFB8872B, GOLD_DEEP = 0xFF9A6A1A;
     private static final int GOLD_FRAME = 0xFFE0AC3C, GOLD_TOP = 0xFFFFF0A8, GOLD_LIT = 0xFFFFC24A;
@@ -51,7 +46,6 @@ public final class LeaderboardScreen extends Screen {
     private final List<Row> shown = new ArrayList<>();
     private EditBox search;
     private int left, top, height2, scroll, maxScroll;
-    // While the scroll bar's thumb is held: where on it it was taken, down from its top (-1 while it isn't).
     private int dragOffset = -1;
 
     private LeaderboardScreen(OpenLeaderboardPayload payload) {
@@ -64,7 +58,6 @@ public final class LeaderboardScreen extends Screen {
         }
     }
 
-    /** Opens the picker the server sent. */
     public static void open(OpenLeaderboardPayload payload) {
         Minecraft.getInstance().setScreen(new LeaderboardScreen(payload));
     }
@@ -83,7 +76,6 @@ public final class LeaderboardScreen extends Screen {
         filter();
     }
 
-    // The boards whose title or leader holds what's searched for.
     private void filter() {
         String query = search.getValue().trim().toLowerCase(Locale.ROOT);
         shown.clear();
@@ -125,7 +117,6 @@ public final class LeaderboardScreen extends Screen {
             Component leader = row.leader().isEmpty() ? Component.translatable("trophypedestals.leaderboard.no_leader")
                     : Component.translatable("trophypedestals.info.leader", row.leader(), row.board().format(row.value()));
             int leaderX = x1 - 4 - font.width(leader);
-            // Its name, cut with "..." where it would run into its leader (all of it shows while hovered).
             int room = leaderX - GAP - (x0 + 4);
             boolean cut = font.width(row.title()) > room;
             graphics.text(font, cut ? fit(row.title(), room) : row.title().getVisualOrderText(), x0 + 4, y + 5, chosen ? GOLD : TEXT);
@@ -137,16 +128,13 @@ public final class LeaderboardScreen extends Screen {
         if (shown.isEmpty()) graphics.centeredText(font, Component.translatable("trophypedestals.leaderboard.none_found"), left + WIDTH / 2, y0 + 8, LABEL);
     }
 
-    // The gap kept between a board's name and its leader.
     private static final int GAP = 8;
 
-    // The text cut to fit this many pixels, ending in "...".
     private FormattedCharSequence fit(Component text, int room) {
         FormattedText cut = font.substrByWidth(text, Math.max(0, room - font.width(CommonComponents.ELLIPSIS)));
         return Language.getInstance().getVisualOrder(FormattedText.composite(cut, CommonComponents.ELLIPSIS));
     }
 
-    // Where the rows end: at the panel's margin, or before the scroll bar while there is one.
     private int rowsRight() {
         return maxScroll > 0 ? barX() - 1 - BAR_GAP : left + WIDTH - MARGIN;
     }
@@ -169,13 +157,11 @@ public final class LeaderboardScreen extends Screen {
         return maxScroll > 0 && mouseX >= barX() - 1 && mouseX < barX() + BAR_WIDTH + 1 && mouseY >= y0 && mouseY < y0 + listHeight();
     }
 
-    // Scrolls so the thumb's top is where the mouse is, less where on the thumb it was taken.
     private void dragThumb(double mouseY) {
         int travel = listHeight() - 2 * BAR_TRIM - 2 - thumbHeight();
         scroll = travel <= 0 ? 0 : Mth.clamp((int) Math.round((mouseY - dragOffset - (top + LIST_TOP + BAR_TRIM + 1)) * maxScroll / travel), 0, maxScroll);
     }
 
-    // The groove (a dark rim, lit along its bottom and right) and the gold thumb in it, brighter while hovered or held.
     private void scrollBar(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int x = barX(), y0 = top + LIST_TOP + BAR_TRIM, y1 = top + LIST_TOP + listHeight() - BAR_TRIM;
         graphics.fill(x - 1, y0 - 1, x + BAR_WIDTH + 1, y1 + 1, GROOVE_LIT);
@@ -210,7 +196,6 @@ public final class LeaderboardScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        // The scroll bar: its thumb taken where it's clicked, or (clicked above or below it) moved there by its middle.
         if (event.button() == 0 && overBar(event.x(), event.y())) {
             int ty = thumbY(), th = thumbHeight();
             dragOffset = event.y() >= ty && event.y() < ty + th ? (int) event.y() - ty : th / 2;

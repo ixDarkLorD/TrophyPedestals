@@ -14,14 +14,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * From a client's board picker: show this board on the pedestal at {@code pos}. A display pedestal with nothing on it
- * becomes a leaderboard, taking a Leaderboard Crest from the player's hand; a leaderboard changes board, for those who may
- * adjust it.
- */
+/** From a client's board picker: show this board on the pedestal at {@code pos}. */
 public record SetLeaderboardPayload(BlockPos pos, Identifier board) implements CustomPacketPayload {
     public static final Type<SetLeaderboardPayload> TYPE = new Type<>(TrophyPedestalsMod.id("set_leaderboard"));
-    // How near the pedestal the player must be, in blocks.
     private static final double REACH = 8.0;
 
     @Override
@@ -36,7 +31,6 @@ public record SetLeaderboardPayload(BlockPos pos, Identifier board) implements C
         Leaderboards.Board chosen = Leaderboards.Board.byName(board.toString());
         if (chosen == null) return;
         if (pedestal.leaderboard() == null) {
-            // A new leaderboard takes the crest in hand.
             InteractionHand hand = player.getMainHandItem().is(Pedestals.LEADERBOARD_CREST.get()) ? InteractionHand.MAIN_HAND
                     : player.getOffhandItem().is(Pedestals.LEADERBOARD_CREST.get()) ? InteractionHand.OFF_HAND : null;
             if (hand == null) return;
