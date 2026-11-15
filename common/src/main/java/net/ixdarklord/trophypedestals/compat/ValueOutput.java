@@ -6,7 +6,7 @@ import net.minecraft.nbt.NbtOps;
 
 /**
  * 1.20.1's stand-in for 26.1's {@code ValueOutput}: the same calls, writing into a saved tag, so the code saving
- * pedestals is the same on every version. Values that can't be encoded are left out.
+ * pedestals is the same on every version.
  */
 public final class ValueOutput {
     private final CompoundTag tag;

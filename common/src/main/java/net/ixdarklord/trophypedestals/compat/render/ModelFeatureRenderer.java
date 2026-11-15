@@ -7,7 +7,6 @@ public final class ModelFeatureRenderer {
     public static final class CrumblingOverlay {
         private CrumblingOverlay() {}
 
-        /** (Never made here: the game draws a block entity's cracks over what it draws itself.) */
         public int progress() {
             return 0;
         }

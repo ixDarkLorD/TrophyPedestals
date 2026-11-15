@@ -29,34 +29,20 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The animations a mob (or a player's statue) on a pedestal can play on loop, found from the mob itself rather than a
- * fixed list (1.20.1's version: a mob's animations are kept on the mob, not on a render state). Candidates are:
- * <ul>
- *     <li>walking and running (its walk cycle), and attacking (its swing), each listed only if it moves the mob's model;</li>
- *     <li>its own keyframe animations, from its {@code AnimationState}s (a warden's roar, a camel's sitting), looped.
- *     They're found by their names ("roarAnimationState"), which only a game running with Mojang's names has (NeoForge);
- *     under Fabric's names none are found.</li>
- * </ul>
- * Names are shown through {@code trophypedestals.animation.<id>} or made readable. (26.1's on/off states and poses, read
- * from its render states' fields, have no counterpart here.)
+ * fixed list (1.20.1's version: a mob's animations are kept on the mob, not on a render state).
  */
 public final class MobAnimations {
-    // How fast the walk cycle goes walking and running (vanilla's limb swing speed, 0 to 1).
     private static final float WALK_SPEED = 0.5F, RUN_SPEED = 1.0F;
-    // An attack's swing and the rest after it, in ticks.
     private static final int SWING = 10, SWING_PERIOD = 20;
-    // How long one of a mob's own animations is taken to last (its model doesn't say here), in ticks.
     private static final int UNKNOWN_LENGTH = 60;
     private static final String STATE_SUFFIX = "AnimationState";
-    // How far a part must move or turn for a candidate to count as moving the model.
     private static final float MOVED = 1.0E-3F;
 
     private static final Map<EntityType<?>, List<Animation>> FOUND = new ConcurrentHashMap<>();
 
     private MobAnimations() {}
 
-    /** One a mob can play: its name, how it's played, and what it sets. */
     public record Animation(String id, Kind kind, @Nullable Field field, @Nullable Object value, int period) {
-        /** Its name for players: {@code trophypedestals.animation.<id>}, or the name made readable ("sit_pose" as "Sit Pose"). */
         public Component name() {
             return MobAnimations.name(id);
         }
@@ -64,7 +50,6 @@ public final class MobAnimations {
 
     enum Kind { IDLE, WALK, RUN, SWING, KEYFRAME }
 
-    /** A name for players: {@code trophypedestals.animation.<id>}, or the name made readable. */
     public static Component name(String id) {
         StringBuilder readable = new StringBuilder();
         for (String word : id.split("_")) {
@@ -75,15 +60,10 @@ public final class MobAnimations {
         return Component.translatableWithFallback("trophypedestals.animation." + id, readable.toString());
     }
 
-    /** What this mob can play, idle first; just idle for one that can't be looked into. */
     public static List<Animation> of(Entity mob) {
         return FOUND.computeIfAbsent(mob.getType(), type -> find(mob));
     }
 
-    /**
-     * Plays the named animation on the mob as it's drawn, at {@code time} (in ticks): its own keyframe animations other
-     * than that one stopped. One it doesn't have plays as idle.
-     */
     public static void play(Entity mob, EntityRenderState shown, String id, float time) {
         List<Animation> animations = of(mob);
         Animation chosen = null;
@@ -97,7 +77,6 @@ public final class MobAnimations {
             }
             apply(chosen, mob, shown, time);
         } catch (ReflectiveOperationException | RuntimeException e) {
-            // (Looked into once already; one that turns out not to play is left standing.)
         }
     }
 
@@ -126,8 +105,6 @@ public final class MobAnimations {
         }
     }
 
-    // --- Finding them ---
-
     private static List<Animation> find(Entity mob) {
         List<Animation> found = new ArrayList<>();
         found.add(new Animation(PedestalBlockEntity.IDLE, Kind.IDLE, null, null, 1));
@@ -139,11 +116,9 @@ public final class MobAnimations {
             for (Animation candidate : candidates) {
                 if (candidate.kind() == Kind.KEYFRAME && candidate.id().equals(PedestalBlockEntity.IDLE)) ownIdle = candidate;
             }
-            // A mob's own idle animation plays as Idle.
             if (ownIdle != null) found.set(0, ownIdle);
             for (Animation candidate : candidates) {
                 if (candidate == ownIdle || found.stream().anyMatch(a -> a.id().equals(candidate.id()))) continue;
-                // Keyframe animations are always the mob's own; the rest are listed only if they move its model.
                 if (candidate.kind() == Kind.KEYFRAME || model != null && mob instanceof LivingEntity living && moves(living, model, candidate)) found.add(candidate);
             }
         } catch (RuntimeException | LinkageError e) {
@@ -152,7 +127,6 @@ public final class MobAnimations {
         return List.copyOf(found);
     }
 
-    // Everything the mob might play, before trying them on its model.
     private static List<Animation> candidates(Entity mob) {
         List<Animation> all = new ArrayList<>();
         if (mob instanceof LivingEntity) {
@@ -172,13 +146,10 @@ public final class MobAnimations {
         return all;
     }
 
-    // Ids must be short and plain (they're saved on the pedestal).
     private static void add(List<Animation> list, Animation animation) {
         if (animation.id().matches("[a-z0-9_]{1,32}")) list.add(animation);
     }
 
-    // Whether the candidate moves the mob's model away from how it stands: its model posed once standing, once a moment
-    // into the candidate (where a swing or a step has moved something).
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static boolean moves(LivingEntity mob, EntityModel<?> model, Animation candidate) {
         try {
@@ -208,8 +179,6 @@ public final class MobAnimations {
         }
     }
 
-    // Every part's place, turn, size and visibility, one after another: the parts the model keeps (found by their type,
-    // whatever their names), with those under them.
     private static float[] pose(EntityModel<?> model) {
         Map<ModelPart, Boolean> parts = new IdentityHashMap<>();
         for (Class<?> type = model.getClass(); type != null && type != Object.class; type = type.getSuperclass()) {
@@ -219,7 +188,6 @@ public final class MobAnimations {
                     field.setAccessible(true);
                     if (field.get(model) instanceof ModelPart part) part.getAllParts().forEach(found -> parts.put(found, true));
                 } catch (ReflectiveOperationException | RuntimeException ignored) {
-                    // (A part that can't be read isn't compared.)
                 }
             }
         }
@@ -241,7 +209,6 @@ public final class MobAnimations {
         return pose;
     }
 
-    // "sitPose" as "sit_pose".
     private static String snake(String camel) {
         return camel.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(Locale.ROOT);
     }

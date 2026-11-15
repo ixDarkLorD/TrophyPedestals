@@ -10,7 +10,7 @@ import java.util.Optional;
 
 /**
  * 1.20.1's stand-in for 26.1's {@code ValueInput}: the same calls, reading a saved tag, so the code loading pedestals
- * is the same on every version. A value that's missing, of the wrong type, or can't be decoded reads as its default.
+ * is the same on every version.
  */
 public final class ValueInput {
     private final CompoundTag tag;
@@ -29,10 +29,6 @@ public final class ValueInput {
         return codec.parse(NbtOps.INSTANCE, value).result();
     }
 
-    /**
-     * A name saved as an entity saves one here (the text's JSON in a string): 26.1 reads it with
-     * {@code ComponentSerialization.CODEC}. A plain string that isn't JSON reads as that text.
-     */
     public Optional<Component> readName(String key) {
         if (!tag.contains(key, Tag.TAG_STRING)) return Optional.empty();
         String saved = tag.getString(key);
@@ -40,7 +36,6 @@ public final class ValueInput {
             Component name = Component.Serializer.fromJson(saved);
             if (name != null) return Optional.of(name);
         } catch (RuntimeException ignored) {
-            // (Not JSON: the text itself.)
         }
         return Optional.of(Component.literal(saved));
     }

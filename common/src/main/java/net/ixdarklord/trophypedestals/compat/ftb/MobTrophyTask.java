@@ -27,11 +27,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * An FTB Quests task done once the player has collected mob trophies, as their Mob Trophies Ledger records them: one of a
- * mob the pack maker names, or a number of different mobs' (any mob, with no mob named). It can ask for gilded ones
- * only. Pack makers pick it as "Mob Trophy" in the quest editor. Checked on login and every few ticks, so trophies
- * collected before the quest was added count too. Only loaded when FTB Quests is. (1.20.1's FTB Quests saves a task to a
- * tag, sends it in a plain buffer and edits it in a config group: the same fields as 26.1.2's.)
+ * An FTB Quests task done once the player has collected mob trophies, as their Mob Trophies Ledger records them: one of
+ * a mob the pack maker names, or a number of different mobs' (any mob, with no mob named).
  */
 public final class MobTrophyTask extends AbstractBooleanTask {
     private static TaskType type;
@@ -53,7 +50,6 @@ public final class MobTrophyTask extends AbstractBooleanTask {
         return type;
     }
 
-    // The mob named, or null for any mob.
     private @Nullable ResourceLocation mobId() {
         return mob.isBlank() ? null : ResourceLocation.tryParse(mob.trim());
     }
@@ -65,7 +61,6 @@ public final class MobTrophyTask extends AbstractBooleanTask {
         return id != null ? collected.contains(id) : collected.size() >= Math.max(1, count);
     }
 
-    // As an advancement task is: a few times a second, and on login.
     @Override
     public int autoSubmitOnPlayerTick() {
         return 5;
@@ -116,7 +111,6 @@ public final class MobTrophyTask extends AbstractBooleanTask {
         config.addBool("gilded", gilded, value -> gilded = value, false);
     }
 
-    // "Gilded Mob Trophy: Wither", or "Mob Trophies: 20".
     @Override
     public Component getAltTitle() {
         ResourceLocation id = mobId();
@@ -127,7 +121,6 @@ public final class MobTrophyTask extends AbstractBooleanTask {
         return Component.translatable(gilded ? "trophypedestals.ftbquests.task.mob_trophies.gilded" : "trophypedestals.ftbquests.task.mob_trophies", Math.max(1, count));
     }
 
-    // The mob's trophy, as the creative tab shows it (gilded, if the task asks for that); the ledger for any mob.
     @Override
     public Icon getAltIcon() {
         ResourceLocation id = mobId();

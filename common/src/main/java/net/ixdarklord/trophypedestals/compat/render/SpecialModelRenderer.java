@@ -26,7 +26,6 @@ public interface SpecialModelRenderer<T> {
         MapCodec<? extends Unbaked<T>> type();
     }
 
-    /** What a renderer is baked with: nothing more is needed here. */
     final class BakingContext {
         static final BakingContext INSTANCE = new BakingContext();
 

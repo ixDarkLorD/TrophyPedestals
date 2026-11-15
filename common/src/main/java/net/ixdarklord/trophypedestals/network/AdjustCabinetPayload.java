@@ -10,11 +10,10 @@ import net.minecraft.server.level.ServerPlayer;
 
 /**
  * From a cabinet's settings screen: who else may use it, and when its set name shows, by their names (see
- * {@link OpenCabinetPayload}). Applied to both halves of a cabinet, for its owner and operators.
+ * {@link OpenCabinetPayload}).
  */
 public record AdjustCabinetPayload(BlockPos pos, String access, String setName) implements CustomPacketPayload {
     public static final Type<AdjustCabinetPayload> TYPE = new Type<>(TrophyPedestalsMod.id("adjust_cabinet"));
-    // How near the cabinet the player must be, in blocks.
     private static final double REACH = 8.0;
 
     @Override

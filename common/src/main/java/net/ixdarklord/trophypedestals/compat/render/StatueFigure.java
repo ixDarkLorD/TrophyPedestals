@@ -20,8 +20,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A player's statue on a pedestal, on 1.20.1 (which has no mannequin): a player figure that exists only to be drawn,
  * wearing the skin of the player its look names ({@code "profile"}), looked up as it's first shown (the default skin
- * until then). Its poses are set from outside ({@link EntityRenderStates#submit}), as a figure that never ticks can't take
- * them by itself.
+ * until then).
  */
 public final class StatueFigure extends RemotePlayer {
     private @Nullable GameProfile skinOf;
@@ -38,15 +37,12 @@ public final class StatueFigure extends RemotePlayer {
         return new StatueFigure(level);
     }
 
-    // Reads the player whose statue it is from its look, with the rest of the look.
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         try {
             super.readAdditionalSaveData(tag);
         } catch (RuntimeException ignored) {
-            // (A look is a mannequin's or a statue's, not a player's save: what a player's save has is left as it is.)
         }
-        // What it wears and holds, as a mannequin's look gives them (a player's own save keeps them in its inventory).
         wear(tag, "ArmorItems", new EquipmentSlot[] {EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD});
         wear(tag, "HandItems", new EquipmentSlot[] {EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND});
         ValueInput.of(tag).read("profile", ResolvableProfile.CODEC).ifPresent(profile -> {
@@ -60,7 +56,6 @@ public final class StatueFigure extends RemotePlayer {
         return skinOf == null ? super.getSkinTextureLocation() : Minecraft.getInstance().getSkinManager().getInsecureSkinLocation(skinOf);
     }
 
-    // Slim arms for a slim skin.
     @Override
     public String getModelName() {
         if (skinOf == null) return super.getModelName();
@@ -95,7 +90,6 @@ public final class StatueFigure extends RemotePlayer {
         return bed;
     }
 
-    // Drawn without its name over it: the game shows a player's name unless they're carrying someone.
     @Override
     public boolean isVehicle() {
         return true;
