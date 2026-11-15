@@ -82,7 +82,13 @@ is no longer there shows as common.
 
 A mob a player kills now and then drops a **mob trophy**: a pedestal showing the mob turning over it, with its name,
 who slew it and when. The server's config turns them on or off (`mob_trophies.enabled`, on by default) and sets the chance
-(`mob_trophies.chance`, 0.01, one in a hundred; 1 is every kill). Only kills by a player count. Their rank is the
+(`mob_trophies.chance`, 0.015, about one in 67; 1 is every kill; a boss in the epic or legendary mob trophy tags uses
+`mob_trophies.boss_chance`, 0.15, about one in seven). Looting on the weapon raises it: each level adds
+`mob_trophies.looting_bonus` (0.5) of the chance, so Looting III makes a trophy two and a half times as likely. A server
+can make mob trophies drop only from a weapon enchanted with **Trophy Hunter** (`mob_trophies.require_enchantment`, off
+by default): a one-level enchantment for swords, axes and maces, found in enchanting tables, loot and villager trades. It goes on whatever
+is in the `trophypedestals:enchantable/trophy_hunter` item tag: by default every item in `#minecraft:swords` and `#minecraft:axes` and the mace, which
+mods' weapons are in too, and a pack can add others, such as `#minecraft:pickaxes`. Only kills by a player count. Their rank is the
 server's `mob_trophies.rank`: `NONE` (the default) gives them none, shown as a display pedestal is (its warm light,
 no rank line); `STRENGTH` ranks them by how tough the mob is; `KILLS` ranks them by how many of that mob the player
 has killed (the game's own kill statistic): from `mob_trophies.kills.uncommon` (10 by default) uncommon, `rare` (25)
@@ -93,8 +99,14 @@ named by its id wins over one of its tags, and the first matching entry is used.
 `trophypedestals:legendary_mob_trophies` entity type tag (the ender dragon and the wither) gives a legendary trophy, in
 `trophypedestals:epic_mob_trophies` (the warden and the elder guardian) an epic one, and any other one by its health plus four
 times its attack: under 25 common, under 50 uncommon, under 120 rare, under 250 epic, and from there legendary. Data
-packs can add to either tag. Other mods' mobs drop trophies as vanilla's do: any living thing but a player or an armor
-stand counts, unless it's in the `trophypedestals:no_mob_trophy` entity type tag (the giant, by default). A mob with no spawn egg shows a spawner in the
+packs can add to either tag. Any living thing but a player or an armor stand can have a trophy, and by default every
+mob does, other mods' included (`all_mobs`). A pack with many mods' mobs can turn `all_mobs` off (applied when the world
+or server next starts; in large packs it can behave unexpectedly): then only Minecraft's own mobs have trophies, and the
+mods' mobs the pack adds to the `trophypedestals:mob_trophies` entity type tag or names (by id, tag or `@mod id`) in
+`chance_overrides` with a chance above 0. Only those mobs drop trophies and
+are listed in the Mobs creative tab, JEI, REI and the ledger (which still lists a mob its reader has collected). The
+`trophypedestals:no_mob_trophy` entity type tag (the giant, by default) rules a mob out in any case. The
+`/trophypedestals mob_trophy` command and the loot functions make a trophy of any mob. A mob with no spawn egg shows a spawner in the
 inventory, and one whose mod can't draw it outside a world shows its icon on the pedestal instead (logged once). In the inventory and in hand, a mob trophy shows the mob's spawn egg over the pedestal. Mods
 make one with `pedestal/MobTrophies.trophy`.
 
@@ -336,7 +348,11 @@ The server config (`config/trophypedestals-server`, per world) has three groups.
 | Option | Default | Meaning |
 |---|---|---|
 | `enabled` | `true` | whether mobs a player kills can drop a trophy |
-| `chance` | `0.01` | the chance, 0 to 1 |
+| `chance` | `0.015` | the chance, 0 to 1 |
+| `boss_chance` | `0.15` | the chance for a boss (in the epic or legendary mob trophy tags), 0 to 1 |
+| `looting_bonus` | `0.5` | how much each level of Looting on the weapon adds, as a share of the chance (0 turns it off) |
+| `require_enchantment` | `false` | whether mob trophies drop only when the mob is killed with a weapon enchanted with Trophy Hunter |
+| `all_mobs` | `true` | whether every mob, every mod's included, has a trophy; off, only Minecraft's mobs and those a pack adds (the `trophypedestals:mob_trophies` tag, or `chance_overrides` above 0); a change applies when the world or server next starts. **Warning:** in large packs this can behave unexpectedly; turning it off and adding chosen mods' mobs is safer |
 | `announce_rare` | `true` | whether the whole server is told in chat (with a gold trophy cup) when someone gets a legendary or gilded mob trophy |
 | `chance_overrides` | `[]` | other chances, each `"<mob id, #tag or @mod id> = chance"`, e.g. `"#minecraft:raiders = 0.05"` or `"@alexsmobs = 0.005"`; a mob's id wins over its tags, and a tag over its mod |
 | `boss_trophies_once` | `false` | whether a boss (in the epic or legendary mob trophy tags) drops its trophy only for a player who hasn't collected it yet |
@@ -423,6 +439,14 @@ And `TrophyPedestalsEvents`, both on the server:
 TrophyPedestalsEvents.mobTrophyDrop(event => {
   if (event.mob.type == 'minecraft:pig') event.cancel()
 })
+```
+
+**KubeGroovy** (NeoForge 26.1.2), KubeJS's Groovy fork, gets the same binding and events, with its `$` prefix:
+
+```groovy
+$TrophyPedestalsEvents.mobTrophyDrop { event ->
+    if (event.mob.type == 'minecraft:pig') event.cancel()
+}
 ```
 
 Mods on either loader get the same two events from `net.ixdarklord.trophypedestals.api.TrophyEvents` (`MOB_TROPHY_DROP`,

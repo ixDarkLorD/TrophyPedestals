@@ -26,17 +26,13 @@ import java.util.Map;
 
 /**
  * A trophy pedestal's light and sound, from its rank ({@link PedestalRarity}), glowing in its colors (CoolCatLib's
- * luminous particles, with Trophy Pedestals's own textures): a spiral of four-point sparkles rising out of the turning icon, a
- * soft halo on the cap under it as from a projector, glints drifting up, sparks circling the icon and bursts of light;
- * and its ambient sound now and then while the player is near. The particles show only while the player looks at the
- * pedestal within their reach, and not with particles set to Minimal; half as many with Decreased. Each rank's looks
- * are made once, and its sounds looked up once.
+ * luminous particles, with Trophy Pedestals's own textures): a spiral of four-point sparkles rising out of the turning
+ * icon, a soft halo on the cap under it as from a projector, glints drifting up, sparks circling the icon and bursts of
+ * light; and its ambient sound now and then while the player is near.
  */
 public final class PedestalParticles {
     private static final double SPIRAL_RADIUS = 0.36, ORBIT_RADIUS = 0.5, SOUND_RANGE = 12.0;
     private static final int BURST_SPARKS = 16;
-    // Trophy Pedestals's own particle textures, crisp pixel art in white for the colours to tint, drawn pixel for pixel: a
-    // four-point sparkle, a diamond glint, a round halo.
     private static final Identifier SPARKLE = TrophyPedestalsMod.id("textures/vfx/sparkle.png");
     private static final Identifier GLINT = TrophyPedestalsMod.id("textures/vfx/glint.png");
     private static final Identifier HALO = TrophyPedestalsMod.id("textures/vfx/halo.png");
@@ -57,24 +53,19 @@ public final class PedestalParticles {
         Looks looks = LOOKS.computeIfAbsent(rarity, PedestalParticles::make);
         double x = pos.getX() + 0.5, y = pos.getY() + 0.95 + pedestal.height(), z = pos.getZ() + 0.5;
         long time = level.getGameTime();
-        // Its ambient sound, offset by its place so pedestals side by side don't sound together.
         boolean sounds = pedestal.sounds() && TrophyPedestalsClientConfig.AMBIENT_SOUNDS.get();
         if (sounds && looks.ambient != null && (time + pos.asLong()) % rarity.ambientTicks() == 0
                 && minecraft.player.distanceToSqr(x, y, z) < SOUND_RANGE * SOUND_RANGE) {
             PedestalRarity.Sound sound = rarity.ambientSound();
             level.playLocalSound(pos, looks.ambient, SoundSource.BLOCKS, sound.volume(), sound.pitch(), false);
         }
-        // Everything spreads and rises as far as the pedestal's display scale makes what it shows.
         double size = pedestal.scale();
-        // The rest is light: none with its flourishes off (its sounds follow their own setting).
         if (!pedestal.effects() || !TrophyPedestalsClientConfig.FLOURISHES.get() || !PedestalRenderer.lookedAt(pos, (float) size, pedestal.height())) return;
         ParticleStatus status = minecraft.options.particles().get();
         if (status == ParticleStatus.MINIMAL) return;
         boolean all = status == ParticleStatus.ALL;
         RandomSource random = level.getRandom();
 
-        // The spiral: its arms, each a particle at a turning angle now and then, rising and drifting round as it goes,
-        // and gone a little above the icon's middle.
         float rate = all ? rarity.spiralRate() : rarity.spiralRate() / 2.0F;
         if (rarity.spiralArms() > 0 && (int) ((time + 1) * rate) > (int) (time * rate)) {
             double angle = time * 0.33;
@@ -85,14 +76,12 @@ public final class PedestalParticles {
                         -sin * 0.012 * size, 0.026 * size, cos * 0.012 * size);
             }
         }
-        // The projector's glow on the cap, kept up by overlapping soft glows.
         if (time % 6 == 0) WorldParticles.spawn(looks.glow, x, y - 0.02, z, 0.0, 0.004, 0.0);
         if (rarity.glints() > 0.0F && random.nextFloat() < (all ? rarity.glints() : rarity.glints() / 2.0F)) {
             double a = random.nextDouble() * Math.PI * 2.0;
             double r = (0.2 + random.nextDouble() * 0.35) * size;
             WorldParticles.spawn(looks.star, x + Math.cos(a) * r, y + (0.3 + random.nextDouble() * 0.6) * size, z + Math.sin(a) * r, 0.0, 0.012 * size, 0.0);
         }
-        // The orbiting sparks: each leaves a short trail of fading sparks (every other tick with Decreased).
         if (rarity.orbiters() > 0 && (all || time % 2 == 0)) {
             double angle = time * 0.16, height = y + 0.42 * size;
             for (int i = 0; i < rarity.orbiters(); i++) {
@@ -101,7 +90,6 @@ public final class PedestalParticles {
                 WorldParticles.spawn(looks.spark, x + Math.cos(a) * ORBIT_RADIUS * size, height + bob * size, z + Math.sin(a) * ORBIT_RADIUS * size, 0.0, 0.0, 0.0);
             }
         }
-        // The burst: a ring of sparks flung out from the icon, with a chime.
         if (rarity.burstTicks() > 0 && (time + pos.asLong()) % rarity.burstTicks() == 0) {
             int sparks = all ? BURST_SPARKS : BURST_SPARKS / 2;
             for (int i = 0; i < sparks; i++) {

@@ -25,6 +25,8 @@ dependencies {
     // Optional KubeJS (NeoForge only on 26.x; its API exposes Rhino types): pedestal bindings (compat/kubejs).
     compileOnly("maven.modrinth:kubejs:${kubejs_version}") { transitive = false }
     compileOnly("maven.modrinth:rhino:${rhino_version}") { transitive = false }
+    // Optional KubeGroovy (KubeJS's Groovy fork, NeoForge 26.1.2 only, on CurseForge): the same bindings and events (compat/kubegroovy).
+    compileOnly("curse.maven:kubegroovy-1745965:${kubegroovy_file}") { transitive = false }
 
     // spark in a dev run only when asked (-Ptest_spark=true).
     if (project.findProperty("test_spark") == "true") localRuntime "maven.modrinth:spark:${spark_version}-neoforge"
