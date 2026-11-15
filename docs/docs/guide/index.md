@@ -37,10 +37,10 @@ A **trophy** is a pedestal that records something: what it was, who earned it an
 mob) turning above it in its rank's light, and its text panel over it while you look at it. Breaking a trophy keeps
 its record, so you can move it.
 
-- **Mobs.** A mob you kill now and then drops a trophy of itself: one in a hundred kills by default. It keeps how the
+- **Mobs.** A mob you kill now and then drops a trophy of itself: about one kill in 67 by default (one in seven for a boss), more with Looting. It keeps how the
   mob looked: its variant and colors, whether it was a baby, its gear and saddle, and the name it was given. The ender
-  dragon and the wither give legendary trophies, the warden and the elder guardian epic ones, and other mods' mobs
-  drop them too. How the rest are ranked is the server's choice ([Mob trophies](../reference/mob-trophies.md)).
+  dragon and the wither give legendary trophies, the warden and the elder guardian epic ones, and other mods' mobs drop
+  them too. How the rest are ranked is the server's choice ([Mob trophies](../reference/mob-trophies.md)).
 - **Players.** With the server's `mob_trophies.player_trophies` on (it's off by default), a player killed by another player can
   drop a trophy of their statue, in their own skin.
 - **Other mods.** A mod can register its own kind of trophy, and FTB Quests can give one as a quest reward.

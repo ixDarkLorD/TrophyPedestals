@@ -45,6 +45,15 @@ One with no material, or a block no longer in the game, is drawn as stone. Eithe
 A **trophy cabinet** (two blocks wide, half a block deep, holding four trophies; cabinets stacked on one another join)
 and a **trophy shelf** (on the side of a solid block, holding two; shelves side by side join) come in every wood, plain,
 with no trim. Use a block on one to trim it with that block: its rails, posts, corner caps and brackets are drawn in
-that block's textures. A gold ingot (or a gold block) gives the gold trim, and an axe takes the trim off again. The
-trim is the `trophypedestals:trim_material` component (`minecraft:gold_block` for gold), kept when it's broken; a
-trimmed one's item shows its trim. Use a trophy on a spot to put it there, and an empty hand to take it back.
+that block's textures. A block with a block entity (a chest, a furnace, a pedestal, a mod's machine) is never a trim,
+nor is one in the `trophypedestals:no_trim` block tag, which data packs can fill. A gold ingot (or a gold block) gives
+the gold trim, and an axe takes the trim off again. The trim is the `trophypedestals:trim_material` component
+(`minecraft:gold_block` for gold), kept when it's broken; a trimmed one's item shows its trim. Use a trophy on a spot to put it there, and an empty hand to take it back. Any item
+that isn't a block goes on a spot too, standing there by itself (a block in hand is for the trim). Each spot can be
+aimed at by itself, through the open front only: aiming through the rim, the sides, the back or the frame isn't aiming
+at a trophy, so it neither takes it nor shows its text. Sneaking with an empty hand on a trophy opens its settings; on
+anything else of the cabinet or shelf, the owner gets its **Cabinet Settings**: who else may use it (Private, the
+default, Team, or Everyone; operators always can) and when the name of the set its trophies make shows over it (Shown,
+the default, On Look, or Hidden). Whoever places one owns it (one placed before had no owner and stays open to anyone),
+and only those its owner lets may put trophies on it, take them off, trim it or adjust them. Four different mobs of
+one mod (not Minecraft's own) make that mod's set, "Aether II Set", with no data pack needed.

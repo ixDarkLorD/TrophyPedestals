@@ -12,6 +12,11 @@ description: "The command, every server config option, other mods it works with,
 `/trophypedestals mob_trophy <players> <entity> [pedestal] [rarity]` (operators) gives each player a mob trophy, slain
 by them, on a deepslate pedestal or the one named, ranked by the mob's toughness or as named.
 
+`/trophypedestals trophy <players> "<title>" [icon] [rarity] [pedestal]` (operators) gives each player a titled trophy,
+as a quest's Trophy reward makes one: showing the item named (a gold ingot unless one is), rare unless another rank is
+named, on a deepslate pedestal or the one named, earned by them now. For example
+`/trophypedestals trophy @p "Dragon Slayer" minecraft:dragon_head legendary`.
+
 ## Config
 
 The server config (`config/trophypedestals-server`, per world) has three groups.
@@ -21,7 +26,14 @@ The server config (`config/trophypedestals-server`, per world) has three groups.
 | Option | Default | Meaning |
 |---|---|---|
 | `enabled` | `true` | whether mobs a player kills can drop a trophy |
-| `chance` | `0.01` | the chance, 0 to 1 |
+| `chance` | `0.015` | the chance, 0 to 1 |
+| `boss_chance` | `0.15` | the chance for a boss (in the epic or legendary mob trophy tags), 0 to 1 |
+| `looting_bonus` | `0.5` | how much each level of Looting on the weapon adds, as a share of the chance (0 turns it off) |
+| `require_enchantment` | `false` | whether mob trophies drop only when the mob is killed with a weapon enchanted with Trophy Hunter |
+| `all_mobs` | `true` | whether every mob, every mod's included, has a trophy; off, only Minecraft's mobs and those a pack adds (the `trophypedestals:mob_trophies` tag, or `chance_overrides` above 0); a change applies when the world or server next starts. **Warning:** in large packs this can behave unexpectedly; turning it off and adding chosen mods' mobs is safer |
+| `announce_rare` | `true` | whether the whole server is told in chat (with a gold trophy cup) when someone gets a legendary or gilded mob trophy |
+| `chance_overrides` | `[]` | other chances, each `"<mob id, #tag or @mod id> = chance"`, e.g. `"#minecraft:raiders = 0.05"` or `"@alexsmobs = 0.005"`; a mob's id wins over its tags, and a tag over its mod |
+| `boss_trophies_once` | `false` | whether a boss (in the epic or legendary mob trophy tags) drops its trophy only for a player who hasn't collected it yet |
 | `player_trophies` | `false` | whether a player another player kills can drop a statue trophy |
 | `gilded_chance` | `0.02` | the chance a mob trophy that drops is gilded, 0 to 1 |
 | `growing` | `true` | whether a placed mob trophy counts its slayer's kills, and grows a rank with `KILLS` |
@@ -54,9 +66,20 @@ The server config (`config/trophypedestals-server`, per world) has three groups.
 | `display_pedestal_settings.display` | `false` | whether a display pedestal's screen has a Display tab: its item's size, height and rotation |
 | `display_pedestal_settings.text` | `false` | whether a display pedestal's screen has its text's height and size, on a Text tab |
 
-With both `display_pedestal_settings` off, a display pedestal keeps its one-page screen (when its text shows, redstone,
-sounds and its showcase light). With either on, its screen has tabs too: Display (if on), Text, and Behavior (spin,
-sounds, showcase light and redstone).
+Both `display_pedestal_settings` are off by default. A display pedestal's screen has the Display, Text and Behavior
+(spin, sounds, showcase light and redstone) tabs; while `display` is off, its Display tab shows greyed out and says, while
+hovered, that the server turned it off, and while `text` is off its Text tab has only when its text shows. A trophy's tab
+turned off by `trophy_settings` shows the same way.
+
+Each player also has their own client config (`config/trophypedestals-client`), for a calmer or lighter trophy room.
+It only takes away: a pedestal whose owner turned its flourishes or sounds off stays without them.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `flourishes` | `true` | whether ranked trophies show their beams, halos, flares, crowns and particles (their showcase light and outlines stay) |
+| `ambient_sounds` | `true` | whether ranked trophies play their ambient sounds and chimes |
+| `moving_mobs` | `true` | whether mobs and statues on trophies move and play their animations |
+| `display_distance` | `64` | how far away, in blocks (16 to 256), what pedestals show is drawn |
 
 ## Other mods
 
@@ -66,8 +89,11 @@ sounds, showcase light and redstone).
   kills too), an engraved name, a leaderboard's leader, a mannequin, an item on display, and its glass case. Before 26.1,
   The One Probe is on NeoForge and Forge only (it had no Fabric build).
 - **FTB Quests:** a "Trophy" reward, made as it's claimed: titled as the pack maker writes it (the quest's title if
-  left blank), showing the item they name, of the rank they pick, recorded as earned by the player who claims it. From
-  1.20.1 to 26.1.2 (FTB Quests has no build for 26.2 or 26.3 yet).
+  left blank), showing the item they name, of the rank they pick, recorded as earned by the player who claims it. And a
+  "Mob Trophy" task, done once the player's Mob Trophies Ledger has a trophy of the mob named (`mob`, such as
+  `minecraft:zombie`), or of `count` different mobs with no mob named; `gilded` asks for gilded ones. It's checked on
+  login and every few ticks, so trophies collected before the quest was added count too, and it shows the mob's trophy.
+  From 1.20.1 to 26.1.2 (FTB Quests has no build for 26.2 or 26.3 yet).
 - **EMI:** not yet.
 
 ## KubeJS (NeoForge and Forge, up to 26.1.2)
@@ -79,3 +105,27 @@ Server scripts get a `TrophyPedestals` binding:
 | `TrophyPedestals.isPedestal(level, pos)` | whether there's a pedestal there |
 | `TrophyPedestals.pedestalSettings(level, pos)`, `setPedestal(level, pos, {...})` | a pedestal's settings, by name: `textMode`, `scale`, `height`, `yaw`, `pitch`, `roll`, `spins`, `animates`, `effects`, `sounds`, `textHeight`, `textScale`, `crown`, `light`, `redstone`, `statue`, `statuePose`, `animation` (and `locked`) |
 | `TrophyPedestals.forcePedestal(level, pos, {...}, message)`, `lockPedestal(level, pos[, message])`, `unlockPedestal(level, pos)` | set and lock its settings against every player, with a refusal message (or `null`, silently) |
+
+And `TrophyPedestalsEvents`, both on the server:
+
+| Event | Fires | Has |
+|---|---|---|
+| `TrophyPedestalsEvents.mobTrophyDrop(event => ...)` | a mob trophy is about to drop for the player who killed the mob | `event.player`, `event.mob`, `event.trophy` (set it to drop another); `event.cancel()` drops nothing and records nothing in their ledger |
+| `TrophyPedestalsEvents.collected(event => ...)` | a mob trophy was recorded in a player's Mob Trophies Ledger | `event.player`, `event.mobType`, `event.gilded`, `event.first` (the first of that mob they've had) |
+
+```js
+TrophyPedestalsEvents.mobTrophyDrop(event => {
+  if (event.mob.type == 'minecraft:pig') event.cancel()
+})
+```
+
+**KubeGroovy** (NeoForge 26.1.2), KubeJS's Groovy fork, gets the same binding and events, with its `$` prefix:
+
+```groovy
+$TrophyPedestalsEvents.mobTrophyDrop { event ->
+    if (event.mob.type == 'minecraft:pig') event.cancel()
+}
+```
+
+Mods on either loader get the same two events from `net.ixdarklord.trophypedestals.api.TrophyEvents` (`MOB_TROPHY_DROP`,
+`COLLECTED`).
