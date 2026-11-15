@@ -10,7 +10,10 @@ description: "The Trophy Ledger, cabinet sets, leaderboard pedestals, engraving,
 The **Mob Trophies Ledger** (a book and a gold nugget) lists every mob that can be a trophy, in the order of the mob trophies'
 creative tab. Each mob its reader has had a trophy of (one dropped for them, or a first kill) shows in full, its name on
 hover; the rest are dark silhouettes, "???". A gilded one has a gold corner, and the top counts them: "Collected 23 of
-87 (26%)".
+87 (26%)". Its search box finds collected mobs by name and any mob by its mod's name (so it gives away no mob not yet
+collected), and the button beside it shows one mod's mobs at a time (a right click goes back one), the count then that
+mod's. The Missing toggle leaves only the mobs not collected yet. Hovering a mob not collected yet shows where it
+spawns by itself ("Found in: Plains, Forest, Taiga and 3 more"), not its name.
 
 **Buying back a lost trophy.** A trophy lost (burned, despawned, broken by someone else) can be bought back from the
 Ledger: click a collected mob to pick it (a gold outline, and its cost on hover), then click it again to buy a new trophy
@@ -19,13 +22,15 @@ for twice as many. It's yours, slain by you now, at the rank a new one would dro
 bought again, so it can't be stocked up on.
 
 A trophy cabinet whose four spots hold trophies of four different mobs from one **set** shows the set's name over it in a
-gold frame. The sets are the Nether, the End, the Ocean, the Bosses and the Illagers. Each is an entity type tag under
+gold frame. The sets are the Nether, the End, the Ocean, the Bosses, the Illagers, the Undead, the Arthropods, the Farm Animals and
+the Wildlife. Each is an entity type tag under
 `trophypedestals:sets/` (`trophypedestals:sets/nether`), so data packs can change them or add their own, named by the
 lang key `trophypedestals.set.<name>`.
 
 A **Leaderboard Crest** (a gold ingot and paper) used on an empty display pedestal makes it a **leaderboard**: it shows
 whoever on the server leads one statistic, as their statue in their own skin, with the board's name, theirs and their
-count. Using the crest opens a picker of every board: each of the game's statistics (mob kills, deaths, distance
+count, and under them the runners-up ("2nd: Alex, 24", "3rd: ..."), whose smaller statues stand beside the leader's
+as on a podium. Using the crest opens a picker of every board: each of the game's statistics (mob kills, deaths, distance
 walked, time played... and any a mod adds), with who leads it now and by how much, and a search bar that finds a board
 by its name or its leader. Picking one shows it; using the crest on a leaderboard opens the picker again to change it.
 Most Mob Kills, Most Player Kills, Most Deaths, Farthest Walked, Longest Played, Most Fish Caught, Most Jumps and Most
@@ -44,11 +49,12 @@ trophy's own colour, in place of what it records. It keeps the name placed and b
 item, a mannequin or a leaderboard) to close a case of it over it: clear glass with a silver rim (a clear case's lid
 tinted by its light), or stained glass in its colour. Every case is the same size, standing on the cap and as wide as
 it, the pedestal and its case within two blocks (the space over the pedestal must be free), and solid, so no one walks
-into it. Its upper part is clicked as the pedestal, and a middle click on it gives the pedestal; breaking it lifts the
-glass off. What it shows floats centred in the case, a gap over and under it, as large as that room lets it be (a mob or mannequin standing still, facing its yaw), with nothing reaching out of
+into it. Glass placed in the space over a pedestal closes a case the same way. Nothing else can be placed there, by a
+player, a dispenser or another mod's machine: it's the room for what the pedestal shows. Its upper part is clicked as the pedestal, and a middle click on it gives the pedestal; breaking it lifts the
+glass off. What it shows floats centred in the case, a gap over and under it, at its usual size, shrunk only if it wouldn't fit (a mob or mannequin standing still, facing its yaw), with nothing reaching out of
 the glass: a mob or mannequin is fitted by how it's posed and animated, and by what it holds, and anything tipped is fitted
-however it turns. Its display size can make it smaller in the case, never larger than the case lets it be (its height
-setting is kept for when the glass comes off). There's no beam or halos under
+however it turns. Its display size and height settings don't apply under glass; they're kept for when the glass comes
+off. There's no beam or halos under
 glass. Closing a case sounds like putting an item in an item frame, and lifting one like taking it out. Nothing goes on it or comes off it until the glass is lifted:
 sneaking and using an empty hand on the glass lifts it (the same glass comes back), for those who may adjust the pedestal; on the pedestal under it, that opens its adjust screen as usual. Breaking the pedestal drops
 the glass.

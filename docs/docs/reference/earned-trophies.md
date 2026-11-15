@@ -17,6 +17,8 @@ full) and announced in chat (`earned_trophies.announce`).
   "First Wither Slain", and the first to kill the Warden or an Elder Guardian an epic one. No one after them does.
 - **Milestones.** Walking 100 km (Wanderer, rare), killing 1,000 mobs (Monster Hunter, rare), catching 100 fish
   (Angler, uncommon) and playing for 100 hours (Veteran, epic).
+- **Collections.** Trophies of 10 different mobs (Collector, uncommon), 25 (Curator, rare), 50 (Archivist, epic) and
+  100 (Grand Curator, legendary), and 5 gilded ones (Gilded Gallery, epic).
 
 All but the advancements' are data, in `data/trophypedestals/trophypedestals/feats/`, and packs add their own the same
 way (`earned_trophies.feats` turns them all off). Each file is one trophy:
@@ -46,5 +48,6 @@ way (`earned_trophies.feats` turns them all off). Each file is one trophy:
 | `advancement` | `advancement` | a player earns that advancement (its title and icon are the advancement's unless given; one already earned counts when they next join) |
 | `stat` | `stat` (default `minecraft:custom`), `value`, `at_least` | a player's statistic reaches `at_least` (checked every 5 seconds) |
 | `first_kill` | `entity` (an id or `#tag`), `scope` (`server`, the default, or `player`) | a player kills that mob first, of everyone or for themselves; the trophy shows the mob |
+| `collection` | `at_least`, `gilded` (default `false`) | a player's Mob Trophies Ledger holds trophies of `at_least` different mobs (gilded ones only, with `gilded`) |
 
 A file that can't be read is logged with its pack and path, and skipped.
