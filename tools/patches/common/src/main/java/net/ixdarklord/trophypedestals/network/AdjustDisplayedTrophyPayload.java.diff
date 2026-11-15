@@ -1,0 +1,16 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/network/AdjustDisplayedTrophyPayload.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/network/AdjustDisplayedTrophyPayload.java
+@@ -1,12 +1,12 @@
+ package net.ixdarklord.trophypedestals.network;
+ 
++import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
+ import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
+ import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
+ import net.ixdarklord.trophypedestals.pedestal.DisplayedTrophySettings;
+ import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
+ import net.ixdarklord.trophypedestals.pedestal.TrophyCabinetBlockEntity;
+ import net.minecraft.core.BlockPos;
+-import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
+ import net.minecraft.server.level.ServerPlayer;
+ 
+ /**

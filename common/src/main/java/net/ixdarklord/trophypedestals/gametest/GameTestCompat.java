@@ -23,16 +23,17 @@ import net.minecraft.world.phys.BlockHitResult;
 
 import java.util.UUID;
 
-/** What the shared game tests use and 1.20.1's GameTestHelper lacks, or gets wrong on Forge (as in Tierwise's 1.20.1 port). */
+/**
+ * What the shared game tests use and 1.20.1's GameTestHelper lacks, or gets wrong on Forge (as in Tierwise's 1.20.1
+ * port).
+ */
 final class GameTestCompat {
     private GameTestCompat() {}
 
-    /** A failure to throw, like {@code GameTestHelper#assertionException}. */
     static GameTestAssertException assertionException(GameTestHelper helper, String message) {
         return new GameTestAssertException(message);
     }
 
-    /** A loot function read from its JSON, as a data pack writes it (26.1's tests read it with a codec). */
     static DataResult<LootItemFunction> lootFunction(JsonElement json) {
         try {
             return DataResult.success(Deserializers.createFunctionSerializer().create().fromJson(json, LootItemFunction.class));
@@ -41,10 +42,6 @@ final class GameTestCompat {
         }
     }
 
-    /**
-     * Uses this item on the block, as 26.1's {@code BlockState#useItemOn}: 1.20.1 uses a block with what the player holds,
-     * so the item is held for it (the same stack, so what the use takes from it shows).
-     */
     static ItemInteractionResult useItemOn(BlockState state, ItemStack stack, Level level, Player player, InteractionHand hand, BlockHitResult hit) {
         ItemStack held = player.getItemInHand(hand);
         player.setItemInHand(hand, stack);
@@ -53,18 +50,12 @@ final class GameTestCompat {
             return result == InteractionResult.PASS ? ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION
                     : result.consumesAction() ? ItemInteractionResult.SUCCESS : ItemInteractionResult.FAIL;
         } finally {
-            // What the use left in the hand instead of the item (a mannequin's helmet swapped for it) is kept, in the
-            // inventory, as 26.1 leaves it with the player.
             ItemStack given = player.getItemInHand(hand);
             player.setItemInHand(hand, held);
             if (given != stack && given != held && !given.isEmpty() && !player.getInventory().add(given)) player.drop(given, false);
         }
     }
 
-    /**
-     * Uses the block with an empty hand, as 26.1's {@code BlockState#useWithoutItem}. What the use puts in the emptied
-     * hand (an item taken back off a pedestal) is kept, in the inventory.
-     */
     static InteractionResult useWithoutItem(BlockState state, Level level, Player player, BlockHitResult hit) {
         ItemStack held = player.getMainHandItem();
         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
@@ -77,11 +68,6 @@ final class GameTestCompat {
         }
     }
 
-    /**
-     * A mock player like {@code GameTestHelper#makeMockServerPlayerInLevel}, but on a connection with an embedded
-     * channel, as later versions make it. 1.20.1's mock connection has no channel, and Forge's {@code placeNewPlayer}
-     * sends its registry packets through it and fails; Fabric doesn't, but the same mock works on both.
-     */
     static ServerPlayer mockServerPlayer(GameTestHelper helper) {
         ServerPlayer player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), new GameProfile(UUID.randomUUID(), "test-mock-player")) {
             @Override

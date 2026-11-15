@@ -19,20 +19,18 @@
  import net.minecraft.core.Direction;
  import net.minecraft.core.registries.BuiltInRegistries;
  import net.minecraft.resources.ResourceLocation;
-@@ -57,8 +54,8 @@
-     // Faces turned to the light: as a block's are shaded.
+@@ -54,7 +51,7 @@
+     private static final Block FALLBACK = Blocks.STONE;
      private static final float SHADE_UP = 1.0F, SHADE_DOWN = 0.5F, SHADE_NORTH_SOUTH = 0.8F, SHADE_EAST_WEST = 0.6F;
  
--    // What the shape and textures were read for: the models of the last resource load.
 -    private static @Nullable BlockStateModelSet readFor;
-+    // What the shape and textures were read for: the models of the last resource load (known by its missing model).
 +    private static @Nullable BakedModel readFor;
      private static List<Face> faces = List.of();
      private static final Map<Block, Look> LOOKS = new ConcurrentHashMap<>();
-     // The gold faces of the trophy displays' models, by model, for trims of other blocks.
-@@ -68,12 +65,10 @@
+     private static final Map<ResourceLocation, List<Face>> TRIMS = new ConcurrentHashMap<>();
+@@ -62,12 +59,10 @@
+     private PedestalBody() {}
  
-     /** Draws a custom pedestal's body, of this material (stone for none), in this light. */
      public static void submit(@Nullable ResourceLocation material, PoseStack poseStack, SubmitNodeCollector collector, int light) {
 -        Minecraft minecraft = Minecraft.getInstance();
 -        BlockStateModelSet models = minecraft.getModelManager().getBlockStateModelSet();
@@ -45,19 +43,19 @@
          collector.submitCustomGeometry(poseStack, RenderType.entityCutout(TextureAtlas.LOCATION_BLOCKS), (pose, consumer) -> {
              for (Face face : faces) if (!face.texture.overlay()) face(consumer, pose, face, look, light);
          });
-@@ -84,7 +79,8 @@
+@@ -76,7 +71,8 @@
+         });
      }
  
-     // After the resources reload, the shapes and textures are read again.
 -    private static void reread(BlockStateModelSet models) {
 +    private static void reread() {
 +        BakedModel models = Minecraft.getInstance().getModelManager().getMissingModel();
          if (models == readFor) return;
          readFor = models;
          faces = readFaces(TEMPLATE);
-@@ -98,12 +94,11 @@
-      * bottom on those turned down, a side on the rest), each pixel where the gold's would be, in this light.
-      */
+@@ -85,12 +81,11 @@
+     }
+ 
      public static void submitTrim(ResourceLocation model, ResourceLocation material, PoseStack poseStack, SubmitNodeCollector collector, int light) {
 -        BlockStateModelSet models = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
 -        reread(models);
@@ -67,13 +65,13 @@
          Block block = BuiltInRegistries.BLOCK.getOptional(material).orElse(FALLBACK);
 -        Look look = LOOKS.computeIfAbsent(block, found -> look(found, models));
 +        Look look = LOOKS.computeIfAbsent(block, PedestalBody::look);
-         // (The gold trim, a trimmed item's when it's gold, in the gold trim's own texture.)
          boolean gold = material.equals(TrophyDisplayBlock.GOLD);
          collector.submitCustomGeometry(poseStack, RenderType.entityCutout(TextureAtlas.LOCATION_BLOCKS), (pose, consumer) -> {
-@@ -129,37 +124,32 @@
+             for (Face face : trim) {
+@@ -113,36 +108,31 @@
+         }
+     }
  
-     // A material's textures and tints, from its block's model: its top's, bottom's and a side's, or its particle texture
-     // for a face it doesn't have (a model that isn't a whole block).
 -    private static Look look(Block block, BlockStateModelSet models) {
 +    private static Look look(Block block) {
          BlockState state = block.defaultBlockState();
@@ -109,7 +107,6 @@
 +        return quad == null ? fallback : quad.getSprite();
      }
  
-     // The face's tint, as the block's own colors give it (white for one that isn't tinted).
      private static int tint(@Nullable BakedQuad quad, BlockState state) {
 -        if (quad == null || !quad.materialInfo().isTinted()) return 0xFFFFFF;
 -        BlockTintSource source = Minecraft.getInstance().getBlockColors().getTintSource(state, quad.materialInfo().tintIndex());
@@ -119,4 +116,4 @@
 +        return color == -1 ? 0xFFFFFF : color & 0xFFFFFF;
      }
  
-     // A model's shape: every face of its boxes (those of the textures drawn here), turned as each box is, in the block's
+     private static List<Face> readFaces(ResourceLocation template) {

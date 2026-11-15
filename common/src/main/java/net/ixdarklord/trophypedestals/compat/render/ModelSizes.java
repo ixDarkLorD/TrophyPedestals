@@ -17,15 +17,12 @@ import java.util.function.Consumer;
 
 /**
  * Where a mob's model reaches, found by drawing it into a buffer that only notes where its corners land (1.20.1 builds
- * some models as a list of parts, with no tree of parts to walk as 26.1 does):
- * <ul>
- *     <li>{@link #measure}: at rest, as {reach from its middle, height, below its feet, width}, in blocks;</li>
- *     <li>{@link #pose}, {@link #visitModel} and {@link #visitItem}: posed as it's drawn this frame, every corner of its
- *     model and of what it holds (26.1's model set up from its state, and its held items' extents).</li>
- * </ul>
+ * some models as a list of parts, with no tree of parts to walk as 26.1 does): <ul> <li>{@link #measure}: at rest, as
+ * {reach from its middle, height, below its feet, width}, in blocks;</li> <li>{@link #pose}, {@link #visitModel} and
+ * {@link #visitItem}: posed as it's drawn this frame, every corner of its model and of what it holds (26.1's model set
+ * up from its state, and its held items' extents).</li> </ul>
  */
 public final class ModelSizes {
-    // Where a model's feet are, in its own (upside-down) units, as PedestalRenderer has it.
     private static final float MODEL_FEET = 1.501F;
 
     private ModelSizes() {}
@@ -33,7 +30,6 @@ public final class ModelSizes {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static float @Nullable [] measure(EntityModel model, Entity mob) {
         try {
-            // (Its body is laid down and its legs set in its pose: at rest, standing still.)
             model.setupAnim(mob, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
             float[] bounds = {0.0F, Float.MAX_VALUE, -Float.MAX_VALUE, Float.MAX_VALUE, -Float.MAX_VALUE, Float.MAX_VALUE, -Float.MAX_VALUE};
             model.renderToBuffer(new PoseStack(), new Points(point -> {
@@ -46,7 +42,6 @@ public final class ModelSizes {
                 bounds[6] = Math.max(bounds[6], point.z);
             }), 0, 0, 1.0F, 1.0F, 1.0F, 1.0F);
             float height = bounds[2] - bounds[1];
-            // (Its model is upside down: its lowest point is its largest y, its feet at MODEL_FEET.)
             float width = Math.max(0.01F, Math.max(bounds[4] - bounds[3], bounds[6] - bounds[5]));
             return height > 0.01F && bounds[0] > 0.01F ? new float[] {bounds[0], height, Math.max(0.0F, bounds[2] - MODEL_FEET), width} : null;
         } catch (RuntimeException | LinkageError e) {
@@ -54,7 +49,6 @@ public final class ModelSizes {
         }
     }
 
-    /** Sets the model up as the mob is drawn this frame: its state (pose, walk, swing) put on it, then the model posed. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static void pose(EntityModel model, LivingEntity mob, EntityRenderState state) {
         EntityRenderStates.apply(state);
@@ -63,12 +57,10 @@ public final class ModelSizes {
         model.setupAnim(mob, walked, speed, state.ageInTicks, Mth.wrapDegrees(mob.getYHeadRot() - mob.yBodyRot), mob.getXRot());
     }
 
-    /** Each corner of the model as it's posed, in its own space (blocks, upside down as models are). */
     public static void visitModel(EntityModel<?> model, Consumer<Vector3f> corners) {
         model.renderToBuffer(new PoseStack(), new Points(corners), 0, 0, 1.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    /** Each corner of an item as the mob holds it in this hand, in the hand's space (as the game draws it there). */
     public static void visitItem(LivingEntity mob, ItemStack stack, boolean leftHand, Consumer<Vector3f> corners) {
         Points points = new Points(corners);
         Minecraft.getInstance().getItemRenderer().renderStatic(mob, stack,
@@ -76,8 +68,6 @@ public final class ModelSizes {
                 new PoseStack(), type -> points, mob.level(), 0xF000F0, OverlayTexture.NO_OVERLAY, 0);
     }
 
-    // Hands on where each vertex lands (already placed by the pose it was drawn in). (This package has a VertexConsumer
-    // of its own: this is the game's.)
     private static final class Points implements VertexConsumer {
         private final Consumer<Vector3f> corners;
         private final Vector3f point = new Vector3f();

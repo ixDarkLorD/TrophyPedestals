@@ -1,0 +1,19 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/TrophyCabinetBlock.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/TrophyCabinetBlock.java
+@@ -9,7 +9,6 @@
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.LevelAccessor;
+ import net.minecraft.world.level.LevelReader;
+-import net.minecraft.world.level.block.BaseEntityBlock;
+ import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.state.BlockState;
+@@ -47,7 +46,7 @@
+     }
+ 
+     @Override
+-    public double[][] spots() {
++    protected double[][] spots() {
+         return SPOTS;
+     }
+ 

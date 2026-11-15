@@ -21,10 +21,9 @@ import java.util.function.Function;
 
 /**
  * Lists every mob trophy in the mob trophies creative tab as its own entry (a pedestal item's trophy tells its stacks
- * apart by its mob, so one of each kind of mob shows, whoever slew it), and shows what isn't crafted on pages of its own:
- * the trophy each mob drops ({@link MobTrophyCategory}) and the trims of cabinets and shelves ({@link TrimCategory}).
- * JEI finds it by its annotation on NeoForge and
- * through the {@code jei_mod_plugin} entrypoint on Fabric; nothing else loads this class.
+ * apart by its mob, so one of each kind of mob shows, whoever slew it), and shows what isn't crafted on pages of its
+ * own: the trophy each mob drops ({@link MobTrophyCategory}) and the trims of cabinets and shelves
+ * ({@link TrimCategory}).
  */
 @JeiPlugin
 public final class TrophyPedestalsJeiPlugin implements IModPlugin {
@@ -33,8 +32,6 @@ public final class TrophyPedestalsJeiPlugin implements IModPlugin {
         return TrophyPedestalsMod.id("jei");
     }
 
-    // Pedestal items are told apart by the mob of the trophy they carry (none for a plain pedestal or an achievement's
-    // trophy), and the custom pedestal by its material too (one entry for each a data pack makes).
     @Override
     public void registerItemSubtypes(ISubtypeRegistration registration) {
         Pedestals.ITEMS_BY_STONE.values().forEach(item -> registration.registerSubtypeInterpreter(item.get(), interpreter(TrophyPedestalsJeiPlugin::mob)));
@@ -52,16 +49,13 @@ public final class TrophyPedestalsJeiPlugin implements IModPlugin {
         return material == null && mob == null ? null : material + "/" + mob;
     }
 
-    // A subtype interpreter from a subtype's name (null for none).
     private static IIngredientSubtypeInterpreter<ItemStack> interpreter(Function<ItemStack, @Nullable String> subtype) {
-        // (JEI 15 names a subtype by a string, NONE for none.)
         return (stack, context) -> {
             String data = subtype.apply(stack);
             return data == null ? IIngredientSubtypeInterpreter.NONE : data;
         };
     }
 
-    // What isn't crafted: the trophy each mob can drop, and the trims of cabinets and shelves.
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
         IGuiHelper gui = registration.getJeiHelpers().getGuiHelper();
@@ -74,7 +68,6 @@ public final class TrophyPedestalsJeiPlugin implements IModPlugin {
         registration.addRecipes(TrimCategory.TYPE, TrimCategory.trims());
     }
 
-    // The default pedestal (mob trophies drop on it) and the gold ingot (the gold trim) lead to their pages.
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         registration.addRecipeCatalyst(Pedestals.DEFAULT.get(), MobTrophyCategory.TYPE);

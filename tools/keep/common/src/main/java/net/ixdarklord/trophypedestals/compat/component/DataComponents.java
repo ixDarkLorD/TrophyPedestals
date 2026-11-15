@@ -18,11 +18,6 @@ public final class DataComponents {
 
     private DataComponents() {}
 
-    /**
-     * An item's own name (not a custom one, so not in italics), as JSON on its tag. A trophy's is its record's ("Diamond
-     * Age Trophy"), worked out again for one that lost it (a broken pedestal's drop carries only its record), as a
-     * pedestal item's name is shown from it.
-     */
     public static final DataComponentType<Component> ITEM_NAME = new DataComponentType<>(null) {
         @Override
         protected @Nullable Component get(ItemStack stack) {
@@ -32,7 +27,6 @@ public final class DataComponents {
                     Component name = Component.Serializer.fromJson(tag.getString(ITEM_NAME_KEY));
                     if (name != null) return name;
                 } catch (RuntimeException ignored) {
-                    // (A name that can't be read is worked out again.)
                 }
             }
             return fromRecord(stack);
@@ -50,7 +44,6 @@ public final class DataComponents {
         }
     };
 
-    /** A name given with an anvil or a name tag: the item's custom hover name. */
     public static final DataComponentType<Component> CUSTOM_NAME = new DataComponentType<>(null) {
         @Override
         protected @Nullable Component get(ItemStack stack) {
@@ -69,7 +62,6 @@ public final class DataComponents {
         }
     };
 
-    /** A head's player: its {@code SkullOwner}. */
     public static final DataComponentType<ResolvableProfile> PROFILE = new DataComponentType<>(null) {
         @Override
         protected @Nullable ResolvableProfile get(ItemStack stack) {
@@ -91,7 +83,6 @@ public final class DataComponents {
         }
     };
 
-    // A trophy's name, made from its record as the mod names it when it makes the trophy.
     private static @Nullable Component fromRecord(ItemStack stack) {
         PedestalRecord record = Components.get(stack, Pedestals.RECORD.get());
         MobTrophyRecord mob = record == null ? Components.get(stack, Pedestals.MOB_TROPHY.get()) : null;

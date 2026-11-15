@@ -1,6 +1,17 @@
 --- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalBlock.java
 +++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalBlock.java
-@@ -25,10 +25,10 @@
+@@ -8,10 +8,8 @@
+ import net.ixdarklord.trophypedestals.api.PedestalRarity;
+ import net.ixdarklord.trophypedestals.client.PedestalParticles;
+ import net.ixdarklord.trophypedestals.compat.ItemInteractionResult;
+-import net.ixdarklord.trophypedestals.compat.component.DataComponents;
+ import net.ixdarklord.trophypedestals.network.OpenPedestalPayload;
+ import net.minecraft.core.BlockPos;
+-import net.minecraft.core.Direction;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.server.level.ServerLevel;
+@@ -27,10 +25,10 @@
  import net.minecraft.world.entity.LivingEntity;
  import net.minecraft.world.entity.player.Player;
  import net.minecraft.world.item.BlockItem;
@@ -12,7 +23,15 @@
  import net.minecraft.world.level.BlockGetter;
  import net.minecraft.world.level.Level;
  import net.minecraft.world.level.block.BaseEntityBlock;
-@@ -138,6 +138,7 @@
+@@ -81,7 +79,6 @@
+         registerDefaultState(defaultBlockState().setValue(LIT, false).setValue(RANK, 0).setValue(CASED, false));
+     }
+ 
+-    // Drawn by its model (a block with a block entity draws nothing unless it says so).
+     @Override
+     public RenderShape getRenderShape(BlockState state) {
+         return RenderShape.MODEL;
+@@ -123,6 +120,7 @@
          if (!level.isClientSide() && level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) {
              pedestal.markPlaced();
              if (placer instanceof Player player) pedestal.setOwner(player);
@@ -20,8 +39,26 @@
          }
          ResourceLocation rarity = Pedestals.rarity(stack);
          if (level.isClientSide() || rarity == null || PedestalRarities.isNone(rarity)) return;
-@@ -284,8 +285,8 @@
-     // shield, and what goes in an off hand, to that); null on a pedestal with no armor stand (it goes on display as usual).
+@@ -158,7 +156,6 @@
+         return state.getValue(CASED) ? CASED_SHAPE : SHAPE;
+     }
+ 
+-    // 1.20.1 uses a block once, with whatever's in hand: the item's use first, then (passed on) the empty hand's.
+     @Override
+     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+         ItemStack stack = player.getItemInHand(hand);
+@@ -246,8 +243,7 @@
+ 
+     private static void closeCase(Level level, BlockPos pos, PedestalBlockEntity pedestal, ItemStack stack, @Nullable LivingEntity user) {
+         pedestal.setGlass(true, stack.getItem() instanceof BlockItem item && item.getBlock() instanceof StainedGlassBlock stained ? stained.getColor() : null);
+-        if (user != null) if (!user.getAbilities().instabuild) stack.shrink(1);
+-        else stack.shrink(1);
++        if (!(user instanceof Player player && player.getAbilities().instabuild)) stack.shrink(1);
+         level.playSound(null, pos, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 1.0F, 1.0F);
+     }
+ 
+@@ -271,8 +267,8 @@
+ 
      private static @Nullable EquipmentSlot mannequinSlot(ItemStack stack, PedestalBlockEntity pedestal) {
          if (!pedestal.mannequin()) return null;
 -        Equippable equippable = stack.get(DataComponents.EQUIPPABLE);

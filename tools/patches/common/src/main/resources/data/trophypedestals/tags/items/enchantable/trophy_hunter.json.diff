@@ -1,0 +1,11 @@
+--- a/common/src/main/resources/data/trophypedestals/tags/items/enchantable/trophy_hunter.json
++++ b/common/src/main/resources/data/trophypedestals/tags/items/enchantable/trophy_hunter.json
+@@ -1,7 +1,6 @@
+ {
+   "values": [
+     "#minecraft:swords",
+-    "#minecraft:axes",
+-    "minecraft:mace"
++    "#minecraft:axes"
+   ]
+ }

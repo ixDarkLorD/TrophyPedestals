@@ -30,7 +30,6 @@ public record ResolvableProfile(Optional<String> name, Optional<UUID> id, List<P
             PROPERTY.listOf().optionalFieldOf("properties", List.of()).forGetter(ResolvableProfile::properties)
     ).apply(instance, ResolvableProfile::new));
 
-    /** A player by name, looked up when they're shown. */
     public static ResolvableProfile createUnresolved(String name) {
         return new ResolvableProfile(Optional.of(name), Optional.empty(), List.of());
     }
@@ -40,14 +39,12 @@ public record ResolvableProfile(Optional<String> name, Optional<UUID> id, List<P
                 List.copyOf(profile.getProperties().values()));
     }
 
-    /** The profile as it is (a name-only one has no id and no skin). */
     public GameProfile gameProfile() {
         GameProfile profile = new GameProfile(id.orElse(Util.NIL_UUID), name.orElse(""));
         for (Property property : properties) profile.getProperties().put(property.getName(), property);
         return profile;
     }
 
-    /** The whole profile, looked up (by name or id) if it isn't whole yet. */
     public CompletableFuture<ResolvableProfile> resolve() {
         if (!properties.isEmpty() || id.isPresent() == name.isPresent()) return CompletableFuture.completedFuture(this);
         CompletableFuture<ResolvableProfile> resolved = new CompletableFuture<>();

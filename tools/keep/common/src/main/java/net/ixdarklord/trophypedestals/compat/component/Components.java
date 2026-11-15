@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 1.20.1's stand-in for 26.1's item component calls ({@code stack.get(type)}, {@code set}, {@code has}, {@code remove}),
- * over an item's tag (see {@link DataComponentType}).
+ * 1.20.1's stand-in for 26.1's item component calls ({@code stack.get(type)}, {@code set}, {@code has},
+ * {@code remove}), over an item's tag (see {@link DataComponentType}).
  */
 public final class Components {
     private static final Map<String, DataComponentType<?>> BY_ID = new ConcurrentHashMap<>();
@@ -22,7 +22,6 @@ public final class Components {
         BY_ID.put(id, type);
     }
 
-    /** A component by its id ({@code trophypedestals:pedestal}), as an item definition names it; null for one unknown. */
     public static @Nullable DataComponentType<?> byId(String id) {
         return BY_ID.get(id);
     }
@@ -43,10 +42,6 @@ public final class Components {
         type.remove(stack);
     }
 
-    /**
-     * Gives a block entity what an item carries for it (26.1's {@code applyComponentsFromItemStack}): its block entity
-     * data, over what the block entity has.
-     */
     public static void applyToBlockEntity(BlockEntity blockEntity, ItemStack stack) {
         CompoundTag carried = stack.getTag() != null && stack.getTag().contains("BlockEntityTag", Tag.TAG_COMPOUND)
                 ? stack.getTag().getCompound("BlockEntityTag") : null;

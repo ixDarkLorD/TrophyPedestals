@@ -1,0 +1,17 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/TrophyPedestalsClient.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/TrophyPedestalsClient.java
+@@ -1,13 +1,13 @@
+ package net.ixdarklord.trophypedestals;
+ 
+ import net.ixdarklord.coolcatcore.api.core.ClientModConstructor;
+-import net.ixdarklord.trophypedestals.compat.render.ItemDefinitions;
+ import net.ixdarklord.trophypedestals.client.CustomPedestalItemRenderer;
+ import net.ixdarklord.trophypedestals.client.DisplayTrimItemRenderer;
+ import net.ixdarklord.trophypedestals.client.MobTrophiesTab;
+ import net.ixdarklord.trophypedestals.client.PedestalRenderer;
+ import net.ixdarklord.trophypedestals.client.TrophyIconRenderer;
+ import net.ixdarklord.trophypedestals.client.TrophyPedestalsClientConfig;
++import net.ixdarklord.trophypedestals.compat.render.ItemDefinitions;
+ 
+ /** Client mod constructor (CoolCatLib). */
+ public final class TrophyPedestalsClient implements ClientModConstructor {

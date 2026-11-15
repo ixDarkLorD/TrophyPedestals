@@ -1,6 +1,17 @@
 --- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalBlockEntity.java
 +++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalBlockEntity.java
-@@ -66,6 +66,7 @@
+@@ -5,10 +5,8 @@
+ import net.ixdarklord.trophypedestals.api.PedestalTeams;
+ import net.ixdarklord.trophypedestals.compat.ValueInput;
+ import net.ixdarklord.trophypedestals.compat.ValueOutput;
+-import net.ixdarklord.trophypedestals.compat.component.DataComponents;
+ import net.minecraft.commands.Commands;
+ import net.minecraft.core.BlockPos;
+-import net.minecraft.core.HolderLookup;
+ import net.minecraft.core.UUIDUtil;
+ import net.minecraft.core.registries.BuiltInRegistries;
+ import net.minecraft.nbt.CompoundTag;
+@@ -61,6 +59,7 @@
      private static final String TEXT_MODE = "TextMode";
      private static final String OWNER = "Owner";
      private static final String OWNER_NAME = "OwnerName";
@@ -8,20 +19,18 @@
      private static final String SCALE = "Scale";
      private static final String HEIGHT = "Height";
      private static final String STILL = "Still";
-@@ -134,6 +135,8 @@
+@@ -112,6 +111,7 @@
      private TextMode textMode = TextMode.LOOKING;
      private @Nullable UUID owner;
      private String ownerName = "";
-+    // Its own name, from the named item it was placed from (26.1 keeps it in the block entity's components).
 +    private @Nullable Component customName;
      private float scale = 1.0F;
      private float height;
      private boolean spins = true;
-@@ -470,6 +473,16 @@
+@@ -402,6 +402,15 @@
          return ownerName;
      }
  
-+    /** The name it was given (an anvil's, on the item it was placed from), or null. */
 +    public @Nullable Component customName() {
 +        return customName;
 +    }
@@ -34,7 +43,15 @@
      public void setOwner(Player player) {
          owner = player.getUUID();
          ownerName = player.getName().getString();
-@@ -863,6 +876,7 @@
+@@ -704,7 +713,6 @@
+         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+     }
+ 
+-    /** As it's broken (on 1.20.1 its block's onRemove calls this). */
+     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+         if (level != null && !display.isEmpty()) Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, display);
+         if (level != null) outfit.values().forEach(worn -> Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, worn));
+@@ -740,6 +748,7 @@
              output.store(OWNER, UUIDUtil.CODEC, owner);
              output.putString(OWNER_NAME, ownerName);
          }
@@ -42,7 +59,7 @@
          if (scale != 1.0F) output.putFloat(SCALE, scale);
          if (height != 0.0F) output.putFloat(HEIGHT, height);
          if (!spins) output.putBoolean(STILL, true);
-@@ -927,6 +941,7 @@
+@@ -800,6 +809,7 @@
          display = input.read(DISPLAY, ItemStack.CODEC).orElse(ItemStack.EMPTY);
          owner = input.read(OWNER, UUIDUtil.CODEC).orElse(null);
          ownerName = input.getStringOr(OWNER_NAME, "");

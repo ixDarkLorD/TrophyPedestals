@@ -5,13 +5,10 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 /**
- * 1.20.1's stand-in for 1.21's vertex calls ({@code addVertex(pose, x, y, z).setColor(...).setUv(...)...}) over 1.20.1's
- * buffers, which take a vertex's parts in its format's order and then {@code endVertex()}. A vertex's parts are kept
- * until the next vertex starts (or the drawing ends: {@link #flush()}), then written in order; parts its format doesn't
- * have are skipped by the buffer.
+ * 1.20.1's stand-in for 1.21's vertex calls ({@code addVertex(pose, x, y, z).setColor(...).setUv(...)...}) over
+ * 1.20.1's buffers, which take a vertex's parts in its format's order and then {@code endVertex()}.
  */
 public final class VertexConsumer {
-    // Scratch for a whole vertex's place and normal (drawing is on the render thread only).
     private static final Vector4f POSITION = new Vector4f();
     private static final Vector3f NORMAL = new Vector3f();
     private final com.mojang.blaze3d.vertex.VertexConsumer buffer;
@@ -70,13 +67,10 @@ public final class VertexConsumer {
         return this;
     }
 
-    /** Writes the vertex being made, if any. */
     public void flush() {
         if (!open) return;
         open = false;
         if (hasColor && hasUv && overlay != -1 && light != -1 && hasNormal) {
-            // A whole vertex in one call, which the buffer writes straight in when it holds entity vertices: part by part,
-            // it looks each part up as it goes, which is most of the time a GUI full of trophies takes.
             Vector4f at = pose.pose().transform(POSITION.set(x, y, z, 1.0F));
             Vector3f normal = normalPose.normal().transform(NORMAL.set(normalX, normalY, normalZ));
             buffer.vertex(at.x(), at.y(), at.z(), (color >> 16 & 0xFF) / 255.0F, (color >> 8 & 0xFF) / 255.0F, (color & 0xFF) / 255.0F,

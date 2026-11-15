@@ -1,0 +1,10 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/client/LeaderboardScreen.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/client/LeaderboardScreen.java
+@@ -91,7 +91,6 @@
+         return height2 - LIST_TOP - MARGIN;
+     }
+ 
+-    // (1.20.1's screens don't draw their background themselves: render() draws this first.)
+     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+         super.renderBackground(graphics);
+         GuiSprites.blit(graphics, PANEL, left, top, WIDTH, height2);

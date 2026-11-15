@@ -23,14 +23,8 @@ import java.util.Set;
 
 /**
  * The {@code trophypedestals:set_trophy} loot function: makes a pedestal a trophy recording an achievement (its
- * {@code "kind"}, a mod's {@code TrophyKind}, and its {@code "subject"}), so data packs can
- * hand trophies out from loot tables, advancement rewards or {@code /loot}. It records the unlock as of now, by
- * {@code "unlocker"} ({@code player}, the default, {@code team} or {@code server}) named {@code "name"}, or, without a
- * name, the entity the loot is for, with the kind's own rarity for it or the one named in {@code "rarity"}. Anything but a
- * pedestal is left as it is.
- * <pre>{@code
- * {"function": "trophypedestals:set_trophy", "kind": "tierwise:tier", "subject": "mypack:iron_age", "rarity": "epic"}
- * }</pre>
+ * {@code "kind"}, a mod's {@code TrophyKind}, and its {@code "subject"}), so data packs can hand trophies out from loot
+ * tables, advancement rewards or {@code /loot}.
  */
 public class SetTrophyFunction extends LootItemConditionalFunction {
     public static final MapCodec<SetTrophyFunction> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> LootCodecs.commonFields(instance).and(instance.group(

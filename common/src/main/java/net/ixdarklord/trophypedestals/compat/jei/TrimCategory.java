@@ -29,13 +29,11 @@ import java.util.List;
 
 /**
  * Trims: a trophy cabinet or shelf given a gold trim with a gold ingot, or a trim of any block with that block (used on
- * the placed display; an axe takes it off). Each display's page shows a few of the blocks, its trimmed look changing with
- * them.
+ * the placed display; an axe takes it off).
  */
 public final class TrimCategory implements IRecipeCategory<TrimCategory.Trim> {
     public static final RecipeType<Trim> TYPE = new RecipeType<>(TrophyPedestalsMod.id("trim"), Trim.class);
     private static final int WIDTH = 120, HEIGHT = 34, SLOT = 18, TEXT_Y = 24, LABEL = 0xFF404040;
-    // What a display's page shows it trimmed with: a gold ingot (the gold trim), then any block (a few for the page).
     private static final List<Item> MATERIALS = List.of(Items.GOLD_INGOT, Items.STONE, Items.COBBLESTONE, Items.DEEPSLATE_BRICKS,
             Items.POLISHED_BLACKSTONE, Items.QUARTZ_BLOCK, Items.SMOOTH_SANDSTONE, Items.BRICKS, Items.PRISMARINE, Items.PURPUR_BLOCK,
             Items.END_STONE_BRICKS, Items.COPPER_BLOCK, Items.EMERALD_BLOCK, Items.DIAMOND_BLOCK, Items.AMETHYST_BLOCK, Items.OAK_LOG);
@@ -45,16 +43,13 @@ public final class TrimCategory implements IRecipeCategory<TrimCategory.Trim> {
 
     public TrimCategory(IGuiHelper gui) {
         this.gui = gui;
-        // A gold-trimmed shelf (the first wood's).
         ItemStack shelf = new ItemStack(Pedestals.SHELVES.values().iterator().next().get());
         Components.set(shelf, Pedestals.TRIM_MATERIAL.get(), TrophyDisplayBlock.GOLD);
         this.icon = gui.createDrawableItemStack(shelf);
     }
 
-    /** A display, each material for it, and the display with each one's trim (in the same order). */
     public record Trim(ItemStack display, List<ItemStack> materials, List<ItemStack> trimmed) {}
 
-    /** A page for each cabinet and shelf. */
     public static List<Trim> trims() {
         List<Trim> trims = new ArrayList<>();
         for (var item : Pedestals.DISPLAY_ITEMS) {
@@ -99,7 +94,6 @@ public final class TrimCategory implements IRecipeCategory<TrimCategory.Trim> {
         return icon;
     }
 
-    // The display, plus a material, makes the display with that trim: the material and the result change together.
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, Trim trim, IFocusGroup focuses) {
         builder.addSlot(RecipeIngredientRole.INPUT, 1, 1).addItemStack(trim.display());
@@ -110,7 +104,6 @@ public final class TrimCategory implements IRecipeCategory<TrimCategory.Trim> {
 
     private static final int PLUS_X = SLOT + 3, MATERIAL_X = PLUS_X + 13 + 3, ARROW_X = MATERIAL_X + SLOT + (WIDTH - SLOT - MATERIAL_X - SLOT - 22) / 2;
 
-    // Its slots, a plus and an arrow between them, and under them how to take the trim off.
     @Override
     public void draw(Trim trim, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
         gui.getSlotDrawable().draw(graphics, 0, 0);

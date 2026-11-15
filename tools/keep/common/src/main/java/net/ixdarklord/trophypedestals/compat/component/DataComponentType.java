@@ -9,10 +9,9 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 1.20.1's stand-in for 26.1's {@code DataComponentType} (1.20.1 items have no components, only a tag): where on an
- * item's tag a value is kept, and how. Read and written through {@link Components}.
+ * item's tag a value is kept, and how.
  */
 public class DataComponentType<T> {
-    // Where it's kept: under these keys, one inside the other ("BlockEntityTag", "Record"), in this codec.
     private @Nullable String[] path;
     private final @Nullable Codec<T> codec;
 
@@ -24,7 +23,6 @@ public class DataComponentType<T> {
         return new Builder<>();
     }
 
-    /** Places it on an item's tag (named by its registration, see {@link DataComponentRegister}). */
     void at(String... path) {
         this.path = path;
     }
@@ -53,7 +51,6 @@ public class DataComponentType<T> {
         return path[path.length - 1];
     }
 
-    // The tag holding its key: made if asked to (and it's missing), else null if it's missing.
     private @Nullable CompoundTag holder(ItemStack stack, boolean make) {
         if (path == null) throw new IllegalStateException("A component used before it was registered");
         CompoundTag tag = make ? stack.getOrCreateTag() : stack.getTag();
@@ -76,7 +73,6 @@ public class DataComponentType<T> {
             return this;
         }
 
-        /** (Items are sent whole with their tag here: nothing more to say how.) */
         public Builder<T> networkSynchronized(Object streamCodec) {
             return this;
         }

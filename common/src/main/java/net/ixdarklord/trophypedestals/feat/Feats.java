@@ -41,29 +41,21 @@ import java.util.Optional;
 
 /**
  * Trophies players earn: data packs' feats ({@link Feat}, read by {@link FeatLoader}) and, if the server turns them on
- * ({@code earned_trophies.advancements}, off by default), a trophy for each advancement of the kinds it names. Each is given straight to the
- * player and, unless the server turns it off, announced to them.
- * A feat given once per player is remembered on the player ({@link #GRANTED}); a first kill of everyone on the server, on
- * the server ({@link #FIRST_KILLS}).
+ * ({@code earned_trophies.advancements}, off by default), a trophy for each advancement of the kinds it names.
  */
 public final class Feats {
-    /** The kind of a data pack's trophy; its subject is the feat's id, and it carries its own title and icon. */
     public static final ResourceLocation FEAT = TrophyPedestalsMod.id("feat");
-    /** The kind of an advancement's trophy; its subject is the advancement's id, and it carries its title and icon. */
     public static final ResourceLocation ADVANCEMENT = TrophyPedestalsMod.id("advancement");
 
     static final AttachmentRegistry ATTACHMENTS = AttachmentRegistry.create(TrophyPedestalsMod.MOD_ID);
-    /** The feats a player has had the trophy of (those given once), and the advancements whose trophy they have. */
     public static final Attachment<List<ResourceLocation>> GRANTED = ATTACHMENTS.builder("earned_trophies", ResourceLocation.CODEC.listOf(), List.<ResourceLocation>of())
             .copyOnDeath()
             .build();
     public static final Attachment<List<ResourceLocation>> GRANTED_ADVANCEMENTS = ATTACHMENTS.builder("advancement_trophies", ResourceLocation.CODEC.listOf(), List.<ResourceLocation>of())
             .copyOnDeath()
             .build();
-    /** The first kills of everyone on the server already taken. */
     public static final Attachment<List<ResourceLocation>> FIRST_KILLS = ATTACHMENTS.builder("first_kills", ResourceLocation.CODEC.listOf(), List.<ResourceLocation>of()).build();
 
-    // How often, in ticks, each player's statistics are checked against the milestones.
     private static final int STAT_CHECK = 100;
 
     private static volatile Map<ResourceLocation, Feat> feats = Map.of();
@@ -79,7 +71,6 @@ public final class Feats {
         PlayerEvents.ADVANCEMENT_EARNED.register(Feats::onAdvancement);
         PlayerEvents.JOIN.register(Feats::onJoin);
         PlayerEvents.JOIN.register(TrophyLedger::syncStat);
-        // (A trophy collected may reach a collection milestone.)
         TrophyEvents.COLLECTED.register((player, mob, gilded, first) -> {
             if (first) checkCollection(player);
         });
@@ -92,12 +83,10 @@ public final class Feats {
         });
     }
 
-    /** The feats read last. */
     public static Map<ResourceLocation, Feat> all() {
         return feats;
     }
 
-    /** Replaces the feats read last, for the game tests. */
     public static void loadForTests(Map<ResourceLocation, Feat> loaded) {
         load(loaded);
     }
@@ -107,9 +96,6 @@ public final class Feats {
         TrophyPedestalsMod.LOGGER.info("Loaded {} earned trophies", loaded.size());
     }
 
-    // --- Triggers ---
-
-    /** An advancement earned: the feats for it, else its own trophy if the server gives one for its kind. */
     public static void onAdvancement(ServerPlayer player, Advancement advancement) {
         boolean featFor = false;
         if (TrophyPedestalsConfig.FEAT_TROPHIES.get()) {
@@ -123,7 +109,6 @@ public final class Feats {
         if (!featFor) grantAdvancement(player, advancement);
     }
 
-    /** A player's statistics against the milestones they haven't reached. */
     public static void checkStats(ServerPlayer player) {
         if (!TrophyPedestalsConfig.FEAT_TROPHIES.get() || feats.isEmpty()) return;
         List<ResourceLocation> granted = GRANTED.get(player);
@@ -138,7 +123,6 @@ public final class Feats {
         }
     }
 
-    /** A trophy recorded in a player's ledger: the collection milestones it reaches. */
     public static void checkCollection(ServerPlayer player) {
         if (!TrophyPedestalsConfig.FEAT_TROPHIES.get() || feats.isEmpty()) return;
         List<ResourceLocation> granted = GRANTED.get(player);
@@ -149,12 +133,10 @@ public final class Feats {
         }
     }
 
-    // Whether the player's ledger holds as many different mobs as the trigger asks (gilded ones, if it asks for those).
     private static boolean collected(ServerPlayer player, Feat.CollectionTrigger trigger) {
         return (trigger.gilded() ? TrophyLedger.COLLECTED_GILDED : TrophyLedger.COLLECTED).get(player).size() >= trigger.atLeast();
     }
 
-    /** A mob killed by a player: the first kills it's first for. */
     public static void onKill(ServerPlayer player, LivingEntity victim) {
         if (!TrophyPedestalsConfig.FEAT_TROPHIES.get() || !MobTrophies.droppable(victim)) return;
         MinecraftServer server = player.level().getServer();
@@ -165,7 +147,6 @@ public final class Feats {
                 if (FIRST_KILLS.get(server).contains(entry.getKey())) continue;
                 FIRST_KILLS.update(server, taken -> append(taken, entry.getKey()));
             } else if (GRANTED.get(player).contains(entry.getKey())) {
-                // (A player's own first kill: once each.)
                 continue;
             }
             Component title = feat.title().orElseGet(() -> Component.translatable("trophypedestals.feat.first_kill", victim.getType().getDescription()));
@@ -179,7 +160,6 @@ public final class Feats {
         }
     }
 
-    // A player joining: the advancement feats they've already earned (added since, or before the mod was installed).
     private static void onJoin(ServerPlayer player) {
         if (!TrophyPedestalsConfig.FEAT_TROPHIES.get()) return;
         MinecraftServer server = player.level().getServer();
@@ -192,9 +172,6 @@ public final class Feats {
         checkStats(player);
     }
 
-    // --- Giving ---
-
-    // A feat's trophy for this player (an advancement feat's titled and shown as the advancement, unless it says otherwise).
     private static void grant(ServerPlayer player, ResourceLocation id, Feat feat, @Nullable Advancement advancement) {
         if (feat.once() && GRANTED.get(player).contains(id)) return;
         DisplayInfo display = advancement == null ? null : Optional.ofNullable(advancement.getDisplay()).orElse(null);
@@ -206,7 +183,6 @@ public final class Feats {
 
     private static final ResourceLocation DEFAULT_ICON = BuiltInRegistries.ITEM.getKey(Items.GOLD_INGOT);
 
-    // An advancement's own trophy, if the server gives one for its kind and the player hasn't had it.
     private static void grantAdvancement(ServerPlayer player, Advancement advancement) {
         DisplayInfo display = Optional.ofNullable(advancement.getDisplay()).orElse(null);
         if (display == null || !gives(display.getFrame()) || GRANTED_ADVANCEMENTS.get(player).contains(advancement.getId())) return;
@@ -223,7 +199,6 @@ public final class Feats {
         giveAndAnnounce(player, trophy);
     }
 
-    // Whether the server gives a trophy for advancements of this frame.
     private static boolean gives(FrameType type) {
         return switch (TrophyPedestalsConfig.ADVANCEMENT_TROPHIES.get()) {
             case NONE -> false;
@@ -233,7 +208,6 @@ public final class Feats {
         };
     }
 
-    // A feat's trophy recording its title and icon, for this player, now.
     private static ItemStack record(ServerPlayer player, ResourceLocation kind, ResourceLocation id, Feat feat, Component title, ResourceLocation icon) {
         ItemStack trophy = new ItemStack(pedestal(feat));
         Pedestals.record(trophy, new PedestalRecord(kind, id, PedestalRecord.Unlocker.PLAYER, player.getName().getString(),
@@ -241,13 +215,11 @@ public final class Feats {
         return trophy;
     }
 
-    // Gives the player a feat's trophy, remembers it if it's given once, and tells them.
     private static void give(ServerPlayer player, ResourceLocation id, Feat feat, ItemStack trophy) {
         if (feat.once()) GRANTED.update(player, list -> append(list, id));
         giveAndAnnounce(player, trophy);
     }
 
-    // (Named before it's given: going into the inventory can leave the stack given empty.)
     private static void giveAndAnnounce(ServerPlayer player, ItemStack trophy) {
         Component name = trophy.getHoverName();
         Pedestals.give(player, List.of(trophy));
@@ -259,7 +231,6 @@ public final class Feats {
         return named != null ? named : Pedestals.DEFAULT.get();
     }
 
-    // The statistic a milestone counts, or null if its type or value isn't in the game.
     private static @Nullable Stat<?> stat(Feat.StatTrigger trigger) {
         StatType<?> type = BuiltInRegistries.STAT_TYPE.getOptional(trigger.stat()).orElse(null);
         return type == null ? null : stat(type, trigger.value());
@@ -277,7 +248,6 @@ public final class Feats {
         return List.copyOf(added);
     }
 
-    /** A kind whose trophies carry their own title and icon; without them, its subject's id and nothing turning over it. */
     private static final class TitledKind implements TrophyKind {
         @Override
         public Component name(ResourceLocation subject, boolean client) {

@@ -1,0 +1,11 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/TrophyPedestalsConfig.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/TrophyPedestalsConfig.java
+@@ -40,7 +40,7 @@
+             .comment("How much each level of Looting on the weapon a mob is killed with raises its trophy chance, as a share of that chance: 0.5 makes Looting III two and a half times as likely to drop one. 0 turns it off.")
+             .build();
+     public static final ConfigValue<Boolean> REQUIRE_ENCHANTMENT = BUILDER.bool("require_enchantment", false)
+-            .comment("Whether mob trophies drop only when the mob is killed with a weapon enchanted with Trophy Hunter (found in enchanting tables, loot and trades, for swords, axes and maces, and any item a pack adds to the #trophypedestals:enchantable/trophy_hunter item tag, such as #minecraft:pickaxes). Off by default.")
++            .comment("Whether mob trophies drop only when the mob is killed with a weapon enchanted with Trophy Hunter (found in enchanting tables, loot and trades, for swords and axes, and any item a pack adds to the #trophypedestals:enchantable/trophy_hunter item tag, such as #minecraft:pickaxes). Off by default.")
+             .build();
+     public static final ConfigValue<Boolean> ALL_MOBS = BUILDER.bool("all_mobs", true)
+             .comment("Whether every mob in the game, every mod's included, drops a trophy and is listed in the Mobs creative tab and the Mob Trophies Ledger. On by default. Turned off, only Minecraft's own mobs do, and the mobs a pack adds, either to the #trophypedestals:mob_trophies entity type tag or by naming them (by id, #tag or @mod id) in chance_overrides with a chance above 0. A change applies when the world (or server) next starts. WARNING: in large packs this can behave unexpectedly (very long lists, mobs never meant to be collected, some shown as spawn eggs); turning it off and adding chosen mods' mobs is safer.")

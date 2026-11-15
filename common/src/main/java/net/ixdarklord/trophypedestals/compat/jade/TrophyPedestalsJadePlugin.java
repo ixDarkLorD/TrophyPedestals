@@ -15,8 +15,7 @@ import snownee.jade.api.config.IPluginConfig;
 
 /**
  * Adds what a looked-at pedestal holds to Jade's tooltip: its trophy, rank and who earned it, a mob trophy's kills, a
- * leaderboard's leader, and its glass case ({@link PedestalInfo}). Jade finds it by its annotation on NeoForge and
- * through the {@code jade} entrypoint on Fabric; nothing else loads this class.
+ * leaderboard's leader, and its glass case ({@link PedestalInfo}).
  */
 @WailaPlugin(TrophyPedestalsMod.MOD_ID)
 public final class TrophyPedestalsJadePlugin implements IWailaPlugin {

@@ -11,15 +11,14 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * The server's settings ({@code config/trophypedestals-server}, per world), in two groups: {@code mob_trophies} (whether
- * and how often mobs drop trophies, and their rank, with the kill counts in {@code mob_trophies.kills}) and
- * {@code pedestals} (who may adjust them, taking items off, and which of the adjust screen's settings players can change:
- * a trophy's in {@code pedestals.trophy_settings}, a display pedestal's in {@code pedestals.display_pedestal_settings}).
+ * The server's settings ({@code config/trophypedestals-server}, per world), in two groups: {@code mob_trophies}
+ * (whether and how often mobs drop trophies, and their rank, with the kill counts in {@code mob_trophies.kills}) and
+ * {@code pedestals} (who may adjust them, taking items off, and which of the adjust screen's settings players can
+ * change: a trophy's in {@code pedestals.trophy_settings}, a display pedestal's in
+ * {@code pedestals.display_pedestal_settings}).
  */
 public final class TrophyPedestalsConfig {
     private static final ConfigBuilder BUILDER = Config.builder(TrophyPedestalsMod.MOD_ID, ConfigScope.SERVER);
-
-    // --- Mob trophies ---
 
     static {
         BUILDER.push("mob_trophies", "Trophies that mobs drop when a player kills them.");
@@ -28,14 +27,25 @@ public final class TrophyPedestalsConfig {
     public static final ConfigValue<Boolean> MOB_TROPHIES = BUILDER.bool("enabled", true)
             .comment("Whether mobs a player kills can drop a trophy pedestal showing them.")
             .build();
-    public static final ConfigValue<Double> MOB_TROPHY_CHANCE = BUILDER.doubleValue("chance", 0.01)
+    public static final ConfigValue<Double> MOB_TROPHY_CHANCE = BUILDER.doubleValue("chance", 0.015)
             .range(0.0, 1.0)
-            .comment("The chance a mob a player kills drops its trophy, from 0 (never) to 1 (always). 0.01 is one in a hundred.")
+            .comment("The chance a mob a player kills drops its trophy, from 0 (never) to 1 (always). 0.015 is about one in sixty-seven.")
             .build();
-    /**
-     * Other chances for some mobs, as {@code "<mob id, #tag or @mod id> = chance"}. A mob named by its id wins, then one
-     * of its tags, then its mod; the first matching entry of each is used, and other mobs use {@link #MOB_TROPHY_CHANCE}.
-     */
+    public static final ConfigValue<Double> BOSS_TROPHY_CHANCE = BUILDER.doubleValue("boss_chance", 0.15)
+            .range(0.0, 1.0)
+            .comment("The chance a boss (a mob in #trophypedestals:epic_mob_trophies or #trophypedestals:legendary_mob_trophies) a player kills drops its trophy, from 0 to 1. 0.15 is about one in seven.")
+            .build();
+    public static final ConfigValue<Double> LOOTING_BONUS = BUILDER.doubleValue("looting_bonus", 0.5)
+            .range(0.0, 10.0)
+            .comment("How much each level of Looting on the weapon a mob is killed with raises its trophy chance, as a share of that chance: 0.5 makes Looting III two and a half times as likely to drop one. 0 turns it off.")
+            .build();
+    public static final ConfigValue<Boolean> REQUIRE_ENCHANTMENT = BUILDER.bool("require_enchantment", false)
+            .comment("Whether mob trophies drop only when the mob is killed with a weapon enchanted with Trophy Hunter (found in enchanting tables, loot and trades, for swords and axes, and any item a pack adds to the #trophypedestals:enchantable/trophy_hunter item tag, such as #minecraft:pickaxes). Off by default.")
+            .build();
+    public static final ConfigValue<Boolean> ALL_MOBS = BUILDER.bool("all_mobs", true)
+            .comment("Whether every mob in the game, every mod's included, drops a trophy and is listed in the Mobs creative tab and the Mob Trophies Ledger. On by default. Turned off, only Minecraft's own mobs do, and the mobs a pack adds, either to the #trophypedestals:mob_trophies entity type tag or by naming them (by id, #tag or @mod id) in chance_overrides with a chance above 0. A change applies when the world (or server) next starts. WARNING: in large packs this can behave unexpectedly (very long lists, mobs never meant to be collected, some shown as spawn eggs); turning it off and adding chosen mods' mobs is safer.")
+            .requiresWorldRestart()
+            .build();
     public static final ConfigValue<List<String>> MOB_TROPHY_CHANCE_OVERRIDES = BUILDER.stringList("chance_overrides", List.of())
             .comment("Other drop chances for some mobs, groups of mobs or whole mods, each \"<mob id, #entity type tag or @mod id> = chance\" (0 to 1), e.g. \"minecraft:zombie = 0.001\", \"#minecraft:raiders = 0.05\" or \"@alexsmobs = 0.005\". A mob named by its id wins over one of its tags, and a tag over its mod.")
             .build();
@@ -79,10 +89,6 @@ public final class TrophyPedestalsConfig {
             .range(1, 1_000_000)
             .comment("Kills for a legendary trophy.")
             .build();
-    /**
-     * Other counts for some mobs, as {@code "<mob id or #tag> = uncommon, rare, epic, legendary"}. The first entry naming
-     * the mob by id wins, then the first naming one of its tags; other mobs use the counts above.
-     */
     public static final ConfigValue<List<String>> KILLS_OVERRIDES = BUILDER.stringList("overrides", List.of(
                     "#trophypedestals:legendary_mob_trophies = 1, 2, 3, 5",
                     "#trophypedestals:epic_mob_trophies = 2, 5, 10, 20"))
@@ -92,8 +98,6 @@ public final class TrophyPedestalsConfig {
     static {
         BUILDER.pop().pop();
     }
-
-    // --- Earned trophies ---
 
     static {
         BUILDER.push("earned_trophies", "Trophies players earn for what they do: advancements, and data packs' feats (milestones and first kills).");
@@ -113,8 +117,6 @@ public final class TrophyPedestalsConfig {
         BUILDER.pop();
     }
 
-    // --- The Mob Trophies Ledger ---
-
     static {
         BUILDER.push("ledger", "The Mob Trophies Ledger: buying back mob trophies a player has collected, for when one's lost.");
     }
@@ -130,8 +132,6 @@ public final class TrophyPedestalsConfig {
     static {
         BUILDER.pop();
     }
-
-    // --- Pedestals ---
 
     static {
         BUILDER.push("pedestals", "Who may adjust pedestals, and what they can change.");
@@ -177,36 +177,27 @@ public final class TrophyPedestalsConfig {
 
     private TrophyPedestalsConfig() {}
 
-    /** Loads the config; called from the mod constructor. */
     public static void init() {}
 
-    /** Whether players can change a pedestal's Display settings: a trophy's, or a display pedestal's. */
     public static boolean displaySettings(boolean trophy) {
         return (trophy ? TROPHY_DISPLAY_SETTINGS : DISPLAY_PEDESTAL_DISPLAY_SETTINGS).get();
     }
 
-    /** Whether players can change a pedestal's text height and size: a trophy's, or a display pedestal's. */
     public static boolean textSettings(boolean trophy) {
         return (trophy ? TROPHY_TEXT_SETTINGS : DISPLAY_PEDESTAL_TEXT_SETTINGS).get();
     }
 
-    /** Whether players can change when a pedestal's text shows: a trophy's with its Text tab, a display pedestal's always. */
     public static boolean textModeSettings(boolean trophy) {
         return !trophy || TROPHY_TEXT_SETTINGS.get();
     }
 
-    /** Whether players can change a trophy's Pose settings (a display pedestal has none). */
     public static boolean poseSettings(boolean trophy) {
         return trophy && TROPHY_POSE_SETTINGS.get();
     }
 
-    /** How mob trophies get their rank. */
     public enum MobTrophyRarity implements EnumType.Displayable {
-        /** By how tough the mob is: its health and attack, or the boss tags. */
         STRENGTH,
-        /** By how many of that mob the player has killed (the game's own kill statistic). */
         KILLS,
-        /** None: shown as a display pedestal is. */
         NONE;
 
         @Override
@@ -219,15 +210,10 @@ public final class TrophyPedestalsConfig {
         }
     }
 
-    /** Which advancements give a trophy. */
     public enum AdvancementTrophies implements EnumType.Displayable {
-        /** None. */
         NONE,
-        /** Challenges only. */
         CHALLENGES,
-        /** Goals and challenges. */
         GOALS,
-        /** Every advancement shown in the advancements screen. */
         ALL;
 
         @Override
@@ -240,11 +226,8 @@ public final class TrophyPedestalsConfig {
         }
     }
 
-    /** Who can adjust a pedestal. */
     public enum PedestalAccess implements EnumType.Displayable {
-        /** The player who placed it, and operators; anyone, for a pedestal placed before pedestals had owners. */
         OWNER,
-        /** Anyone. */
         ANYONE;
 
         @Override

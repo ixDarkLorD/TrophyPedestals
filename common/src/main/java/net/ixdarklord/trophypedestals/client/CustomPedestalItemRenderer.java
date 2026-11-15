@@ -17,9 +17,9 @@ import org.joml.Vector3fc;
 import java.util.function.Consumer;
 
 /**
- * The custom pedestal item's body, drawn with its material's textures as the placed block is ({@link PedestalBody}): the
- * {@code trophypedestals:custom_pedestal} special item model, which the custom pedestal's item definition uses (with a trophy's
- * icon over it, for a trophy).
+ * The custom pedestal item's body, drawn with its material's textures as the placed block is ({@link PedestalBody}):
+ * the {@code trophypedestals:custom_pedestal} special item model, which the custom pedestal's item definition uses
+ * (with a trophy's icon over it, for a trophy).
  */
 public final class CustomPedestalItemRenderer implements SpecialModelRenderer<ResourceLocation> {
     public static final ResourceLocation TYPE = TrophyPedestalsMod.id("custom_pedestal");

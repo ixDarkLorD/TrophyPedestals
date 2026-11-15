@@ -17,9 +17,8 @@ import net.minecraft.world.item.crafting.ShapedRecipe;
 
 /**
  * {@code trophypedestals:crafting_shaped}, on 1.20.1: a shaped crafting recipe whose result can carry data
- * ({@code "result": {"item": ..., "nbt": {...}}}), as 26.1's results carry components, which vanilla 1.20.1's shaped recipes
- * can't (Forge's can; Fabric's can't). A data pack's custom pedestal of a material is one (the port turns 26.1's
- * {@code minecraft:crafting_shaped} with result components into this). The recipe it makes is a vanilla shaped one.
+ * ({@code "result": {"item": ..., "nbt": {...}}}), as 26.1's results carry components, which vanilla 1.20.1's shaped
+ * recipes can't (Forge's can; Fabric's can't).
  */
 public final class ShapedNbtRecipe {
     private static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.RECIPE_SERIALIZER);

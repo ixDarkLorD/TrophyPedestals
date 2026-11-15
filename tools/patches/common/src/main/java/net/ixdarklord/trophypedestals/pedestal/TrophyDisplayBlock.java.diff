@@ -1,0 +1,18 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/TrophyDisplayBlock.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/TrophyDisplayBlock.java
+@@ -64,7 +64,6 @@
+ 
+     protected abstract double[][] spots();
+ 
+-    // Drawn by its model (a block with a block entity draws nothing unless it says so).
+     @Override
+     public RenderShape getRenderShape(BlockState state) {
+         return RenderShape.MODEL;
+@@ -218,7 +217,6 @@
+         return across < 0.0 ? 0 : 1;
+     }
+ 
+-    // 1.20.1 uses a block once, with whatever's in hand: the item's use first, then (passed on) the empty hand's.
+     @Override
+     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+         ItemStack stack = player.getItemInHand(hand);

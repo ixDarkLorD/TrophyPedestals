@@ -18,7 +18,6 @@ import org.joml.Vector3f;
  * filled by {@link ItemModelResolver#updateForTopItem} and drawn by the item renderer.
  */
 public final class ItemStackRenderState {
-    // A baked quad's vertices: eight ints each, the position first.
     private static final int VERTEX_SIZE = 8;
     ItemStack stack = ItemStack.EMPTY;
     ItemDisplayContext context = ItemDisplayContext.NONE;
@@ -40,10 +39,6 @@ public final class ItemStackRenderState {
         Minecraft.getInstance().getItemRenderer().render(stack, context, false, poseStack, collector.buffers(), light, overlay, model);
     }
 
-    /**
-     * The model's box as it's drawn (its display transform for how it's held applied, about its middle), in the item's
-     * units; empty for an item drawn by code alone.
-     */
     public AABB getModelBoundingBox() {
         if (box != null) return box;
         if (isEmpty()) return box = new AABB(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);

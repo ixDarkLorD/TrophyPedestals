@@ -1,0 +1,10 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/client/TrophyCabinetRenderer.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/client/TrophyCabinetRenderer.java
+@@ -85,7 +85,6 @@
+         return new State();
+     }
+ 
+-    // Drawn in one call here: its state filled, as it's extracted on 26.1, then drawn, as it's submitted.
+     @Override
+     public void render(TrophyCabinetBlockEntity blockEntity, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light, int overlay) {
+         State state = createRenderState();

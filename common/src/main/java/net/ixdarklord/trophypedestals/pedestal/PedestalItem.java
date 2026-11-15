@@ -10,15 +10,12 @@ import net.minecraft.world.level.block.Block;
 
 import java.util.Optional;
 
-/**
- * A pedestal's item. A ranked trophy's tooltip shows its rank as a badge after its name ({@link TrophyTooltip}).
- */
+/** A pedestal's item. */
 public class PedestalItem extends BlockItem {
     public PedestalItem(Block block, Properties properties) {
         super(block, properties);
     }
 
-    // (1.20.1 items have no name of their own beside a custom one: see compat/component/DataComponents.ITEM_NAME.)
     @Override
     public Component getName(ItemStack stack) {
         Component named = Components.get(stack, DataComponents.ITEM_NAME);

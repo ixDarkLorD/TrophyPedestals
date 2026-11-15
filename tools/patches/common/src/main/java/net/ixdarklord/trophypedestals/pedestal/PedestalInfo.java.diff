@@ -1,0 +1,10 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalInfo.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalInfo.java
+@@ -2,7 +2,6 @@
+ 
+ import net.ixdarklord.trophypedestals.api.PedestalRarities;
+ import net.ixdarklord.trophypedestals.api.TrophyKinds;
+-import net.ixdarklord.trophypedestals.compat.component.DataComponents;
+ import net.minecraft.ChatFormatting;
+ import net.minecraft.network.chat.Component;
+ 

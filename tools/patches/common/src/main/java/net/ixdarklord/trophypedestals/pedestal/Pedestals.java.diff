@@ -1,0 +1,17 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/Pedestals.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/Pedestals.java
+@@ -1,6 +1,5 @@
+ package net.ixdarklord.trophypedestals.pedestal;
+ 
+-import java.util.function.Supplier;
+ import net.ixdarklord.coolcatcore.api.network.codec.ByteBufCodecs;
+ import net.ixdarklord.coolcatcore.api.registry.BlockEntityTypes;
+ import net.ixdarklord.coolcatcore.api.registry.CreativeTabs;
+@@ -39,6 +38,7 @@
+ import java.util.Locale;
+ import java.util.Map;
+ import java.util.function.Function;
++import java.util.function.Supplier;
+ import java.util.stream.Stream;
+ 
+ /**

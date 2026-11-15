@@ -1,0 +1,12 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/compat/jei/TrimCategory.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/compat/jei/TrimCategory.java
+@@ -7,8 +7,8 @@
+ import mezz.jei.api.helpers.IGuiHelper;
+ import mezz.jei.api.recipe.IFocusGroup;
+ import mezz.jei.api.recipe.RecipeIngredientRole;
++import mezz.jei.api.recipe.RecipeType;
+ import mezz.jei.api.recipe.category.IRecipeCategory;
+-import mezz.jei.api.recipe.RecipeType;
+ import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
+ import net.ixdarklord.trophypedestals.compat.component.Components;
+ import net.ixdarklord.trophypedestals.pedestal.Pedestals;

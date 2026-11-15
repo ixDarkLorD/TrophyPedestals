@@ -5,12 +5,9 @@ import java.util.function.Supplier;
 
 /**
  * 1.20.1's stand-in for registering 26.1's data components (there's no registry for them): each is placed on items'
- * tags as it's made. Trophy Pedestals' own go in the item's {@code BlockEntityTag}, under the keys its block entities
- * save them by, so the game itself hands them to a placed pedestal and loot tables copy them back
- * ({@code minecraft:copy_nbt}).
+ * tags as it's made.
  */
 public final class DataComponentRegister {
-    // A component's name, and its key in the block entity's saved data.
     private static final Map<String, String> BLOCK_ENTITY_KEYS = Map.of(
             "pedestal", "Record",
             "mob_trophy", "MobTrophy",
@@ -35,6 +32,5 @@ public final class DataComponentRegister {
         return () -> type;
     }
 
-    /** (Nothing to register with the game.) */
     public void register() {}
 }

@@ -20,13 +20,10 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * The upper part of a glass case: an invisible block in the space over a cased pedestal, its shape the part of the case
- * that reaches up into it (the case is drawn with the pedestal; its own model is clear, there only for the cracks
- * drawn over it as it's broken). It's there so that space is the case's, as a door's upper
- * half is the door's: looked at, clicked and picked as the pedestal below (a middle click gives the pedestal), and solid.
- * Breaking it lifts the glass off the pedestal (dropping it); it goes when the pedestal loses its case.
+ * that reaches up into it (the case is drawn with the pedestal; its own model is clear, there only for the cracks drawn
+ * over it as it's broken).
  */
 public class VitrineTopBlock extends Block {
-    // The case over the cap, from the space's floor: as wide as the cap, up to the case's top.
     private static final VoxelShape SHAPE = box(2.0, 0.0, 2.0, 14.0, (14.0F / 16.0F + PedestalBlock.CASE_HEIGHT - 1.0F) * 16.0, 14.0);
 
     public VitrineTopBlock(Properties properties) {
@@ -38,13 +35,11 @@ public class VitrineTopBlock extends Block {
         return SHAPE;
     }
 
-    /** Whether the pedestal below has a glass case, which this is the top of. */
     public static boolean over(LevelReader level, BlockPos pos) {
         BlockState below = level.getBlockState(pos.below());
         return below.getBlock() instanceof PedestalBlock && below.getValue(PedestalBlock.CASED);
     }
 
-    // Gone as soon as the pedestal below has no case (lifted off, or the pedestal broken).
     @Override
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighbor, LevelAccessor level, BlockPos pos,
                                      BlockPos neighborPos) {
@@ -57,14 +52,12 @@ public class VitrineTopBlock extends Block {
         return over(level, pos);
     }
 
-    // A middle click gives the pedestal (with its data, as the game copies it).
     @Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
         BlockState below = level.getBlockState(pos.below());
         return below.getBlock() instanceof PedestalBlock ? below.getBlock().getCloneItemStack(level, pos.below(), below) : ItemStack.EMPTY;
     }
 
-    // Used as the pedestal below is: sneaking with an empty hand lifts the glass (for those who may).
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         BlockPos below = pos.below();
         BlockState pedestal = level.getBlockState(below);
@@ -72,7 +65,6 @@ public class VitrineTopBlock extends Block {
         return pedestal.use(level, player, InteractionHand.MAIN_HAND, new BlockHitResult(hit.getLocation(), hit.getDirection(), below, hit.isInside()));
     }
 
-    // 1.20.1 uses a block once, with whatever's in hand: the item's use first, then (passed on) the empty hand's.
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         ItemStack stack = player.getItemInHand(hand);
@@ -91,7 +83,6 @@ public class VitrineTopBlock extends Block {
                 : result.consumesAction() ? ItemInteractionResult.SUCCESS : ItemInteractionResult.FAIL;
     }
 
-    // Broken by a player: the glass comes off the pedestal below, and drops (the pedestal stays).
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide() && level.getBlockEntity(pos.below()) instanceof PedestalBlockEntity pedestal && pedestal.glass()) {

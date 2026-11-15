@@ -38,15 +38,10 @@ public final class LootCodecs {
 
     private LootCodecs() {}
 
-    /**
-     * A conditional function's {@code "conditions"}, as 1.20.5+'s {@code commonFields} reads them. (They aren't written
-     * back: a function's conditions aren't visible outside it here, and nothing writes a function's JSON in play.)
-     */
     public static <T extends LootItemConditionalFunction> P1<RecordCodecBuilder.Mu<T>, List<LootItemCondition>> commonFields(RecordCodecBuilder.Instance<T> instance) {
         return instance.group(CONDITION.listOf().optionalFieldOf("conditions", List.of()).forGetter(function -> List.of()));
     }
 
-    /** A loot function type's JSON serializer, reading and writing the function with its codec. */
     public static <T extends LootItemFunction> Serializer<T> serializer(MapCodec<T> codec) {
         return new Serializer<>() {
             @Override

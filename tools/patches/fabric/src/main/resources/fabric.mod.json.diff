@@ -1,0 +1,12 @@
+--- a/fabric/src/main/resources/fabric.mod.json
++++ b/fabric/src/main/resources/fabric.mod.json
+@@ -35,6 +35,9 @@
+       "net.ixdarklord.trophypedestals.compat.jade.TrophyPedestalsJadePlugin"
+     ]
+   },
++  "mixins": [
++    "trophypedestals.fabric.mixins.json"
++  ],
+ 
+   "depends": {
+     "java": ">=${versions.java.get()}",

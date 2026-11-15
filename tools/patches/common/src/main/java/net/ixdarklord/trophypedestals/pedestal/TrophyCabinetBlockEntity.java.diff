@@ -1,0 +1,18 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/TrophyCabinetBlockEntity.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/TrophyCabinetBlockEntity.java
+@@ -7,7 +7,6 @@
+ import net.ixdarklord.trophypedestals.compat.component.Components;
+ import net.minecraft.commands.Commands;
+ import net.minecraft.core.BlockPos;
+-import net.minecraft.core.HolderLookup;
+ import net.minecraft.core.UUIDUtil;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.network.protocol.Packet;
+@@ -194,7 +193,6 @@
+         setName = input.read(SET_NAME, SetName.CODEC).orElse(SetName.SHOWN);
+     }
+ 
+-    /** As it's broken (on 1.20.1 its block's onRemove calls this). */
+     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+         if (level == null) return;
+         for (ItemStack item : items) {

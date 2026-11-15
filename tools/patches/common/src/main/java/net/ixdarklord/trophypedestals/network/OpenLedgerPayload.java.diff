@@ -1,0 +1,11 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/network/OpenLedgerPayload.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/network/OpenLedgerPayload.java
+@@ -1,7 +1,7 @@
+ package net.ixdarklord.trophypedestals.network;
+ 
++import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
+ import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
+-import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
+ import net.minecraft.resources.ResourceLocation;
+ 
+ import java.util.List;

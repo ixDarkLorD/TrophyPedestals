@@ -1,0 +1,10 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/TrophySets.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/TrophySets.java
+@@ -4,7 +4,6 @@
+ import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
+ import net.ixdarklord.trophypedestals.compat.component.Components;
+ import net.minecraft.core.BlockPos;
+-import net.minecraft.core.HolderSet;
+ import net.minecraft.core.registries.BuiltInRegistries;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.resources.ResourceLocation;

@@ -5,9 +5,8 @@ import dev.latvian.mods.kubejs.script.BindingsEvent;
 import dev.latvian.mods.kubejs.script.ScriptType;
 
 /**
- * KubeJS support (on Forge here, as on NeoForge elsewhere): server scripts get a {@code TrophyPedestals} binding to read,
- * set and lock pedestals, and {@code TrophyPedestalsEvents} ({@link TrophyPedestalsKubeEvents}). KubeJS finds this
- * plugin through {@code kubejs.plugins.txt}; nothing else loads it.
+ * KubeJS support (on Forge here, as on NeoForge elsewhere): server scripts get a {@code TrophyPedestals} binding to
+ * read, set and lock pedestals, and {@code TrophyPedestalsEvents} ({@link TrophyPedestalsKubeEvents}).
  */
 public final class TrophyPedestalsKubeJSPlugin extends KubeJSPlugin {
     @Override

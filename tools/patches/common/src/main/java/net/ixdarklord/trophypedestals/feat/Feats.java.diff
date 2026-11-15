@@ -1,6 +1,16 @@
 --- a/common/src/main/java/net/ixdarklord/trophypedestals/feat/Feats.java
 +++ b/common/src/main/java/net/ixdarklord/trophypedestals/feat/Feats.java
-@@ -174,7 +174,7 @@
+@@ -20,8 +20,8 @@
+ import net.ixdarklord.trophypedestals.pedestal.PedestalRecord;
+ import net.ixdarklord.trophypedestals.pedestal.Pedestals;
+ import net.minecraft.advancements.Advancement;
++import net.minecraft.advancements.DisplayInfo;
+ import net.minecraft.advancements.FrameType;
+-import net.minecraft.advancements.DisplayInfo;
+ import net.minecraft.core.registries.BuiltInRegistries;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.resources.ResourceLocation;
+@@ -177,7 +177,7 @@
          DisplayInfo display = advancement == null ? null : Optional.ofNullable(advancement.getDisplay()).orElse(null);
          Component title = feat.title().orElseGet(() -> display != null ? display.getTitle()
                  : Component.translatableWithFallback("trophypedestals.feat." + id.getNamespace() + "." + id.getPath().replace('/', '.'), id.getPath()));
@@ -9,7 +19,7 @@
          give(player, id, feat, record(player, FEAT, id, feat, title, icon));
      }
  
-@@ -189,7 +189,7 @@
+@@ -191,7 +191,7 @@
              case GOAL -> PedestalRarities.RARE;
              case CHALLENGE -> PedestalRarities.EPIC;
          };

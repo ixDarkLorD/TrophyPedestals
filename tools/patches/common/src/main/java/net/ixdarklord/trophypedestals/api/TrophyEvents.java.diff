@@ -1,0 +1,11 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/api/TrophyEvents.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/api/TrophyEvents.java
+@@ -7,7 +7,7 @@
+ import net.minecraft.world.item.ItemStack;
+ 
+ /**
+- * Trophy Pedestals' events, for mods (on either loader) and, on NeoForge, KubeJS scripts ({@code TrophyPedestalsEvents}).
++ * Trophy Pedestals' events, for mods (on either loader) and, on Forge, KubeJS scripts ({@code TrophyPedestalsEvents}).
+  * Both fire on the server.
+  * <pre>{@code
+  * TrophyEvents.MOB_TROPHY_DROP.register(drop -> {

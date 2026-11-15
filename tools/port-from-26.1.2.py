@@ -47,8 +47,12 @@ KEEP: set[str] = {file.relative_to(KEEP_ROOT).as_posix() for file in KEEP_ROOT.r
 
 # Not brought over.
 # The One Probe has no Fabric build for this version (its first is for 26.1.2).
+# Enchantments aren't data here: Trophy Hunter is registered in Java (MobTrophies.TROPHY_HUNTER, TrophyHunterEnchantment),
+# and its rarity and flags do what 26.1's enchantment tags do.
 SKIP: list[str] = [
     "fabric/src/main/java/net/ixdarklord/trophypedestals/fabric/compat",
+    "common/src/main/resources/data/trophypedestals/enchantment",
+    "common/src/main/resources/data/minecraft/tags/enchantment",
 ]
 
 RENAMES = [
@@ -556,9 +560,14 @@ UNUSED = [
 ]
 
 EDITS: dict[str, list[tuple[str, str]]] = {
+    # KubeGroovy is only for 26.1.2; there are no maces here.
+    "CHANGELOG.md": [
+        ("a one-level enchantment for swords, axes and maces (modded ones too)", "a one-level enchantment for swords and axes (modded ones too)"),
+        ("- **KubeGroovy support** (NeoForge 26.1.2): Groovy server scripts get `$TrophyPedestals` and `$TrophyPedestalsEvents`, the same binding and events as on KubeJS.\n", ""),
+    ],
     # REI before 26.x has no display serializers (this display is made on the client, never sent or saved).
     "common/" + JAVA + "/compat/rei/TrophyPedestalsReiPlugin.java": [
-        ("\n        // (Made on the client from the game's own mobs: never sent or saved.)\n        @Override\n        public DisplaySerializer<? extends Display> getSerializer() {\n            return null;\n        }\n", ""),
+        ("\n        @Override\n        public DisplaySerializer<? extends Display> getSerializer() {\n            return null;\n        }\n", ""),
         ("import me.shedaniel.rei.api.common.display.DisplaySerializer;\n", ""),
     ],
     "fabric/src/main/resources/fabric.mod.json": [
@@ -597,19 +606,17 @@ EDITS: dict[str, list[tuple[str, str]]] = {
          "    @Override\n    public VoxelShape getShape("),
     ],
     "common/" + JAVA + "/pedestal/TrophyDisplayBlock.java": [
-        ("    // Its trophies' settings that answer redstone know whether a signal reaches it.\n",
-         "    // Its trophies drop as it's broken (1.20.1 block entities hear nothing of it).\n"
+        ("    @Override\n    public void neighborChanged(",
          "    @Override\n"
          "    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moved) {\n"
          "        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display) display.preRemoveSideEffects(pos, state);\n"
          "        super.onRemove(state, level, pos, newState, moved);\n"
          "    }\n\n"
-         "    // Its trophies' settings that answer redstone know whether a signal reaches it.\n"),
+         "    @Override\n    public void neighborChanged("),
     ],
     # A trophy is named by its own name (26.1's item_name, kept on its tag here, or worked out from its record).
     "common/" + JAVA + "/pedestal/PedestalItem.java": [
         ("    @Override\n    public Optional<TooltipComponent> getTooltipImage(",
-         "    // (1.20.1 items have no name of their own beside a custom one: see compat/component/DataComponents.ITEM_NAME.)\n"
          "    @Override\n"
          "    public Component getName(ItemStack stack) {\n"
          "        Component named = Components.get(stack, DataComponents.ITEM_NAME);\n"
@@ -639,7 +646,7 @@ EDITS: dict[str, list[tuple[str, str]]] = {
     # JEI 15's subtype interpreters and catalysts.
     "common/" + JAVA + "/compat/jei/TrophyPedestalsJeiPlugin.java": [
         ('    private static ISubtypeInterpreter<ItemStack> interpreter(Function<ItemStack, @Nullable String> subtype) {\n        return (stack, context) -> subtype.apply(stack);\n    }',
-         '    private static IIngredientSubtypeInterpreter<ItemStack> interpreter(Function<ItemStack, @Nullable String> subtype) {\n        // (JEI 15 names a subtype by a string, NONE for none.)\n        return (stack, context) -> {\n            String data = subtype.apply(stack);\n            return data == null ? IIngredientSubtypeInterpreter.NONE : data;\n        };\n    }'),
+         '    private static IIngredientSubtypeInterpreter<ItemStack> interpreter(Function<ItemStack, @Nullable String> subtype) {\n        return (stack, context) -> {\n            String data = subtype.apply(stack);\n            return data == null ? IIngredientSubtypeInterpreter.NONE : data;\n        };\n    }'),
         ('        registration.addCraftingStation(MobTrophyCategory.TYPE, Pedestals.DEFAULT.get());\n        registration.addCraftingStation(TrimCategory.TYPE, Items.GOLD_INGOT);',
          '        registration.addRecipeCatalyst(Pedestals.DEFAULT.get(), MobTrophyCategory.TYPE);\n        registration.addRecipeCatalyst(Items.GOLD_INGOT, TrimCategory.TYPE);'),
         ('import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;',
@@ -660,7 +667,7 @@ EDITS: dict[str, list[tuple[str, str]]] = {
         ('.add(drop.trophy());',
          '.addItemStack(drop.trophy());'),
         ('        Vector2f at = graphics.pose().transformPosition(0.0F, 0.0F, new Vector2f());\n        int x = Math.round(at.x()), y = Math.round(at.y());\n        InventoryScreen.extractEntityInInventoryFollowsMouse(graphics, x, y, x + MOB_WIDTH, y + HEIGHT, scale, 0.0625F,\n                x + MOB_WIDTH / 2.0F + LOOK_X, y + LOOK_Y, mob);',
-         "        // (Here it's drawn where the page is, from its feet, turned by where it looks from its head.)\n        InventoryScreen.renderEntityInInventoryFollowsMouse(graphics, MOB_WIDTH / 2, HEIGHT - 2, scale, -LOOK_X, HEIGHT / 2.0F - LOOK_Y, mob);"),
+         "        InventoryScreen.renderEntityInInventoryFollowsMouse(graphics, MOB_WIDTH / 2, HEIGHT - 2, scale, -LOOK_X, HEIGHT / 2.0F - LOOK_Y, mob);"),
         ('import org.joml.Vector2f;\n',
          ''),
     ],
@@ -1004,6 +1011,13 @@ def expected_tree(copied: bool = False) -> dict[str, bytes]:
             source = SOURCE / name
             if source.is_dir():
                 shutil.copytree(source, scratch / name)
+            elif name in EDITS:
+                text = source.read_text(encoding="utf-8")
+                for original, replacement in EDITS[name]:
+                    if original not in text:
+                        sys.exit(f"{name}: expected text not found, port it by hand:\n{original}")
+                    text = text.replace(original, replacement)
+                (scratch / name).write_text(text, encoding="utf-8", newline="\n")
             else:
                 shutil.copy2(source, scratch / name)
     global ROOT_FOR_RESOURCES
