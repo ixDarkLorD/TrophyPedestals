@@ -6,16 +6,13 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.Optional;
 
 /**
- * How a trophy on a trophy display (a cabinet or a shelf) is shown: the pedestal settings that can be changed there, for
- * the spot it's on. Everything that would change its size or place (its display's size and height, its text's height and
- * size, its crown's size and place) stays as a new pedestal has it, so it fits the display. They're the spot's, not the
- * trophy's: taken off, the trophy keeps its own, and the spot goes back to {@link #DEFAULT}.
+ * How a trophy on a trophy display (a cabinet or a shelf) is shown: the pedestal settings that can be changed there,
+ * for the spot it's on.
  */
 public record DisplayedTrophySettings(PedestalBlockEntity.TextMode textMode, boolean spins, float yaw, float pitch, float roll,
                                       boolean effects,
                                       PedestalBlockEntity.RedstoneMode redstone, boolean sounds, boolean animates, boolean statue,
                                       PedestalBlockEntity.StatuePose statuePose, String animation, boolean crown, boolean light) {
-    /** As a new pedestal has them. */
     public static final DisplayedTrophySettings DEFAULT = new DisplayedTrophySettings(PedestalBlockEntity.TextMode.LOOKING, true, 0.0F, 0.0F, 0.0F, true,
             PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, true, true);
 
@@ -23,7 +20,6 @@ public record DisplayedTrophySettings(PedestalBlockEntity.TextMode textMode, boo
             PedestalBlockEntity.TextMode.CODEC.optionalFieldOf("text", DEFAULT.textMode).forGetter(DisplayedTrophySettings::textMode),
             Codec.BOOL.optionalFieldOf("spins", true).forGetter(DisplayedTrophySettings::spins),
             Codec.FLOAT.optionalFieldOf("yaw").forGetter(settings -> settings.yaw == 0.0F ? Optional.empty() : Optional.of(settings.yaw)),
-            // (What yaw was saved as before pitch and roll: read, never written.)
             Codec.FLOAT.optionalFieldOf("facing").forGetter(settings -> Optional.empty()),
             Codec.FLOAT.optionalFieldOf("pitch", 0.0F).forGetter(DisplayedTrophySettings::pitch),
             Codec.FLOAT.optionalFieldOf("roll", 0.0F).forGetter(DisplayedTrophySettings::roll),
@@ -40,7 +36,6 @@ public record DisplayedTrophySettings(PedestalBlockEntity.TextMode textMode, boo
             new DisplayedTrophySettings(text, spins, yaw.or(() -> facing).orElse(0.0F), pitch, roll, effects, redstone, sounds, animates,
                     statue, pose, animation, crown, light)));
 
-    /** Shows a trophy's pedestal (a stand-in for drawing it) with these settings, and as powered or not. */
     public void applyTo(PedestalBlockEntity pedestal, boolean powered) {
         pedestal.setTextMode(textMode);
         pedestal.setSpins(spins);

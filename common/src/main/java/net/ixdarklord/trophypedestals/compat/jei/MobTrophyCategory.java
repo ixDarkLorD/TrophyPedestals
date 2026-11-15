@@ -39,17 +39,14 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * The mob trophies: each mob, drawn standing still, and the trophy a player who slays it can
- * find, with its rank and the chance of it dropping ({@code mob_trophies.chance}). Its spawn egg finds the page too.
+ * The mob trophies: each mob, drawn standing still, and the trophy a player who slays it can find, with its rank and
+ * the chance of it dropping ({@code mob_trophies.chance}).
  */
 public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategory.Drop> {
     public static final IRecipeType<Drop> TYPE = IRecipeType.create(TrophyPedestalsMod.id("mob_trophy"), Drop.class);
     private static final int WIDTH = 120, HEIGHT = 48, SLOT = 18, LABEL = 0xFF404040;
-    // The mob's box on the left (its feet on its floor); the arrow, the trophy's slot and the two lines of text right of it.
     private static final int MOB_WIDTH = 34, MOB_FIT = 38, TEXT_X = MOB_WIDTH + 4, ROW_Y = 6, RANK_Y = 28, CHANCE_Y = 38;
-    // Where the mob looks, from its box's middle and top: to its right (towards its trophy), level with its head.
     private static final float LOOK_X = 24.0F, LOOK_Y = 12.0F;
-    // One of each mob, made on the client to be drawn (null for one that can't be made outside a world).
     private static final Map<EntityType<?>, Optional<LivingEntity>> MOBS = new HashMap<>();
 
     private final IGuiHelper gui;
@@ -60,10 +57,8 @@ public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategor
         this.icon = gui.createDrawableItemStack(new ItemStack(Pedestals.DEFAULT.get()));
     }
 
-    /** A mob, its spawn egg (empty for none) and its trophy. */
     public record Drop(EntityType<?> type, ItemStack egg, ItemStack trophy, PedestalRarity rarity) {}
 
-    /** One of each mob that drops a trophy, as the creative tab lists them (by rank, then by name). */
     public static List<Drop> drops() {
         List<Drop> drops = new ArrayList<>();
         var level = Minecraft.getInstance().level;
@@ -104,18 +99,14 @@ public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategor
 
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, Drop drop, IFocusGroup focuses) {
-        // (The mob is drawn, not a slot: its egg is there to find it by.)
         if (!drop.egg().isEmpty()) builder.addInvisibleIngredients(RecipeIngredientRole.INPUT).add(drop.egg());
         builder.addSlot(RecipeIngredientRole.OUTPUT, WIDTH - SLOT + 1, ROW_Y + 1).add(drop.trophy());
     }
 
-    // The mob (its egg if it can't be drawn), the arrow to its trophy's slot, and under them its rank (in its color) and
-    // the chance of it dropping.
     @Override
     public void draw(Drop drop, IRecipeSlotsView slots, GuiGraphicsExtractor graphics, double mouseX, double mouseY) {
         LivingEntity mob = mob(drop.type());
         if (mob != null) {
-            // Scaled to fit its box, the larger of its height and width, so a dragon fits as a chicken does.
             int scale = Math.max(2, (int) (MOB_FIT / Math.max(mob.getBbHeight(), mob.getBbWidth() * 1.4F)));
             drawMob(graphics, mob, scale);
         } else if (!drop.egg().isEmpty()) {
@@ -129,9 +120,6 @@ public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategor
         graphics.text(font, chance, TEXT_X, CHANCE_Y, LABEL, false);
     }
 
-    // The mob in its box, standing still, turned a little towards its trophy (as if looking at a point LOOK_X right of
-    // its middle and LOOK_Y down from the top). (The game draws it at the screen's own coordinates, not the page's: the
-    // page's place on the screen is added.)
     private static void drawMob(GuiGraphicsExtractor graphics, LivingEntity mob, int scale) {
         Vector2f at = graphics.pose().transformPosition(0.0F, 0.0F, new Vector2f());
         int x = Math.round(at.x()), y = Math.round(at.y());
@@ -139,7 +127,6 @@ public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategor
                 x + MOB_WIDTH / 2.0F + LOOK_X, y + LOOK_Y, mob);
     }
 
-    // The mob of this kind to draw, made once (in the world the client is in), or null for one that won't be made there.
     private static @Nullable LivingEntity mob(EntityType<?> type) {
         Level level = Minecraft.getInstance().level;
         if (level == null) return null;
@@ -157,7 +144,6 @@ public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategor
         return mob.orElse(null);
     }
 
-    // The chance as a percentage, without trailing zeros (1%, 0.5%).
     private static String percent(double chance) {
         String text = String.format(Locale.ROOT, "%.2f", chance * 100.0);
         text = text.contains(".") ? text.replaceAll("0+$", "").replaceAll("\\.$", "") : text;

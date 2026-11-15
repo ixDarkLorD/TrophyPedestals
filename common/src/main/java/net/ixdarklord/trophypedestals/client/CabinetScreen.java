@@ -23,7 +23,7 @@ import java.util.function.BooleanSupplier;
 /**
  * A trophy cabinet's or shelf's settings, for its owner (opened with the Trophy Ledger, or sneaking on an empty spot):
  * who else may use it (Private, Team, Everyone) and when the name of the set its trophies make shows over it (Shown, On
- * Look, Hidden). Sent to the server as it closes. Drawn as the pedestal's adjust screen is.
+ * Look, Hidden).
  */
 public final class CabinetScreen extends Screen {
     private static final Identifier PANEL = TrophyPedestalsMod.id("pedestal/panel");
@@ -32,7 +32,6 @@ public final class CabinetScreen extends Screen {
     private static final Identifier SEGMENT_SELECTED = TrophyPedestalsMod.id("pedestal/segment_selected");
     private static final Identifier INFO = TrophyPedestalsMod.id("pedestal/info");
     private static final Identifier INFO_HOVER = TrophyPedestalsMod.id("pedestal/info_hover");
-    // Its size; the margin inside its frame; where its two sections' labels are, down from its top; how wide tooltips wrap.
     private static final int WIDTH = 220, HEIGHT = 150, MARGIN = 12, ROW_1 = 46, ROW_2 = 84, INFO_SIZE = 9, TOOLTIP_WIDTH = 180, EDGE = 4;
     private static final int GOLD = 0xFFF2C94C, PALE_GOLD = 0xFFFFE08A, LABEL = 0xFF9DA2A7, TEXT = 0xFFDCDCE0;
     private static final int GROOVE_DARK = 0xFF07090E, GROOVE_LIT = 0xFF343B4E;
@@ -58,7 +57,6 @@ public final class CabinetScreen extends Screen {
         left = Math.max(EDGE, (width - WIDTH) / 2);
         top = Math.max(EDGE, (height - HEIGHT) / 2);
         int x = left + MARGIN, column = WIDTH - 2 * MARGIN, third = (column - 4) / 3;
-        // Who else may use it, then when its set name shows: three choices each, across the column.
         for (int i = 0; i < 3; i++) {
             String each = ACCESS.get(i);
             addRenderableWidget(new Choice(x + i * (third + 2), top + ROW_1 + 12, i == 2 ? column - 2 * (third + 2) : third,
@@ -75,7 +73,6 @@ public final class CabinetScreen extends Screen {
         Network.sendToServer(new AdjustCabinetPayload(pos, access, setName));
     }
 
-    // The panel, its title over a groove, and its two sections' labels, each with a "?" explaining it while hovered.
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
@@ -102,7 +99,6 @@ public final class CabinetScreen extends Screen {
         return false;
     }
 
-    /** A choice: a slate button, gold-trimmed while chosen. */
     private final class Choice extends AbstractButton {
         private final BooleanSupplier selected;
         private final Runnable action;

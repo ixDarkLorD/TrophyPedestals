@@ -14,10 +14,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-/**
- * Adds what a looked-at pedestal holds to The One Probe ({@link PedestalInfo}). TOP finds it through the
- * {@code theoneprobe} entrypoint; nothing else loads this class.
- */
+/** Adds what a looked-at pedestal holds to The One Probe ({@link PedestalInfo}). */
 public final class TrophyProbeFabric implements TheOneProbePlugin, IProbeInfoProvider {
     private static final Identifier ID = TrophyPedestalsMod.id("pedestal");
 
