@@ -13,7 +13,7 @@ import java.util.Optional;
 
 /**
  * 1.21.1's stand-in for 26.1's {@code ValueInput}: the same calls, reading a saved tag, so the code loading pedestals
- * is the same on every version. A value that's missing, of the wrong type, or can't be decoded reads as its default.
+ * is the same on every version.
  */
 public final class ValueInput {
     private final CompoundTag tag;
@@ -28,7 +28,6 @@ public final class ValueInput {
         return new ValueInput(tag, registries);
     }
 
-    /** A tag read without the game's registries (for values that don't need them: names, ids, components' text). */
     public static ValueInput of(CompoundTag tag) {
         return new ValueInput(tag, null);
     }
@@ -39,10 +38,6 @@ public final class ValueInput {
         return codec.parse(registries == null ? NbtOps.INSTANCE : registries.createSerializationContext(NbtOps.INSTANCE), value).result();
     }
 
-    /**
-     * A name saved as an entity saves one here (the text's JSON in a string): 26.1 reads it with
-     * {@code ComponentSerialization.CODEC}. A plain string that isn't JSON reads as that text.
-     */
     public Optional<Component> readName(String key) {
         if (!tag.contains(key, Tag.TAG_STRING)) return Optional.empty();
         String saved = tag.getString(key);
@@ -50,7 +45,6 @@ public final class ValueInput {
             Component name = Component.Serializer.fromJson(saved, registries == null ? RegistryAccess.EMPTY : registries);
             if (name != null) return Optional.of(name);
         } catch (RuntimeException ignored) {
-            // (Not JSON: the text itself.)
         }
         return Optional.of(Component.literal(saved));
     }

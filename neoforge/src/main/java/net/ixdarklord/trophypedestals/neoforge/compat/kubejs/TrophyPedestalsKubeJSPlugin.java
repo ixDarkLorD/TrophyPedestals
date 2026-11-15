@@ -8,7 +8,6 @@ import dev.latvian.mods.kubejs.script.ScriptType;
 /**
  * KubeJS support (NeoForge only: KubeJS has no Fabric build for 26.x): server scripts get a {@code TrophyPedestals}
  * binding to read, set and lock pedestals, and {@code TrophyPedestalsEvents} ({@link TrophyPedestalsKubeEvents}).
- * KubeJS finds this plugin through {@code kubejs.plugins.txt}; nothing else loads it.
  */
 public final class TrophyPedestalsKubeJSPlugin implements KubeJSPlugin {
     @Override

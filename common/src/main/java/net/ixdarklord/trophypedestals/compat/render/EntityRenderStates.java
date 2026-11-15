@@ -25,14 +25,12 @@ import org.jetbrains.annotations.Nullable;
 public final class EntityRenderStates {
     private EntityRenderStates() {}
 
-    /** A mob of this type made only to be drawn (a player's statue figure for a player), or null if it can't be made. */
     public static @Nullable Entity create(EntityType<?> type, @Nullable Level level) {
         if (level == null) return null;
         if (type == EntityType.PLAYER) return level instanceof ClientLevel client ? StatueFigure.create(client) : null;
         return type.create(level);
     }
 
-    /** The mob as it's to be drawn this frame. */
     public static EntityRenderState extract(Entity entity, float partialTicks) {
         EntityRenderState state;
         if (entity instanceof Player) state = new AvatarRenderState(entity);
@@ -48,7 +46,6 @@ public final class EntityRenderStates {
         return state;
     }
 
-    /** Draws the mob as its state says, at this place in the pose. */
     public static void submit(EntityRenderState state, CameraRenderState camera, double x, double y, double z, PoseStack poseStack,
                               SubmitNodeCollector collector) {
         Entity entity = state.entity;
@@ -65,7 +62,6 @@ public final class EntityRenderStates {
         }
     }
 
-    // What's set on the state, put on the mob.
     public static void apply(EntityRenderState state) {
         if (state instanceof EnderDragonRenderState dragon && dragon.flapTime >= 0.0F && state.entity instanceof EnderDragon entity) {
             entity.oFlapTime = entity.flapTime = dragon.flapTime;
@@ -95,8 +91,6 @@ public final class EntityRenderStates {
         }
     }
 
-    // Sets a walk cycle to this place and speed: its place only moves on as it's updated, so it's moved on to just short
-    // of the place, then updated at the speed twice (so its last two speeds are the speed, as drawing reads them).
     private static void walk(WalkAnimationState walk, float position, float speed) {
         walk.update(position - walk.position() - 2.0F * speed, 1.0F);
         walk.update(speed, 1.0F);

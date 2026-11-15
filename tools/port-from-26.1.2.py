@@ -49,6 +49,9 @@ KEEP: set[str] = {file.relative_to(KEEP_ROOT).as_posix() for file in KEEP_ROOT.r
 # The One Probe has no Fabric build for this version (its first is for 26.1.2).
 SKIP: list[str] = [
     "fabric/src/main/java/net/ixdarklord/trophypedestals/fabric/compat",
+    # KubeGroovy (KubeJS's Groovy fork) is only made for 26.1.2.
+    "neoforge/src/main/java/net/ixdarklord/trophypedestals/neoforge/compat/kubegroovy",
+    "neoforge/src/main/resources/kubegroovy.plugins.txt",
 ]
 
 RENAMES = [
@@ -91,7 +94,7 @@ RENAMES = [
      r'look.putString("CustomName", Component.Serializer.toJson(Component.literal(\1.getName().getString()), RegistryAccess.EMPTY));'),
     # Nothing calls a block entity as it's removed: its block's onRemove does (see EDITS).
     (r"    @Override\n    public void preRemoveSideEffects\(BlockPos pos, BlockState state\) \{\n        super\.preRemoveSideEffects\(pos, state\);\n",
-     "    /** As it's broken (on 1.21.1 its block's onRemove calls this). */\n    public void preRemoveSideEffects(BlockPos pos, BlockState state) {\n"),
+     "    public void preRemoveSideEffects(BlockPos pos, BlockState state) {\n"),
 
     # ── Blocks: 1.21.1's neighbour and shape updates, and item use, have their own signatures.
     (r"Block neighbor, @Nullable Orientation orientation, boolean moved\) \{\n        super\.neighborChanged\(state, level, pos, neighbor, orientation, moved\);",
@@ -315,8 +318,7 @@ def model_shape(text: str) -> str:
     at = text.find("\n    @Override\n", declared.end())
     if at < 0:
         return text
-    method = ("\n    // Drawn by its model (a block with a block entity draws nothing unless it says so).\n"
-              "    @Override\n"
+    method = ("\n    @Override\n"
               "    protected RenderShape getRenderShape(BlockState state) {\n"
               "        return RenderShape.MODEL;\n"
               "    }\n")
@@ -333,8 +335,7 @@ def block_entity_render(text: str) -> str:
     if renderer is None or create is None:
         return text
     method = (
-        "\n    // Drawn in one call here: its state filled, as it's extracted on 26.1, then drawn, as it's submitted.\n"
-        "    @Override\n"
+        "\n    @Override\n"
         f"    public void render({renderer.group(1)} blockEntity, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light, int overlay) {{\n"
         # (One that draws off-screen is listed twice here, so drawn twice a frame: see compat/render/OncePerFrame.)
         + ("        if (!OncePerFrame.first(blockEntity, partialTicks)) return;\n" if "shouldRenderOffScreen(" in text else "") +
@@ -362,9 +363,13 @@ UNUSED = [
 ]
 
 EDITS: dict[str, list[tuple[str, str]]] = {
+    # KubeGroovy is only made for 26.1.2 (see SKIP).
+    "CHANGELOG.md": [
+        ("- **KubeGroovy support** (NeoForge 26.1.2): Groovy server scripts get `$TrophyPedestals` and `$TrophyPedestalsEvents`, the same binding and events as on KubeJS.\n", ""),
+    ],
     # REI before 26.x has no display serializers (this display is made on the client, never sent or saved).
     "common/" + JAVA + "/compat/rei/TrophyPedestalsReiPlugin.java": [
-        ("\n        // (Made on the client from the game's own mobs: never sent or saved.)\n        @Override\n        public DisplaySerializer<? extends Display> getSerializer() {\n            return null;\n        }\n", ""),
+        ("\n        @Override\n        public DisplaySerializer<? extends Display> getSerializer() {\n            return null;\n        }\n", ""),
         ("import me.shedaniel.rei.api.common.display.DisplaySerializer;\n", ""),
     ],
     "fabric/src/main/resources/fabric.mod.json": [
@@ -403,14 +408,14 @@ EDITS: dict[str, list[tuple[str, str]]] = {
          "    @Override\n    protected VoxelShape getShape("),
     ],
     "common/" + JAVA + "/pedestal/TrophyDisplayBlock.java": [
-        ("    // Its trophies' settings that answer redstone know whether a signal reaches it.\n",
-         "    // Its trophies drop as it's broken (1.21.1 block entities hear nothing of it).\n"
+        # Its trophies drop as it's broken (1.21.1 block entities hear nothing of it).
+        ("    @Override\n    protected void neighborChanged(",
          "    @Override\n"
          "    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moved) {\n"
          "        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof TrophyCabinetBlockEntity display) display.preRemoveSideEffects(pos, state);\n"
          "        super.onRemove(state, level, pos, newState, moved);\n"
          "    }\n\n"
-         "    // Its trophies' settings that answer redstone know whether a signal reaches it.\n"),
+         "    @Override\n    protected void neighborChanged("),
     ],
     # A single Minecraft version: NeoForge 21.1's version ranges can't have identical boundaries ([1.21.1,1.21.1]).
     "neoforge/src/main/resources/META-INF/neoforge.mods.toml": [
@@ -431,7 +436,7 @@ EDITS: dict[str, list[tuple[str, str]]] = {
     # JEI 19's subtype interpreters and catalysts.
     "common/" + JAVA + "/compat/jei/TrophyPedestalsJeiPlugin.java": [
         ('    private static ISubtypeInterpreter<ItemStack> interpreter(Function<ItemStack, @Nullable String> subtype) {\n        return (stack, context) -> subtype.apply(stack);\n    }',
-         '    private static ISubtypeInterpreter<ItemStack> interpreter(Function<ItemStack, @Nullable String> subtype) {\n        // (JEI 19\'s has two methods: the second is its old string form.)\n        return new ISubtypeInterpreter<>() {\n            @Override\n            public @Nullable Object getSubtypeData(ItemStack stack, UidContext context) {\n                return subtype.apply(stack);\n            }\n\n            @Override\n            @SuppressWarnings("removal")\n            public String getLegacyStringSubtypeInfo(ItemStack stack, UidContext context) {\n                String data = subtype.apply(stack);\n                return data == null ? "" : data;\n            }\n        };\n    }'),
+         '    private static ISubtypeInterpreter<ItemStack> interpreter(Function<ItemStack, @Nullable String> subtype) {\n        return new ISubtypeInterpreter<>() {\n            @Override\n            public @Nullable Object getSubtypeData(ItemStack stack, UidContext context) {\n                return subtype.apply(stack);\n            }\n\n            @Override\n            @SuppressWarnings("removal")\n            public String getLegacyStringSubtypeInfo(ItemStack stack, UidContext context) {\n                String data = subtype.apply(stack);\n                return data == null ? "" : data;\n            }\n        };\n    }'),
         ('        registration.addCraftingStation(MobTrophyCategory.TYPE, Pedestals.DEFAULT.get());\n        registration.addCraftingStation(TrimCategory.TYPE, Items.GOLD_INGOT);',
          '        registration.addRecipeCatalyst(Pedestals.DEFAULT.get(), MobTrophyCategory.TYPE);\n        registration.addRecipeCatalyst(Items.GOLD_INGOT, TrimCategory.TYPE);'),
         ('import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;',
@@ -452,7 +457,7 @@ EDITS: dict[str, list[tuple[str, str]]] = {
         ('.add(drop.trophy());',
          '.addItemStack(drop.trophy());'),
         ('        Vector2f at = graphics.pose().transformPosition(0.0F, 0.0F, new Vector2f());\n        int x = Math.round(at.x()), y = Math.round(at.y());\n        InventoryScreen.extractEntityInInventoryFollowsMouse(graphics, x, y, x + MOB_WIDTH, y + HEIGHT, scale, 0.0625F,\n                x + MOB_WIDTH / 2.0F + LOOK_X, y + LOOK_Y, mob);',
-         "        // (Here it's drawn where the page is.)\n        InventoryScreen.renderEntityInInventoryFollowsMouse(graphics, 0, 0, MOB_WIDTH, HEIGHT, scale, 0.0625F, MOB_WIDTH / 2.0F + LOOK_X, LOOK_Y, mob);"),
+         "        InventoryScreen.renderEntityInInventoryFollowsMouse(graphics, 0, 0, MOB_WIDTH, HEIGHT, scale, 0.0625F, MOB_WIDTH / 2.0F + LOOK_X, LOOK_Y, mob);"),
         ('import org.joml.Vector2f;\n',
          ''),
     ],
@@ -731,6 +736,14 @@ def expected_tree(copied: bool = False) -> dict[str, bytes]:
             source = SOURCE / name
             if source.is_dir():
                 shutil.copytree(source, scratch / name)
+            elif name in EDITS:
+                # (A copied file takes its EDITS, and nothing else.)
+                text = source.read_bytes().decode("utf-8")
+                for original, replacement in EDITS[name]:
+                    if original not in text:
+                        sys.exit(f"{name}: expected text not found, port it by hand:\n{original}")
+                    text = text.replace(original, replacement)
+                (scratch / name).write_bytes(text.encode("utf-8"))
             else:
                 shutil.copy2(source, scratch / name)
     global ROOT_FOR_RESOURCES

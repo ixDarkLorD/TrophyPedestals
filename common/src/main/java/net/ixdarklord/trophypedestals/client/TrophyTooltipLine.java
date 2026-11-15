@@ -22,24 +22,11 @@ import java.util.Locale;
  * A ranked trophy's rank, as a badge after its name on the tooltip's first line, in the rank's color and bevelled like
  * the mod's panels: a dark outer rim with its corners cut, a lit top and left edge, a shaded bottom and right edge, a
  * plate darkening downwards, and on it a small faceted gem and the rank's name in capitals.
- * <pre>
- *  Iron Age Trophy ╭─────────╮
- *                  │ ◆ RARE  │
- *                  ╰─────────╯
- * </pre>
- * The game puts it under the name, so it takes no height there: it's drawn back up onto the name's line, and widens the
- * tooltip to fit it there.
  */
 public final class TrophyTooltipLine implements ClientTooltipComponent {
-    // The badge: its height, the gap between the name and it, where its gem sits from its left edge (and how wide it
-    // is), where its text starts, and the room after its text.
     private static final int HEIGHT = 11, GAP = 4, GEM_X = 3, GEM_SIZE = 5, LABEL_X = GEM_X + GEM_SIZE + 2, PADDING = 3;
-    // How far the badge's capitals (plain, without a shadow) sit down inside it, just under its lit edge.
     private static final int TEXT_Y = 2;
-    // How far up the name's line is: the name's own height and the gap the game leaves under it.
     private static final int NAME_LINE = 10 + 2;
-    // How far the badge's top sits above the name's: a pixel, clear of the tooltip's frame, so its capitals sit a pixel
-    // under the name's and line up with it and its shadow.
     private static final int ABOVE_NAME = 1;
 
     private final Component name;
@@ -50,7 +37,6 @@ public final class TrophyTooltipLine implements ClientTooltipComponent {
         ItemStack stack = tooltip.stack();
         PedestalRecord record = stack.get(Pedestals.RECORD.get());
         MobTrophyRecord mob = stack.get(Pedestals.MOB_TROPHY.get());
-        // (The name as the game shows it on the first line.)
         name = stack.getHoverName().copy().withStyle(stack.getRarity().color());
         ResourceLocation id = record != null ? record.rarity() : mob != null ? mob.rarity() : null;
         rarity = id == null || PedestalRarities.isNone(id) ? null : PedestalRarities.get(id);
@@ -77,24 +63,19 @@ public final class TrophyTooltipLine implements ClientTooltipComponent {
         int color = ARGB.opaque(rarity.color());
         int x0 = x + font.width(name) + GAP, x1 = x0 + badgeWidth(font), y0 = y - NAME_LINE - ABOVE_NAME, y1 = y0 + HEIGHT;
         int rim = ARGB.scaleRGB(color, 0.22F), lit = ARGB.scaleRGB(color, 0.62F), shade = ARGB.scaleRGB(color, 0.34F);
-        // The outer rim, its corners left out.
         graphics.fill(x0 + 1, y0, x1 - 1, y0 + 1, rim);
         graphics.fill(x0 + 1, y1 - 1, x1 - 1, y1, rim);
         graphics.fill(x0, y0 + 1, x0 + 1, y1 - 1, rim);
         graphics.fill(x1 - 1, y0 + 1, x1, y1 - 1, rim);
-        // The bevel: lit along the top and left, shaded along the bottom and right.
         graphics.fill(x0 + 1, y0 + 1, x1 - 1, y0 + 2, lit);
         graphics.fill(x0 + 1, y0 + 2, x0 + 2, y1 - 1, lit);
         graphics.fill(x0 + 2, y1 - 2, x1 - 1, y1 - 1, shade);
         graphics.fill(x1 - 2, y0 + 2, x1 - 1, y1 - 2, shade);
-        // The plate, darkening downwards.
         graphics.fillGradient(x0 + 2, y0 + 2, x1 - 2, y1 - 2, ARGB.color(245, ARGB.scaleRGB(color, 0.40F)), ARGB.color(245, ARGB.scaleRGB(color, 0.20F)));
         gem(graphics, x0 + GEM_X, y0 + (HEIGHT - GEM_SIZE) / 2, color);
         graphics.drawString(font, label, x0 + LABEL_X, y0 + TEXT_Y, ARGB.srgbLerp(0.45F, color, 0xFFFFFFFF), false);
     }
 
-    // The gem: a diamond five pixels across, lit from the upper left. Each letter is a shade: H highlight, W its white
-    // glint, L light, C the rank's color, D deep.
     private static final String[] GEM = {
             "  H  ",
             " HLC ",

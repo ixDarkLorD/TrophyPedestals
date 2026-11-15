@@ -1,6 +1,6 @@
 --- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/MobTrophyRecord.java
 +++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/MobTrophyRecord.java
-@@ -53,16 +53,7 @@
+@@ -40,16 +40,7 @@
              Codec.BOOL.optionalFieldOf("gilded", false).forGetter(MobTrophyRecord::gilded)
      ).apply(instance, MobTrophyRecord::new));
  
@@ -16,5 +16,5 @@
 -            MobTrophyRecord::new);
 +    public static final StreamCodec<RegistryFriendlyByteBuf, MobTrophyRecord> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC);
  
-     /** A record of a mob shown as it spawns. */
      public MobTrophyRecord(ResourceLocation entity, String slayer, long slainAt, ResourceLocation rarity) {
+         this(entity, slayer, slainAt, rarity, new CompoundTag());

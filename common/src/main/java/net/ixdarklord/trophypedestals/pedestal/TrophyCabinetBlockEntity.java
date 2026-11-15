@@ -35,20 +35,12 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
     private static final String TRIM = "Trim", POWERED = "Powered", OWNER = "Owner", ACCESS = "Access", SET_NAME = "SetName";
     private static final String[] SETTINGS_KEYS = {"LeftSettings", "RightSettings"};
     private final ItemStack[] items = {ItemStack.EMPTY, ItemStack.EMPTY};
-    // How each spot's trophy is shown (as a new pedestal until changed; back to that when its trophy comes off), and
-    // whether a redstone signal reaches the display (for the settings that answer it).
     private final DisplayedTrophySettings[] settings = {DisplayedTrophySettings.DEFAULT, DisplayedTrophySettings.DEFAULT};
     private boolean powered;
-    // Who placed it, and who else may use it: put trophies on it and take them off, trim it, adjust them. One placed
-    // before cabinets had owners has none, and anyone may.
     private @Nullable UUID owner;
     private PedestalBlockEntity.Access access = PedestalBlockEntity.Access.PRIVATE;
-    // When the name of the set its trophies make shows over it, as its owner sets it.
     private SetName setName = SetName.SHOWN;
-    // The block its trim is made of, in place of its gold (null for gold).
     private @Nullable ResourceLocation trim;
-    // On clients: each trophy as a pedestal of its own, not in the world, for its renderer to draw as one; and the trophy
-    // each was made for.
     private final @Nullable PedestalBlockEntity[] shown = new PedestalBlockEntity[SLOTS];
     private final ItemStack[] shownFor = {ItemStack.EMPTY, ItemStack.EMPTY};
     private final @Nullable DisplayedTrophySettings[] shownWith = new DisplayedTrophySettings[SLOTS];
@@ -62,7 +54,6 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
         return items[slot];
     }
 
-    // (A trophy put on or taken off: its spot's settings go back to a new pedestal's.)
     public void setItem(int slot, ItemStack stack) {
         items[slot] = stack;
         settings[slot] = DisplayedTrophySettings.DEFAULT;
@@ -70,14 +61,8 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
 
-    /**
-     * The trophy on this spot as a pedestal of its own (made from its item, as placing it would make one, standing where
-     * this block is but not in the world), for drawing it as it would be drawn on its own pedestal; null if the spot's
-     * empty. Made again when the trophy changes.
-     */
     public @Nullable PedestalBlockEntity shownPedestal(int slot) {
         ItemStack stack = items[slot];
-        // (A plain item isn't on a pedestal: it's drawn by itself.)
         if (stack.isEmpty() || level == null || !Pedestals.isTrophy(stack)) return null;
         if (shown[slot] == null || !ItemStack.matches(shownFor[slot], stack) || shownWith[slot] != settings[slot] || shownPowered[slot] != powered) {
             BlockState state = stack.getItem() instanceof BlockItem item && item.getBlock() instanceof PedestalBlock
@@ -104,7 +89,6 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
 
-    /** Records whether a redstone signal reaches it, sending a change to clients. */
     public void setPowered(boolean powered) {
         if (this.powered == powered) return;
         this.powered = powered;
@@ -130,7 +114,6 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
         return access;
     }
 
-    /** Makes the player its owner, who alone (with operators) may use it, until they let their team or everyone. */
     public void setOwner(UUID owner) {
         this.owner = owner;
         setChanged();
@@ -145,14 +128,12 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
         return setName;
     }
 
-    /** When the name of the set its trophies make shows, sent to clients. */
     public void setSetName(SetName setName) {
         this.setName = setName;
         setChanged();
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
 
-    /** When a cabinet's set name shows over it: always (the default), while it's looked at, or never. */
     public enum SetName implements StringRepresentable {
         SHOWN, ON_LOOK, HIDDEN;
 
@@ -163,18 +144,12 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
             return name().toLowerCase(Locale.ROOT);
         }
 
-        /** The one with this name ({@code shown}, {@code on_look}, {@code hidden}), or null. */
         public static @Nullable SetName byName(String name) {
             for (SetName setName : values()) if (setName.getSerializedName().equals(name)) return setName;
             return null;
         }
     }
 
-    /**
-     * Whether this player may use it (put trophies on it and take them off, trim it, adjust them): anyone while it has
-     * no owner or the server lets anyone ({@code pedestals.access}), else its owner, operators, and as its access says,
-     * its owner's team or everyone.
-     */
     public boolean canUse(Player player) {
         if (TrophyPedestalsConfig.PEDESTAL_ACCESS.get() == TrophyPedestalsConfig.PedestalAccess.ANYONE || owner == null || owner.equals(player.getUUID())) return true;
         if (player.hasPermissions(Commands.LEVEL_GAMEMASTERS)) return true;
@@ -185,7 +160,6 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
         };
     }
 
-    /** Whether this player may change who else may use it: its owner (anyone, with no owner) and operators. */
     public boolean canChangeAccess(Player player) {
         return owner == null || owner.equals(player.getUUID()) || player.hasPermissions(Commands.LEVEL_GAMEMASTERS);
     }
@@ -220,11 +194,9 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
         setName = input.read(SET_NAME, SetName.CODEC).orElse(SetName.SHOWN);
     }
 
-    // Its trim's material goes with its item, and comes back when that's placed.
     @Override
     protected void applyImplicitComponents(DataComponentInput components) {
         super.applyImplicitComponents(components);
-        // (Only a material that can be a trim: one set on its item some other way that can't is dropped.)
         ResourceLocation material = components.get(Pedestals.TRIM_MATERIAL.get());
         trim = material != null && TrophyDisplayBlock.canTrim(material) ? material : null;
     }
@@ -245,8 +217,6 @@ public class TrophyCabinetBlockEntity extends BlockEntity {
         output.discard(SET_NAME);
     }
 
-    // Its trophies drop when it's broken.
-    /** As it's broken (on 1.21.1 its block's onRemove calls this). */
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         if (level == null) return;
         for (ItemStack item : items) {

@@ -1,0 +1,22 @@
+--- a/common/src/main/java/net/ixdarklord/trophypedestals/client/DrawnMobs.java
++++ b/common/src/main/java/net/ixdarklord/trophypedestals/client/DrawnMobs.java
+@@ -6,7 +6,6 @@
+ import net.ixdarklord.trophypedestals.compat.render.EntityRenderState;
+ import net.ixdarklord.trophypedestals.compat.render.EntityRenderStates;
+ import net.ixdarklord.trophypedestals.compat.render.SubmitNodeCollector;
+-import net.minecraft.client.Minecraft;
+ import net.minecraft.core.registries.BuiltInRegistries;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.EntityType;
+@@ -31,8 +30,9 @@
+     }
+ 
+     public static boolean submit(EntityRenderState mob, CameraRenderState camera, PoseStack poseStack, SubmitNodeCollector collector) {
+-        while (!OWN_POSE.isEmpty()) OWN_POSE.popPose();
+-        OWN_POSE.last().set(poseStack.last());
++        while (!OWN_POSE.clear()) OWN_POSE.popPose();
++        OWN_POSE.last().pose().set(poseStack.last().pose());
++        OWN_POSE.last().normal().set(poseStack.last().normal());
+         try {
+             EntityRenderStates.submit(mob, camera, 0.0, 0.0, 0.0, OWN_POSE, collector);
+             return true;

@@ -8,8 +8,7 @@ import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 
 /**
  * Each player's own settings ({@code config/trophypedestals-client}): how much of pedestals' show their game draws and
- * plays, for a calmer or lighter trophy room, whatever the server or each pedestal's owner has set. They only take
- * away: a pedestal whose owner turned its flourishes or sounds off stays without them.
+ * plays, for a calmer or lighter trophy room, whatever the server or each pedestal's owner has set.
  */
 public final class TrophyPedestalsClientConfig {
     private static final ConfigBuilder BUILDER = Config.builder(TrophyPedestalsMod.MOD_ID, ConfigScope.CLIENT);
@@ -32,6 +31,5 @@ public final class TrophyPedestalsClientConfig {
 
     private TrophyPedestalsClientConfig() {}
 
-    /** Loads the config; called from the client mod constructor. */
     public static void init() {}
 }

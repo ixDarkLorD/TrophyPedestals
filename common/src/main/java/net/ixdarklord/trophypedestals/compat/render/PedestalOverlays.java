@@ -26,24 +26,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * A placed pedestal's see-through overlays: its column's flutes and its well's imprint. 26.1 draws those faces of its
- * block model translucent and the rest solid; 1.21.1 draws a block's model in one layer, so the pedestals' models here
- * leave them out (the port's {@code *_placed} models, drawn cutout) and their renderer draws them, from the faces of the
- * pedestal's template that use those textures, over the model.
- */
+/** A placed pedestal's see-through overlays: its column's flutes and its well's imprint. */
 public final class PedestalOverlays {
     private static final Map<String, ResourceLocation> TEXTURES = Map.of(
             "#column_flutes", ResourceLocation.tryParse("trophypedestals:block/pedestal/column_flutes"),
             "#well_imprint", ResourceLocation.tryParse("trophypedestals:block/pedestal/well_imprint"));
-    // Faces turned to the light: as a block's are shaded.
     private static final float SHADE_UP = 1.0F, SHADE_DOWN = 0.5F, SHADE_NORTH_SOUTH = 0.8F, SHADE_EAST_WEST = 0.6F;
-    // Each pedestal block's overlay faces (none for a block whose model has no template).
     private static final Map<Block, List<Face>> FACES = new ConcurrentHashMap<>();
 
     private PedestalOverlays() {}
 
-    /** Draws this pedestal's overlays over its model, the pose at its block's corner, in this light. */
     public static void draw(BlockState state, PoseStack poseStack, MultiBufferSource buffers, int light) {
         List<Face> faces = FACES.computeIfAbsent(state.getBlock(), PedestalOverlays::read);
         if (faces.isEmpty()) return;
@@ -61,7 +53,6 @@ public final class PedestalOverlays {
         });
     }
 
-    // The block's model's template (its parent), and the faces in it that use an overlay texture.
     private static List<Face> read(Block block) {
         ResourceLocation id = BuiltInRegistries.BLOCK.getKey(block);
         JsonObject model = json(ResourceLocation.tryParse(id.getNamespace() + ":models/block/" + id.getPath() + ".json"));
@@ -98,7 +89,6 @@ public final class PedestalOverlays {
         return new float[]{array.get(0).getAsFloat() / 16.0F, array.get(1).getAsFloat() / 16.0F, array.get(2).getAsFloat() / 16.0F};
     }
 
-    // A face of the box, its texture across the whole face: its left edge (as seen from outside) at u 0, its top at v 0.
     private static Face face(Direction direction, float[] from, float[] to, ResourceLocation texture) {
         float x0 = from[0], y0 = from[1], z0 = from[2], x1 = to[0], y1 = to[1], z1 = to[2];
         return switch (direction) {

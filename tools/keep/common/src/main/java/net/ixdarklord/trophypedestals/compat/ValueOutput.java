@@ -9,7 +9,7 @@ import net.minecraft.nbt.Tag;
 
 /**
  * 1.21.1's stand-in for 26.1's {@code ValueOutput}: the same calls, writing into a block entity's saved tag, so the
- * code saving pedestals is the same on every version. Values that can't be encoded are left out.
+ * code saving pedestals is the same on every version.
  */
 public final class ValueOutput {
     private final CompoundTag tag;
@@ -24,7 +24,6 @@ public final class ValueOutput {
         return new ValueOutput(tag, registries.createSerializationContext(NbtOps.INSTANCE));
     }
 
-    /** A tag written without the game's registries (for removing keys, and values that don't need them). */
     public static ValueOutput of(CompoundTag tag) {
         return new ValueOutput(tag, NbtOps.INSTANCE);
     }

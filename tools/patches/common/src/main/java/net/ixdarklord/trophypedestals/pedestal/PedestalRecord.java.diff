@@ -1,6 +1,6 @@
 --- a/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalRecord.java
 +++ b/common/src/main/java/net/ixdarklord/trophypedestals/pedestal/PedestalRecord.java
-@@ -55,16 +55,7 @@
+@@ -47,16 +47,7 @@
              ResourceLocation.CODEC.optionalFieldOf("icon").forGetter(PedestalRecord::icon)
      ).apply(instance, PedestalRecord::new));
  
@@ -16,5 +16,5 @@
 -            PedestalRecord::new);
 +    public static final StreamCodec<RegistryFriendlyByteBuf, PedestalRecord> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC);
  
-     /** A record with its kind's own name and icon for its subject. */
      public PedestalRecord(ResourceLocation kind, ResourceLocation subject, Unlocker unlocker, String name, long unlockedAt, ResourceLocation rarity) {
+         this(kind, subject, unlocker, name, unlockedAt, rarity, Optional.empty(), Optional.empty());

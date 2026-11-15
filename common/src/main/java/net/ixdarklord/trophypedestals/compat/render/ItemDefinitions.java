@@ -36,15 +36,11 @@ import java.util.stream.Stream;
 
 /**
  * 26.1's item definitions (the mod's {@code assets/trophypedestals/items/*.json}, which 1.21.1 doesn't read), drawn on
- * 1.21.1: every pedestal, cabinet and shelf item has a code-drawn item model ({@code builtin/entity}), drawn here as its
- * definition says. Read are the kinds those definitions use: {@code minecraft:model}, {@code minecraft:special} (with
- * {@link SpecialModelRendererRegistry}'s types), {@code minecraft:composite}, {@code minecraft:condition} on
- * {@code minecraft:has_component} and {@code minecraft:select} on {@code minecraft:display_context}. The models they name
- * are baked as extra models; both are read again as the resources reload.
+ * 1.21.1: every pedestal, cabinet and shelf item has a code-drawn item model ({@code builtin/entity}), drawn here as
+ * its definition says.
  */
 public final class ItemDefinitions {
     private static final String FOLDER = "items";
-    // The definitions read at the last resource load, by item.
     private static volatile Map<ResourceLocation, Node> definitions = Map.of();
 
     private ItemDefinitions() {}
@@ -55,7 +51,6 @@ public final class ItemDefinitions {
                 .forEach(item -> ItemRendererRegistry.register(item, ItemDefinitions::render));
     }
 
-    // Reads the definitions, keeping them for drawing, and names the models they use for baking.
     private static List<ResourceLocation> read(ResourceManager resources) {
         Map<ResourceLocation, Node> read = new HashMap<>();
         Set<ResourceLocation> models = new LinkedHashSet<>();
@@ -124,8 +119,6 @@ public final class ItemDefinitions {
         }
     }
 
-    // Draws an item by its definition. The game has turned the pose by the code-drawn model's display (none) and moved
-    // it to the model's corner; each part is drawn as its own model is held.
     private static void render(ItemStack stack, ItemDisplayContext context, PoseStack poseStack, MultiBufferSource buffers, int light, int overlay) {
         Node definition = definitions.get(BuiltInRegistries.ITEM.getKey(stack.getItem()));
         if (definition == null) return;
@@ -150,10 +143,6 @@ public final class ItemDefinitions {
         public void render(ItemStack stack, ItemDisplayContext context, PoseStack poseStack, MultiBufferSource buffers, int light, int overlay) {}
     }
 
-    // A baked model, held as its own display says. The game would draw a block item's model in its block's layer (solid
-    // for the shelves and cabinets, cutout for the pedestals), so the see-through flutes would come out black and the
-    // clear pixels of the lens and bezel as their colors: as 26.1 picks a layer for each face, these are drawn in the
-    // translucent item sheet, which takes clear, see-through and solid pixels alike.
     private record Model(ResourceLocation model) implements Node {
         @Override
         public void render(ItemStack stack, ItemDisplayContext context, PoseStack poseStack, MultiBufferSource buffers, int light, int overlay) {
@@ -164,7 +153,6 @@ public final class ItemDefinitions {
         }
     }
 
-    // A code-drawn part, held as its base model's display says.
     private record Special<T>(ResourceLocation base, SpecialModelRenderer<T> renderer) implements Node {
         @Override
         public void render(ItemStack stack, ItemDisplayContext context, PoseStack poseStack, MultiBufferSource buffers, int light, int overlay) {

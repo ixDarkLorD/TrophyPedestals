@@ -316,6 +316,8 @@
   "trophypedestals.rarity.trophypedestals.rare": "Rare",
   "trophypedestals.rarity.trophypedestals.epic": "Epic",
   "trophypedestals.rarity.trophypedestals.legendary": "Legendary",
+  "enchantment.trophypedestals.trophy_hunter": "Trophy Hunter",
+  "enchantment.trophypedestals.trophy_hunter.desc": "Lets slain mobs drop their trophies, on servers where mob trophies need it.",
   "item.trophypedestals.trophy_ledger": "Mob Trophies Ledger",
   "trophypedestals.ledger.count": "Collected %s of %s (%s%%)",
   "trophypedestals.ledger.search": "Search",
