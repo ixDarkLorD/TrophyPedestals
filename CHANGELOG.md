@@ -6,7 +6,7 @@ This file is for listing all the changes to this project
 - **`/trophypedestals config`:** opens Trophy Pedestals' config screens, and `/trophypedestals config <name>` just one. `/trophypedestals config reload` reloads the config files after you edit them by hand, for operators.
 ### 🔧 Changes
 - Every player can now see `/trophypedestals`, but `mob_trophy` and `trophy` still need operator permission.
-- Needs CoolCatLib 8.3.0.
+- Needs CoolCatLib 9.0.0.
 
 ## v0.2.1 Release | Nov 16, 2026
 ### ✨ New Features

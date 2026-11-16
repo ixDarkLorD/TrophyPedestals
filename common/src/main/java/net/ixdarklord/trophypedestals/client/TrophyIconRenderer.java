@@ -4,7 +4,7 @@ import com.mojang.math.Axis;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.ixdarklord.coolcatcore.api.client.registry.SpecialModelRendererRegistry;
+import net.ixdarklord.coolcatcanvas.api.client.registry.ItemRendererRegistry;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.api.TrophyKinds;
 import net.ixdarklord.trophypedestals.pedestal.MobLooks;
@@ -69,7 +69,7 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
     }
 
     public static void init() {
-        SpecialModelRendererRegistry.register(TYPE, Unbaked.MAP_CODEC);
+        ItemRendererRegistry.register(TYPE, Unbaked.MAP_CODEC);
     }
 
     public record Shown(ItemStack icon, @Nullable Identifier rarity, @Nullable MobTrophyRecord mob) {

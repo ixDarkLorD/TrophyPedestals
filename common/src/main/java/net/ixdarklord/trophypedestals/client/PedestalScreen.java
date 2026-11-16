@@ -1,5 +1,5 @@
 package net.ixdarklord.trophypedestals.client;
-import net.ixdarklord.coolcatcanvas.api.client.gui.components.SceneViewportWidget;
+import net.ixdarklord.coolcatcanvas.api.client.gui.widget.SceneViewportWidget;
 import net.ixdarklord.coolcatcanvas.api.client.viewport.SceneViewport;
 import net.ixdarklord.coolcatcore.api.network.Network;
 import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
