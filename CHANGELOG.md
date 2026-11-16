@@ -1,7 +1,7 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v0.3.0 Release | Unreleased
+## v0.3.0 Release | Nov 16, 2026
 ### ✨ New Features
 - **`/trophypedestals config`:** opens Trophy Pedestals' config screens, and `/trophypedestals config <name>` just one. `/trophypedestals config reload` reloads the config files after you edit them by hand, for operators.
 ### 🔧 Changes
