@@ -1,13 +1,12 @@
 package net.ixdarklord.trophypedestals.command;
 
-import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-import net.ixdarklord.coolcatcore.api.event.v2.common.CommandEvents;
+import net.ixdarklord.coolcatcore.api.command.ModCommands;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
 import net.ixdarklord.trophypedestals.api.PedestalRarity;
@@ -62,18 +61,19 @@ public final class TrophyPedestalsCommands {
     private TrophyPedestalsCommands() {}
 
     public static void init() {
-        CommandEvents.REGISTER.register((dispatcher, context, selection) -> register(dispatcher));
+        ModCommands.register(TrophyPedestalsMod.MOD_ID, TrophyPedestalsMod.MOD_ID, (root, context, selection) -> register(root));
     }
 
-    private static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal(TrophyPedestalsMod.MOD_ID).requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS));
-        root.then(Commands.literal("mob_trophy").then(Commands.argument("targets", EntityArgument.players())
+    // The permission is on each part rather than the root, so the config command CoolCatLib adds beside them
+    // (/trophypedestals config) stays open to every player.
+    private static void register(LiteralArgumentBuilder<CommandSourceStack> root) {
+        root.then(Commands.literal("mob_trophy").requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("targets", EntityArgument.players())
                 .then(Commands.argument("entity", ResourceLocationArgument.id()).suggests(ENTITIES).executes(ctx -> mobTrophy(ctx, null, null))
                         .then(Commands.argument("pedestal", ResourceLocationArgument.id()).suggests(PEDESTALS)
                                 .executes(ctx -> mobTrophy(ctx, ResourceLocationArgument.getId(ctx, "pedestal"), null))
                                 .then(Commands.argument("rarity", ResourceLocationArgument.id()).suggests(RARITIES)
                                         .executes(ctx -> mobTrophy(ctx, ResourceLocationArgument.getId(ctx, "pedestal"), ResourceLocationArgument.getId(ctx, "rarity"))))))));
-        root.then(Commands.literal("trophy").then(Commands.argument("targets", EntityArgument.players())
+        root.then(Commands.literal("trophy").requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("targets", EntityArgument.players())
                 .then(Commands.argument("title", StringArgumentType.string()).executes(ctx -> trophy(ctx, null, null, null))
                         .then(Commands.argument("icon", ResourceLocationArgument.id()).suggests(ITEMS)
                                 .executes(ctx -> trophy(ctx, ResourceLocationArgument.getId(ctx, "icon"), null, null))
@@ -82,7 +82,6 @@ public final class TrophyPedestalsCommands {
                                         .then(Commands.argument("pedestal", ResourceLocationArgument.id()).suggests(PEDESTALS)
                                                 .executes(ctx -> trophy(ctx, ResourceLocationArgument.getId(ctx, "icon"), ResourceLocationArgument.getId(ctx, "rarity"),
                                                         ResourceLocationArgument.getId(ctx, "pedestal")))))))));
-        dispatcher.register(root);
     }
 
     private static int trophy(CommandContext<CommandSourceStack> ctx, @Nullable ResourceLocation iconId, @Nullable ResourceLocation rarityId, @Nullable ResourceLocation pedestalId)

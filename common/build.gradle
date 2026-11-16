@@ -3,6 +3,7 @@ apply from: "${rootProject.sharedScripts}/common.gradle"
 dependencies {
     // CoolCatLib (common): mod constructors, events, networking, configs, registries, game tests
     modCompileOnly("net.ixdarklord.coolcatlib:coolcatlib-common:${coolcatlib_version}") { transitive = false }
+    modCompileOnly("net.ixdarklord.coolcatlib:coolcatlib-canvas-common:${coolcatlib_version}") { transitive = false }
 
     // Optional recipe viewer: tells mob trophies apart (compat/jei)
     modCompileOnly libs.jei.api.common
