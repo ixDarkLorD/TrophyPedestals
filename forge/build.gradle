@@ -3,6 +3,7 @@ apply from: "${rootProject.sharedScripts}/forge.gradle"
 dependencies {
     // CoolCatLib (Forge). Its common classes are inside this jar.
     modImplementation("net.ixdarklord.coolcatlib:coolcatlib-forge:${coolcatlib_version}") { transitive = false }
+    modImplementation("net.ixdarklord.coolcatlib:coolcatlib-canvas-forge:${coolcatlib_version}") { transitive = false }
 
     // Dev runs only, never published: MCP Bridge lets the game be driven from outside. Not transitive, because it still points
     // at CoolCatLib's old coordinates and would load a second copy of it.
