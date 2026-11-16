@@ -1,7 +1,7 @@
 package net.ixdarklord.trophypedestals.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.ixdarklord.coolcatcanvas.api.client.gui.components.SceneViewportWidget;
+import net.ixdarklord.coolcatcanvas.api.client.gui.widget.SceneViewportWidget;
 import net.ixdarklord.coolcatcanvas.api.client.viewport.SceneViewport;
 import net.ixdarklord.coolcatcore.api.network.Network;
 import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
