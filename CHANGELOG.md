@@ -1,6 +1,13 @@
 # Changelog
 This file is for listing all the changes to this project
 
+## v0.3.0 Release | Unreleased
+### ✨ New Features
+- **`/trophypedestals config`:** opens Trophy Pedestals' config screens, and `/trophypedestals config <name>` just one. `/trophypedestals config reload` reloads the config files after you edit them by hand, for operators.
+### 🔧 Changes
+- Every player can now see `/trophypedestals`, but `mob_trophy` and `trophy` still need operator permission.
+- Needs CoolCatLib 8.3.0.
+
 ## v0.2.1 Release | Nov 16, 2026
 ### ✨ New Features
 - **Looting raises the trophy chance:** each level of Looting on the weapon adds half the chance again (`mob_trophies.looting_bonus`, 0.5), so Looting III makes a trophy two and a half times as likely.
