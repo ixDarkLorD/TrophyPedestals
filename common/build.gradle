@@ -3,6 +3,7 @@ apply from: "${rootProject.sharedScripts}/common.gradle"
 dependencies {
     // CoolCatLib (common): mod constructors, events, networking, configs, registries, game tests
     compileOnly "net.ixdarklord.coolcatlib:coolcatlib-common:${coolcatlib_version}"
+    compileOnly "net.ixdarklord.coolcatlib:coolcatlib-canvas-common:${coolcatlib_version}"
 
     // Optional recipe viewer: tells mob trophies apart (compat/jei)
     compileOnly "mezz.jei:jei-26.2-common-api:${jei_version}"
