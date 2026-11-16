@@ -2,7 +2,7 @@ package net.ixdarklord.trophypedestals.client;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import net.ixdarklord.coolcatcore.api.client.registry.BlockEntityRendererRegistry;
+import net.ixdarklord.coolcatcanvas.api.client.registry.BlockEntityRendererRegistry;
 import net.ixdarklord.coolcatcore.api.client.registry.BlockRenderLayers;
 import net.ixdarklord.coolcatcore.api.client.registry.TooltipComponentRegistry;
 import net.ixdarklord.coolcatcore.api.event.v2.client.ItemTooltipEvents;
