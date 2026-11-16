@@ -3,7 +3,7 @@ package net.ixdarklord.trophypedestals.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.ixdarklord.coolcatcore.api.client.registry.SpecialModelRendererRegistry;
+import net.ixdarklord.coolcatcanvas.api.client.registry.ItemRendererRegistry;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -30,7 +30,7 @@ public final class DisplayTrimItemRenderer implements SpecialModelRenderer<Ident
     }
 
     public static void init() {
-        SpecialModelRendererRegistry.register(TYPE, Unbaked.MAP_CODEC);
+        ItemRendererRegistry.register(TYPE, Unbaked.MAP_CODEC);
     }
 
     @Override
