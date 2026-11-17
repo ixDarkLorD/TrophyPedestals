@@ -1,7 +1,7 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v0.3.1 (unreleased)
+## v0.3.1 Release | Nov 17, 2026
 ### 🐛 Fixes
 - Ranked trophies' light, beam, halos, crown and flares stay centred on their pedestal far from spawn, instead of drifting up to a block off as they got near the world border.
 
