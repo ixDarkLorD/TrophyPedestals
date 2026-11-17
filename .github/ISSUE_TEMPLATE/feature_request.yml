@@ -1,0 +1,52 @@
+name: Feature Request
+description: An idea for a new trophy, display, effect, setting or API.
+labels: [ "enhancement" ]
+assignees:
+  - ixDarkLorD
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Thank you for the idea!** Suggestions shape what comes next in Trophy Pedestals.
+        Check the [docs](https://ixdarklord.github.io/TrophyPedestals/docs/) first: it may already be possible with a config option or a data pack.
+  - type: textarea
+    attributes:
+      label: What you want to do
+      description: The trophy room, display or setup you're trying to make, and what stops you today.
+      placeholder: "Example: My server's trophy room has dozens of pedestals and I'd like to sort them by rank."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Your idea
+      description: How you picture it working, for players and for pack makers.
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Pedestals and displays
+        - Mob trophies
+        - Trophy effects and ranks
+        - Cabinets, shelves and glass cases
+        - Collecting (ledger, sets, leaderboards)
+        - Earned trophies
+        - Config, data packs and commands
+        - Other mods and the API
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Example
+      description: Optional. How a config or data pack entry could look, or a sketch or screenshot of the result.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Other options
+      description: Optional. Workarounds you use now, or other mods that do something similar.
+    validations:
+      required: false
