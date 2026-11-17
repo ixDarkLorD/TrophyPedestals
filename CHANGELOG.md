@@ -1,6 +1,11 @@
 # Changelog
 This file is for listing all the changes to this project
 
+## v0.3.2 (unreleased)
+### 🐛 Fixes
+- On Forge, the mod's textures, models, recipes and loot now load: its jar was missing the file Forge needs to read them, so blocks and items showed as missing textures and couldn't be crafted.
+- A trophy in your hand or in an inventory slot is no longer cut off where its showcase light and rising rings cross it.
+
 ## v0.3.1 Release | Nov 17, 2026
 ### 🐛 Fixes
 - Ranked trophies' light, beam, halos, crown and flares stay centred on their pedestal far from spawn, instead of drifting up to a block off as they got near the world border.
