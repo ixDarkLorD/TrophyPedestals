@@ -24,14 +24,17 @@ public final class PedestalLight {
     private static final VfxMaterial FADE = new VfxMaterial(TrophyPedestalsMod.id("textures/misc/corner_fade.png"), VfxBlend.ADDITIVE, 0.0F);
     private static final int FADE_SIZE = 64;
     private static final VfxMaterial LENS = new VfxMaterial(VfxMaterial.GLOW, VfxBlend.ADDITIVE, 0.0F);
-    private static final int QUAD = 17;
+    private static final int QUAD = 5;
     private static final int MAX_QUADS = 1 << 16;
 
+    private static double[] quadCorners = new double[12 * 1024];
     private static float[] quads = new float[QUAD * 1024];
     private static int quadCount;
-    private static float[] lenses = new float[5 * 64];
+    private static double[] lensCenters = new double[3 * 64];
+    private static float[] lenses = new float[2 * 64];
     private static int lensCount;
-    private static float[] flares = new float[6 * 64];
+    private static double[] flareCenters = new double[3 * 64];
+    private static float[] flares = new float[3 * 64];
     private static int flareCount;
     private static VfxMaterial flareMaterial;
 
@@ -47,24 +50,25 @@ public final class PedestalLight {
         if (quadCount > 0) {
             VfxDraw draw = frame.draw(FADE);
             for (int i = 0; i < quadCount; i++) {
-                int at = i * QUAD;
-                draw.quad(new Vec3(quads[at], quads[at + 1], quads[at + 2]), new Vec3(quads[at + 3], quads[at + 4], quads[at + 5]),
-                        new Vec3(quads[at + 6], quads[at + 7], quads[at + 8]), new Vec3(quads[at + 9], quads[at + 10], quads[at + 11]),
-                        quads[at + 13], quads[at + 15], quads[at + 14], quads[at + 16], Float.floatToRawIntBits(quads[at + 12]));
+                int at = i * QUAD, c = i * 12;
+                double[] p = quadCorners;
+                draw.quad(new Vec3(p[c], p[c + 1], p[c + 2]), new Vec3(p[c + 3], p[c + 4], p[c + 5]),
+                        new Vec3(p[c + 6], p[c + 7], p[c + 8]), new Vec3(p[c + 9], p[c + 10], p[c + 11]),
+                        quads[at + 1], quads[at + 3], quads[at + 2], quads[at + 4], Float.floatToRawIntBits(quads[at]));
             }
         }
         if (lensCount > 0) {
             VfxDraw draw = frame.draw(LENS);
             for (int i = 0; i < lensCount; i++) {
-                int at = i * 5;
-                draw.flat(lenses[at], lenses[at + 1], lenses[at + 2], lenses[at + 3], 0.0F, Float.floatToRawIntBits(lenses[at + 4]));
+                int at = i * 2, c = i * 3;
+                draw.flat(lensCenters[c], lensCenters[c + 1], lensCenters[c + 2], lenses[at], 0.0F, Float.floatToRawIntBits(lenses[at + 1]));
             }
         }
         if (flareCount > 0) {
             VfxDraw draw = frame.draw(flareMaterial);
             for (int i = 0; i < flareCount; i++) {
-                int at = i * 6;
-                draw.billboard(flares[at], flares[at + 1], flares[at + 2], flares[at + 3], flares[at + 4], Float.floatToRawIntBits(flares[at + 5]));
+                int at = i * 3, c = i * 3;
+                draw.billboard(flareCenters[c], flareCenters[c + 1], flareCenters[c + 2], flares[at], flares[at + 1], Float.floatToRawIntBits(flares[at + 2]));
             }
         }
         quadCount = lensCount = flareCount = 0;
@@ -72,14 +76,17 @@ public final class PedestalLight {
 
     static void flare(double x, double y, double z, float half, float roll, int argb) {
         if (ARGB.alpha(argb) == 0) return;
-        if ((flareCount + 1) * 6 > flares.length) flares = Arrays.copyOf(flares, flares.length * 2);
-        int at = flareCount++ * 6;
-        flares[at] = (float) x;
-        flares[at + 1] = (float) y;
-        flares[at + 2] = (float) z;
-        flares[at + 3] = half;
-        flares[at + 4] = roll;
-        flares[at + 5] = Float.intBitsToFloat(argb);
+        if ((flareCount + 1) * 3 > flares.length) {
+            flares = Arrays.copyOf(flares, flares.length * 2);
+            flareCenters = Arrays.copyOf(flareCenters, flareCenters.length * 2);
+        }
+        int at = flareCount++ * 3;
+        flareCenters[at] = x;
+        flareCenters[at + 1] = y;
+        flareCenters[at + 2] = z;
+        flares[at] = half;
+        flares[at + 1] = roll;
+        flares[at + 2] = Float.intBitsToFloat(argb);
     }
 
     interface Glow {
@@ -94,9 +101,9 @@ public final class PedestalLight {
     }
 
     static Glow world(double x, double y, double z, float scale) {
-        WORLD.x = (float) x;
-        WORLD.y = (float) y;
-        WORLD.z = (float) z;
+        WORLD.x = x;
+        WORLD.y = y;
+        WORLD.z = z;
         WORLD.scale = scale;
         return WORLD;
     }
@@ -154,7 +161,8 @@ public final class PedestalLight {
     private static final World WORLD = new World();
 
     private static final class World implements Glow {
-        private float x, y, z, scale = 1.0F;
+        private double x, y, z;
+        private float scale = 1.0F;
 
         @Override
         public void quad(float ax, float ay, float az, float bx, float by, float bz, float cx, float cy, float cz,
@@ -168,23 +176,26 @@ public final class PedestalLight {
         private void corner(float ax, float ay, float az, float bx, float by, float bz, float cx, float cy, float cz,
                             float dx, float dy, float dz, int color, float u0, float u1, float v0, float v1) {
             if (ARGB.alpha(color) == 0 || quadCount >= MAX_QUADS) return;
-            if ((quadCount + 1) * QUAD > quads.length) quads = Arrays.copyOf(quads, quads.length * 2);
-            int at = quadCount++ * QUAD;
-            put(at, ax, ay, az);
-            put(at + 3, dx, dy, dz);
-            put(at + 6, cx, cy, cz);
-            put(at + 9, bx, by, bz);
-            quads[at + 12] = Float.intBitsToFloat(color);
-            quads[at + 13] = texel(u0);
-            quads[at + 14] = texel(u1);
-            quads[at + 15] = texel(v0);
-            quads[at + 16] = texel(v1);
+            if ((quadCount + 1) * QUAD > quads.length) {
+                quads = Arrays.copyOf(quads, quads.length * 2);
+                quadCorners = Arrays.copyOf(quadCorners, quadCorners.length * 2);
+            }
+            int c = quadCount * 12, at = quadCount++ * QUAD;
+            put(c, ax, ay, az);
+            put(c + 3, dx, dy, dz);
+            put(c + 6, cx, cy, cz);
+            put(c + 9, bx, by, bz);
+            quads[at] = Float.intBitsToFloat(color);
+            quads[at + 1] = texel(u0);
+            quads[at + 2] = texel(u1);
+            quads[at + 3] = texel(v0);
+            quads[at + 4] = texel(v1);
         }
 
         private void put(int at, float px, float py, float pz) {
-            quads[at] = x + px * scale;
-            quads[at + 1] = y + py * scale;
-            quads[at + 2] = z + pz * scale;
+            quadCorners[at] = x + px * scale;
+            quadCorners[at + 1] = y + py * scale;
+            quadCorners[at + 2] = z + pz * scale;
         }
 
         private static float texel(float t) {
@@ -194,13 +205,16 @@ public final class PedestalLight {
         @Override
         public void lens(float y, float radius, int color, int segments) {
             if (ARGB.alpha(color) == 0) return;
-            if ((lensCount + 1) * 5 > lenses.length) lenses = Arrays.copyOf(lenses, lenses.length * 2);
-            int at = lensCount++ * 5;
-            lenses[at] = x + 0.5F * scale;
-            lenses[at + 1] = this.y + y * scale;
-            lenses[at + 2] = z + 0.5F * scale;
-            lenses[at + 3] = radius * scale;
-            lenses[at + 4] = Float.intBitsToFloat(color);
+            if ((lensCount + 1) * 2 > lenses.length) {
+                lenses = Arrays.copyOf(lenses, lenses.length * 2);
+                lensCenters = Arrays.copyOf(lensCenters, lensCenters.length * 2);
+            }
+            int c = lensCount * 3, at = lensCount++ * 2;
+            lensCenters[c] = x + 0.5 * scale;
+            lensCenters[c + 1] = this.y + y * scale;
+            lensCenters[c + 2] = z + 0.5 * scale;
+            lenses[at] = radius * scale;
+            lenses[at + 1] = Float.intBitsToFloat(color);
         }
     }
 
