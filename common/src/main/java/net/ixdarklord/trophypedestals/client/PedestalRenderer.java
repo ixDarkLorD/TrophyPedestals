@@ -50,7 +50,6 @@ import net.minecraft.client.model.HierarchicalModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
@@ -622,7 +621,9 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         extractRenderState(blockEntity, state, partialTicks, camera, null);
         state.lightCoords = light;
-        submit(state, poseStack, new SubmitNodeCollector(buffers), CameraRenderState.current());
+        SubmitNodeCollector collector = new SubmitNodeCollector(buffers);
+        submit(state, poseStack, collector, CameraRenderState.current());
+        collector.flush();
         PedestalOverlays.draw(blockEntity.getBlockState(), poseStack, buffers, light);
     }
 
@@ -1222,9 +1223,9 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         float breath = 0.5F + 0.5F * Mth.sin(time * Mth.TWO_PI / BREATH_TICKS);
         int tint = ARGB.opaque(ARGB.scaleRGB(rarity.color(), BREATH_DIM + (1.0F - BREATH_DIM) * breath));
         OrderedSubmitNodeCollector later = collector.order(ITEM_LIGHT_ORDER);
-        later.submitCustomGeometry(poseStack, RenderType.entityTranslucent(WELL_GLOW), (pose, consumer) -> litGlass(consumer, pose, tint));
+        later.submitCustomGeometry(poseStack, RenderType.entityTranslucentEmissive(WELL_GLOW), (pose, consumer) -> litGlass(consumer, pose, tint));
         TextureAtlasSprite white = Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS).getSprite(ITEM_LIGHT_SPRITE);
-        later.submitCustomGeometry(poseStack, Sheets.translucentItemSheet(), (pose, consumer) -> {
+        later.submitCustomGeometry(poseStack, RenderType.entityTranslucentEmissive(TextureAtlas.LOCATION_BLOCKS), (pose, consumer) -> {
             int glow = ARGB.color((int) ((40 + 8 * Math.min(rarity.rank(), 5)) * (GLOW_DIM + (1.0F - GLOW_DIM) * breath)), rarity.color());
             float up = GLASS_TOP + 0.002F;
             boolean withRings = rings && rarity.rings() > 0;

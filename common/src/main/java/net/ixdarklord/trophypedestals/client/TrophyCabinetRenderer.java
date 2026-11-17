@@ -90,7 +90,9 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
         Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         extractRenderState(blockEntity, state, partialTicks, camera, null);
         state.lightCoords = light;
-        submit(state, poseStack, new SubmitNodeCollector(buffers), CameraRenderState.current());
+        SubmitNodeCollector collector = new SubmitNodeCollector(buffers);
+        submit(state, poseStack, collector, CameraRenderState.current());
+        collector.flush();
     }
 
     public void extractRenderState(TrophyCabinetBlockEntity cabinet, State state, float partialTicks, Vec3 cameraPosition,
