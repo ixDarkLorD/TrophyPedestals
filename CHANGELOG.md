@@ -1,7 +1,7 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v0.3.2 (unreleased)
+## v0.3.2 Release | Nov 18, 2026
 ### 🐛 Fixes
 - On Forge, the mod's textures, models, recipes and loot now load: its jar was missing the file Forge needs to read them, so blocks and items showed as missing textures and couldn't be crafted.
 - A trophy in your hand or in an inventory slot is no longer cut off where its showcase light and rising rings cross it.
