@@ -1,6 +1,10 @@
 # Changelog
 This file is for listing all the changes to this project
 
+## v0.3.1 (unreleased)
+### 🐛 Fixes
+- Ranked trophies' light, beam, halos, crown and flares stay centred on their pedestal far from spawn, instead of drifting up to a block off as they got near the world border.
+
 ## v0.3.0 Release | Nov 16, 2026
 ### ✨ New Features
 - **`/trophypedestals config`:** opens Trophy Pedestals' config screens, and `/trophypedestals config <name>` just one. `/trophypedestals config reload` reloads the config files after you edit them by hand, for operators.
