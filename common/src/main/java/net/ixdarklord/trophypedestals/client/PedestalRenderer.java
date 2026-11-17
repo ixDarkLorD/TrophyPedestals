@@ -184,6 +184,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         BlockEntityRendererRegistry.register(Pedestals.CABINET_ENTITY, TrophyCabinetRenderer::new);
         Pedestals.BLOCKS_BY_STONE.values().forEach(block -> BlockRenderLayers.register(block, RenderType.cutout()));
         BlockRenderLayers.register(Pedestals.CUSTOM, RenderType.cutout());
+        BlockRenderLayers.register(Pedestals.VITRINE_TOP, RenderType.cutout());
         TooltipComponentRegistry.register(TrophyTooltip.class, TrophyTooltipLine::new);
         ItemTooltipEvents.APPEND.register((stack, player, flag, lines) -> {
             PedestalRecord record = Components.get(stack, Pedestals.RECORD.get());
