@@ -159,7 +159,9 @@ public final class ItemDefinitions {
             poseStack.pushPose();
             ExtraModels.get(base).getTransforms().getTransform(context).apply(leftHand(context), poseStack);
             poseStack.translate(-0.5F, -0.5F, -0.5F);
-            renderer.submit(renderer.extractArgument(stack), poseStack, new SubmitNodeCollector(buffers), light, overlay, stack.hasFoil(), 0);
+            SubmitNodeCollector collector = new SubmitNodeCollector(buffers);
+            renderer.submit(renderer.extractArgument(stack), poseStack, collector, light, overlay, stack.hasFoil(), 0);
+            collector.flush(true);
             poseStack.popPose();
         }
     }
