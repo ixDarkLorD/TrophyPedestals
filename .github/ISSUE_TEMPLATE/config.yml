@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://ixdarklord.github.io/TrophyPedestals/docs/
+    about: Every block, trophy, config option and data pack format, and the API for mod developers.
+  - name: Questions and help on Discord
+    url: https://discord.gg/ZapGEPqm2V
+    about: Ask how to do something with Trophy Pedestals, or share your trophy room.
