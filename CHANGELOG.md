@@ -1,7 +1,7 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v0.3.2 (unreleased)
+## v0.3.2 Release | Nov 18, 2026
 ### 🐛 Fixes
 - A trophy in your hand or in an inventory slot is no longer cut off where its showcase light and rising rings cross it.
 
