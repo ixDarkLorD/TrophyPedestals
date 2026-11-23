@@ -31,7 +31,7 @@ import java.util.Map;
  * light; and its ambient sound now and then while the player is near.
  */
 public final class PedestalParticles {
-    private static final double SPIRAL_RADIUS = 0.36, ORBIT_RADIUS = 0.5, SOUND_RANGE = 12.0;
+    private static final double SPIRAL_RADIUS = 0.36, ORBIT_RADIUS = 0.5, SOUND_RANGE = 12.0, PARTICLE_REACH = 32.0;
     private static final int BURST_SPARKS = 16;
     private static final ResourceLocation SPARKLE = TrophyPedestalsMod.id("textures/vfx/sparkle.png");
     private static final ResourceLocation GLINT = TrophyPedestalsMod.id("textures/vfx/glint.png");
@@ -47,7 +47,11 @@ public final class PedestalParticles {
     public static void tick(Level level, BlockPos pos, PedestalBlockEntity pedestal) {
         ResourceLocation rank = pedestal.rarity();
         Minecraft minecraft = Minecraft.getInstance();
-        if (rank == null || minecraft.player == null) return;
+        if (minecraft.player == null) return;
+        if (rank == null) {
+            LensLooks.tick(level, pos, pedestal);
+            return;
+        }
         if (!pedestal.displayed() || PedestalRarities.isNone(rank)) return;
         PedestalRarity rarity = PedestalRarities.get(rank);
         Looks looks = LOOKS.computeIfAbsent(rarity, PedestalParticles::make);
@@ -60,7 +64,7 @@ public final class PedestalParticles {
             level.playLocalSound(pos, looks.ambient, SoundSource.BLOCKS, sound.volume(), sound.pitch(), false);
         }
         double size = pedestal.scale();
-        if (!pedestal.effects() || !TrophyPedestalsClientConfig.FLOURISHES.get() || !PedestalRenderer.lookedAt(pos, (float) size, pedestal.height())) return;
+        if (minecraft.player.distanceToSqr(x, y, z) > PARTICLE_REACH * PARTICLE_REACH || !PedestalRenderer.flourishes(pedestal)) return;
         ParticleStatus status = minecraft.options.particles().get();
         if (status == ParticleStatus.MINIMAL) return;
         boolean all = status == ParticleStatus.ALL;

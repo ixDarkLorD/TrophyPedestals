@@ -12,6 +12,9 @@ import net.ixdarklord.trophypedestals.api.PedestalRarity;
 import net.ixdarklord.trophypedestals.api.TrophyKinds;
 import net.ixdarklord.trophypedestals.api.client.PedestalEffect;
 import net.ixdarklord.trophypedestals.api.client.PedestalEffects;
+import net.ixdarklord.trophypedestals.client.lens.AppraisalLensVisuals;
+import net.ixdarklord.trophypedestals.client.lens.LensVisuals;
+import net.ixdarklord.trophypedestals.client.lens.SanguineLensVisuals;
 import net.ixdarklord.trophypedestals.compat.ARGB;
 import net.ixdarklord.trophypedestals.compat.component.Components;
 import net.ixdarklord.trophypedestals.compat.component.DataComponents;
@@ -35,6 +38,7 @@ import net.ixdarklord.trophypedestals.compat.render.SubmitNodeCollector;
 import net.ixdarklord.trophypedestals.compat.render.VertexConsumer;
 import net.ixdarklord.trophypedestals.compat.render.WitherRenderState;
 import net.ixdarklord.trophypedestals.pedestal.Leaderboards;
+import net.ixdarklord.trophypedestals.pedestal.Lens;
 import net.ixdarklord.trophypedestals.pedestal.MobLooks;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophyRecord;
 import net.ixdarklord.trophypedestals.pedestal.PedestalBlock;
@@ -108,7 +112,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static final int CREST_WIDTH = 12, CREST_HEIGHT = 6;
     private static final float CREST_FOOT = 2.0F, GEM_FOOT = 8.25F, PENDANT_TUCK = 6.5F;
     private static final int PANEL_ORDER = 1, PANEL_ORDER_RANGE = 64;
-    private static final int FULL_BRIGHT = 0xF000F0;
+    public static final int FULL_BRIGHT = 0xF000F0;
     private static final int ALWAYS_REACH = 32;
     private static final double DETAIL_RANGE = 40.0;
     private static final double ITEM_SIDE = 0.2, ITEM_TOP = 1.75;
@@ -117,14 +121,18 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static final float HALO_WIDTH = 0.018F, HALO_TILT = 24.0F, HALO_SPIN = 1.2F, HALO_SWEEP = 0.09F;
     private static final int HALO_SEGMENTS = 28, HALO_ALPHA = 220;
     private static final float RISE_TICKS = 12.0F, RISE_DROP = 0.35F;
-    private static final float CONE_FOOT = 0.21F, CONE_TOP = 0.36F, CONE_HEIGHT = 0.8F;
+    /** How much smaller a powered-off pedestal's showpiece rests, and the height it rests at. */
+    private static final float REST_SCALE = 0.72F, REST_FLOOR = 0.9F;
+    /** A model thinner than this share of its longest side is a flat item, which lies down to rest; anything thicker sits upright. */
+    private static final float REST_FLAT_DEPTH = 0.45F;
+    public static final float CONE_FOOT = 0.21F, CONE_TOP = 0.36F, CONE_HEIGHT = 0.8F;
     private static final float TROPHY_CONE = 0.65F;
     private static final int ITEM_LIGHT_ORDER = 1;
     private static final ResourceLocation ITEM_LIGHT_SPRITE = TrophyPedestalsMod.id("item/pedestal_light");
-    private static final float FRAME_HALF = 0.235F;
+    public static final float FRAME_HALF = 0.235F;
     private static final ResourceLocation WELL_GLOW = TrophyPedestalsMod.id("textures/block/pedestal/well_glow.png");
-    private static final float LENS_GLOW_RADIUS = 0.22F;
-    private static final int LENS_GLOW_SEGMENTS = 16;
+    public static final float LENS_GLOW_RADIUS = 0.22F;
+    public static final int LENS_GLOW_SEGMENTS = 16;
     private static final float BREATH_TICKS = 60.0F, BREATH_DIM = 0.72F, GLOW_DIM = 0.55F;
     private static final ResourceLocation FLARE = TrophyPedestalsMod.id("textures/vfx/pedestal_flare.png");
     private static final float ICON_Y = 1.32F, ICON_SCALE = 1.2F, FLARE_GAP = 0.03F;
@@ -138,8 +146,8 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static final float ITEM_RING_INSET = 0.04F;
     private static final int[][] LENS_ROWS = {{3, 6, 9}, {4, 5, 10}, {5, 4, 11}, {6, 3, 12}, {7, 3, 12}, {8, 3, 12}, {9, 3, 12},
             {10, 4, 11}, {11, 5, 10}, {12, 6, 9}};
-    private static final float GLASS_TOP = 14.25F / 16.0F + 0.002F;
-    private static final float LENS_FADE = 0.6F;
+    public static final float GLASS_TOP = 14.25F / 16.0F + 0.002F;
+    private static final float LENS_FADE = 0.6F, LENS_UNLIT = 0.74F, LENS_OFF = 0.38F, LENS_BREATH_TICKS = 48.0F, LENS_BREATH_RADIUS = 0.17F, PALE_PEAK = 1.0F, PALE_OVERLAY = 0.28F;
     private static final float BEAM_HAZE = 0.36F, BEAM_HALF = 0.17F, BEAM_CORE = 0.05F, BEAM_BEHIND_FROM = 1.02F;
     private static final int BEAM_BANDS = 2;
     private static final float BEAM_BAND_TICKS = 40.0F, BEAM_BAND_HALF = 0.22F, BEAM_BAND_WIDTH = 0.09F;
@@ -197,6 +205,19 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
                 lines.add(mob.date().copy().withStyle(ChatFormatting.DARK_GRAY));
             }
         });
+    }
+
+    /**
+     * Whether a pedestal's flourishes show for this player now: as its owner set them to show (always, or while looked
+     * at) and the player's own {@code flourishes} option allows. Its showcase light and outlines show either way.
+     */
+    public static boolean flourishes(PedestalBlockEntity pedestal) {
+        if (!TrophyPedestalsClientConfig.FLOURISHES.get()) return false;
+        return switch (pedestal.effectsMode()) {
+            case ALWAYS -> true;
+            case LOOKING -> lookedAt(pedestal.getBlockPos(), pedestal.glass() ? 1.0F : pedestal.scale(), pedestal.glass() ? 0.0F : pedestal.height());
+            case HIDDEN -> false;
+        };
     }
 
     static boolean lookedAt(BlockPos pos, float scale, float lift) {
@@ -289,7 +310,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         shown.shadowRadius = 0.0F;
         shown.shadowPieces.clear();
         shown.nameTag = null;
-        boolean moving = pedestal.animates() && TrophyPedestalsClientConfig.MOVING_MOBS.get();
+        boolean moving = pedestal.on() && pedestal.animates() && TrophyPedestalsClientConfig.MOVING_MOBS.get();
         shown.ageInTicks = moving ? time : 0.0F;
         idle(shown, shown.ageInTicks);
         if (pedestal.showsStatue()) pose(shown, pedestal.statuePose());
@@ -549,38 +570,101 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     }
 
     public static final class State extends BlockEntityRenderState {
-        final ItemStackRenderState icon = new ItemStackRenderState();
-        boolean shown, trophy, detailed, effects, showcaseLight;
-        float rise = 1.0F;
-        PedestalRarity rarity = DISPLAY;
-        @Nullable PedestalEffect effect;
-        @Nullable EntityRenderState mob;
-        final @Nullable EntityRenderState[] podium = new EntityRenderState[2];
-        final float[] podiumScale = new float[2];
-        float lieScale = 1.0F, lieY, lieZ;
-        boolean custom;
-        @Nullable ResourceLocation material;
-        @Nullable ResourceLocation topper;
-        float topperScale = 1.0F, topperX, topperY;
-        float displayTop, displayPivot;
-        boolean glass;
-        float glassTop;
-        int glassTint = 0xFFFFFFFF;
-        float mobScale, mobReach;
-        float mobLift;
-        float size = 1.0F, iconScale = ICON_SCALE, iconY = ICON_Y, panelBottom;
-        float textScale = 1.0F;
-        float lift;
-        final @Nullable Component[] lines = new Component[4];
-        double originX, originY, originZ;
-        float worldScale = 1.0F;
-        boolean scene;
-        boolean beam = true;
-        ResourceLocation frame = FRAMES.get(PedestalRarities.COMMON.id());
-        @Nullable ResourceLocation crest, pendant;
-        int frameTint = 0xFFFFFFFF;
-        float turn, pitch, roll, spin, bob, time, middle, flareX, flareY, flareZ, flareScale, faceX, faceZ, beamX, beamZ;
-        double distanceSq;
+        public final ItemStackRenderState icon = new ItemStackRenderState();
+        public boolean shown, trophy, detailed, effects, showcaseLight;
+        public @Nullable Lens lens;
+        public boolean lensEffects;
+        /** A display pedestal with no lens fitted: its bezel stands empty. */
+        public boolean bareWell;
+        /** How far the empty socket's glow has eased in, 0 to 1: it glows while the When Powered option has the pedestal showing. */
+        public float socketGlow, socketTime;
+        /** How far its When Powered option has it on, 0 to 1, easing as that changes. */
+        public float powerFade = 1.0F;
+        /** The lens whose glass sits in the bezel; null for the plain dark glass of a trophy, leaderboard or mannequin. */
+        public @Nullable Lens glassLens;
+        public int lensTint = 0xFFFFFFFF;
+        /** How far the lens's effects have faded in, 0 to 1: they ease in and out rather than pop, as when looked at. */
+        public float lensFade;
+        /** How far the pedestal's display has risen, kept as it is while the lens's effects fade. */
+        public float shownRise;
+        /** The rarity of the item shown, as the Appraisal Lens reads it: 0 common to 3 epic. */
+        public int itemRarity;
+        public float backX, backZ;
+        public float rise = 1.0F;
+        public boolean rests, restsFlat;
+        public float restScale, restY, restMobScale, restDepth, restBottom;
+        public PedestalRarity rarity = DISPLAY;
+        public @Nullable PedestalEffect effect;
+        public @Nullable EntityRenderState mob;
+        public final @Nullable EntityRenderState[] podium = new EntityRenderState[2];
+        public final float[] podiumScale = new float[2];
+        public float lieScale = 1.0F, lieY, lieZ;
+        public boolean custom;
+        public @Nullable ResourceLocation material;
+        public @Nullable ResourceLocation topper;
+        public float topperScale = 1.0F, topperX, topperY;
+        public float displayTop, displayPivot;
+        public boolean glass;
+        public float glassTop;
+        public int glassTint = 0xFFFFFFFF;
+        public float mobScale, mobReach;
+        public float mobLift;
+        public float size = 1.0F, iconScale = ICON_SCALE, iconY = ICON_Y, panelBottom;
+        public float textScale = 1.0F;
+        public float lift;
+        public final @Nullable Component[] lines = new Component[4];
+        public double originX, originY, originZ;
+        public float worldScale = 1.0F;
+        public boolean scene;
+        public boolean beam = true;
+        public ResourceLocation frame = FRAMES.get(PedestalRarities.COMMON.id());
+        public @Nullable ResourceLocation crest, pendant;
+        public int frameTint = 0xFFFFFFFF;
+        public float turn, pitch, roll, spin, bob, time, middle, flareX, flareY, flareZ, flareScale, faceX, faceZ, beamX, beamZ;
+        public double distanceSq;
+    }
+
+    /**
+     * What a lens needs to know of the display it's showing, kept so that its effects can fade out as they were once the
+     * display has been taken: the same rarity, and around an item of the same size and height. Replaced as soon as something
+     * else is shown, and dropped once the fade has finished.
+     */
+    private static final class LastDisplay {
+        private PedestalRarity light = DISPLAY;
+        private int itemRarity;
+        private float iconScale, iconY, middle, top;
+        private double reach;
+
+        private void remember(State state, float top, double reach) {
+            this.light = state.rarity;
+            this.itemRarity = state.itemRarity;
+            this.iconScale = state.iconScale;
+            this.iconY = state.iconY;
+            this.middle = state.middle;
+            this.top = top;
+            this.reach = reach;
+        }
+    }
+
+    /** What the renderer keeps for one pedestal between frames, held by the pedestal itself so that it goes when the pedestal does. */
+    private static final class Memory {
+        private float @Nullable [] lensFade, socketFade;
+        private @Nullable LastDisplay last;
+    }
+
+    private static Memory memory(PedestalBlockEntity pedestal) {
+        if (pedestal.renderMemory() instanceof Memory memory) return memory;
+        Memory memory = new Memory();
+        pedestal.setRenderMemory(memory);
+        return memory;
+    }
+
+    /** The display a pedestal's effects are still fading out from, or null if it's showing one or has finished fading. */
+    private static @Nullable LastDisplay heldDisplay(PedestalBlockEntity pedestal, float rise) {
+        if (pedestal.hasShowpiece()) return null;
+        Memory memory = memory(pedestal);
+        if (rise <= 0.0F) memory.last = null;
+        return memory.last;
     }
 
     private static double reach(PedestalBlockEntity pedestal) {
@@ -605,7 +689,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         BlockPos pos = blockEntity.getBlockPos();
         if (!(blockEntity instanceof PedestalBlockEntity pedestal)) return new AABB(pos);
         float size = pedestal.scale();
-        double wide = 1.0 + size, high = 4.0 + Math.max(0.0F, pedestal.height()) + Math.max(0.0F, pedestal.textHeight()) + 4.0 * size;
+        double wide = 1.0 + 1.5 * size, high = 4.0 + Math.max(0.0F, pedestal.height()) + Math.max(0.0F, pedestal.textHeight()) + 4.0 * size;
         return new AABB(pos.getX() + 0.5 - wide, pos.getY() + Math.min(0.0F, pedestal.height()), pos.getZ() + 0.5 - wide,
                 pos.getX() + 0.5 + wide, pos.getY() + high, pos.getZ() + 0.5 + wide);
     }
@@ -638,6 +722,13 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         state.beam = true;
         state.custom = pedestal.getBlockState().is(Pedestals.CUSTOM.get());
         state.material = pedestal.material();
+        state.glassLens = LensLooks.lens(pedestal);
+        state.bareWell = state.glassLens == null && !pedestal.isTrophy() && !pedestal.mannequin() && pedestal.leaderboard() == null;
+        state.powerFade = pedestal.getLevel() != null
+                ? socketFade(pedestal, pedestal.displayed(), pedestal.getLevel().getGameTime() + partialTicks) : 1.0F;
+        state.socketGlow = state.bareWell ? state.powerFade : 0.0F;
+        state.socketTime = pedestal.getLevel() != null ? pedestal.getLevel().getGameTime() + partialTicks : 0.0F;
+        state.lensTint = state.glassLens == Lens.CLEAR ? ARGB.opaque(Lens.dyed(pedestal.lens())) : 0xFFFFFFFF;
         double farther = reach(pedestal);
         if (cameraPosition.distanceToSqr(Vec3.atCenterOf(pedestal.getBlockPos())) > sq(Math.min(BODY_DISTANCE, TrophyPedestalsClientConfig.DISPLAY_DISTANCE.get() * farther))) {
             state.shown = false;
@@ -653,14 +744,23 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             float eased = since * since * (3.0F - 2.0F * since);
             state.rise = on ? eased : 1.0F - eased;
         }
-        state.shown = pedestal.getLevel() != null && (on || state.rise > 0.0F);
+        LastDisplay held = heldDisplay(pedestal, state.rise);
+        state.shown = pedestal.getLevel() != null && (on || state.rise > 0.0F || pedestal.hasShowpiece());
         if (!state.shown) return;
         boolean ranked = state.trophy && !PedestalRarities.isNone(pedestal.rarity());
         state.rarity = ranked ? PedestalRarities.get(pedestal.rarity()) : DISPLAY;
-        state.effects = pedestal.effects() && TrophyPedestalsClientConfig.FLOURISHES.get();
+        state.lens = state.trophy ? null : LensLooks.lens(pedestal);
+        state.lensEffects = state.lens != null && LensLooks.effects();
+        if (state.lens != null) {
+            PedestalRarity light = LensLooks.light(state.lens, pedestal, pedestal.getLevel().getGameTime() + partialTicks);
+            if (light != null) state.rarity = light;
+            if (held != null && state.lens == Lens.APPRAISAL) state.rarity = held.light;
+        }
+        state.effects = flourishes(pedestal);
         state.showcaseLight = pedestal.light();
         state.effect = ranked ? PedestalEffects.of(state.rarity) : null;
         float time = pedestal.getLevel().getGameTime() + partialTicks;
+        state.lensFade = state.lensEffects ? lensFade(pedestal, state.effects, time) : 0.0F;
         BlockPos pos = pedestal.getBlockPos();
         state.size = pedestal.glass() ? 1.0F : pedestal.scale();
         state.iconScale = ICON_SCALE * state.size;
@@ -705,15 +805,28 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         } else {
             ItemStack shown = record != null ? (!pedestal.iconOverride().isEmpty() ? pedestal.iconOverride() : TrophyKinds.icon(record, true))
                     : mobTrophy != null ? spawnEgg(mobTrophy) : pedestal.display();
+            state.itemRarity = LensLooks.tier(shown);
+            if (state.lensEffects && state.lens == Lens.APPRAISAL && state.itemRarity == 3 && !shown.isEmpty()) {
+                shown = shown.copy();
+                // (1.20.1 has no glint override: an enchanted item shines, so this drawn copy gets a blank enchantment.)
+                if (!shown.isEnchanted()) {
+                    ListTag glint = new ListTag();
+                    glint.add(new CompoundTag());
+                    shown.getOrCreateTag().put(ItemStack.TAG_ENCH, glint);
+                }
+            }
             items.updateForTopItem(state.icon, shown, ItemDisplayContext.GROUND, pedestal.getLevel(), null, (int) pos.asLong());
             AABB box = state.icon.getModelBoundingBox();
+            state.restDepth = (float) (box.maxZ - box.minZ) / 2.0F;
+            state.restBottom = (float) box.minY;
+            state.restsFlat = box.maxZ - box.minZ < REST_FLAT_DEPTH * Math.max(box.maxX - box.minX, box.maxY - box.minY);
             float bottom = pedestal.glass() ? GLASS_FLOOR : Math.max(ICON_Y + (float) box.minY * ICON_SCALE, ICON_FLOOR);
             float reachPerScale = (float) Math.hypot(Math.max(-box.minX, box.maxX), Math.max(-box.minZ, box.maxZ));
             if (pedestal.glass()) {
                 state.iconScale = fitInCase(ICON_SCALE, reachPerScale, (float) (box.maxY - box.minY), bottom, pedestal.pitch() != 0.0F || pedestal.roll() != 0.0F);
             } else {
-                float[] fitted = fitToCone(state, state.rarity != DISPLAY, ICON_SCALE * state.size, reachPerScale, (float) (box.maxY - box.minY) / 2.0F, bottom);
-                state.iconScale = fitted[0];
+                float[] fitted = fitToCone(state, !displayLight(state.rarity), ICON_SCALE * state.size, reachPerScale, (float) (box.maxY - box.minY) / 2.0F, bottom);
+                state.iconScale = fitted[0] * (state.lensEffects && state.lens == Lens.HOLOGRAM ? HOLOGRAM_SCALE : 1.0F);
                 bottom = fitted[1];
             }
             if (pedestal.glass()) bottom = caseMiddle((float) (box.maxY - box.minY) * state.iconScale);
@@ -722,12 +835,48 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             reach = Math.hypot(Math.max(-box.minX, box.maxX), Math.max(-box.minZ, box.maxZ)) * state.iconScale + FLARE_GAP;
             top = state.iconY + (float) box.maxY * state.iconScale;
         }
+        if (held != null) {
+            state.itemRarity = held.itemRarity;
+            state.iconScale = held.iconScale;
+            state.iconY = held.iconY;
+            state.middle = held.middle;
+            top = held.top;
+            reach = held.reach;
+        } else if (state.lens != null && pedestal.hasShowpiece()) {
+            Memory memory = memory(pedestal);
+            if (memory.last == null) memory.last = new LastDisplay();
+            memory.last.remember(state, top, reach);
+        }
         state.spin = time * (state.trophy ? 2.0F : 1.0F) % 360.0F;
         boolean still = pedestal.glass() && state.mob != null;
         state.turn = (pedestal.yaw() + (pedestal.spins() && !still ? state.spin : 0.0F)) % 360.0F;
         state.pitch = pedestal.pitch();
         state.roll = pedestal.roll();
         state.bob = Mth.sin(time / 12.0F) * (state.trophy ? 0.05F : 0.025F);
+        if (state.lensEffects && !pedestal.glass()) {
+            if (state.lens == Lens.TIDE) state.bob = Mth.sin(time / 16.0F) * TIDE_BOB * state.size;
+            if (state.lens == Lens.ENDER) {
+                state.bob = ENDER_FLOAT * state.size + Mth.sin(time / 20.0F) * 0.04F * state.size;
+                state.pitch += Mth.sin(time / 23.0F) * ENDER_TUMBLE;
+                state.roll += Mth.cos(time / 31.0F) * ENDER_TUMBLE * 0.8F;
+            }
+        }
+        state.rests = pedestal.hasShowpiece();
+        if (state.rests) {
+            // off, it settles on to the pedestal, a flat item lying on the lens and a block sitting on it: a little smaller, tipped no longer and quite still
+            state.restScale = Math.min(state.iconScale, ICON_SCALE) * REST_SCALE;
+            state.restY = state.restsFlat ? REST_FLOOR + Math.max(0.02F, state.restDepth * state.restScale) - state.middle / state.iconScale * state.restScale
+                    : REST_FLOOR + 0.01F - state.restBottom * state.restScale;
+            state.restMobScale = state.mobScale / Math.max(1.0F, state.size) * REST_SCALE;
+            state.turn = Mth.rotLerp(state.rise, pedestal.yaw(), state.turn);
+            state.pitch *= state.rise;
+            state.roll *= state.rise;
+            state.bob *= state.rise;
+            if (!on && state.rise <= 0.0F) {
+                state.effects = false;
+                state.effect = null;
+            }
+        }
         state.time = time;
         state.panelBottom = Math.max(PANEL_BOTTOM, top + PANEL_OVER_MOB) + pedestal.textHeight();
         state.textScale = pedestal.textScale();
@@ -755,10 +904,12 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             state.flareZ = (float) (toZ * reach / far);
             state.flareScale = (float) ((far + reach) / far);
         }
-        if (state.rarity.beamHeight() > 0.0F || state.rarity.crown() > 0) {
+        if (state.rarity.beamHeight() > 0.0F || state.rarity.crown() > 0 || state.lensEffects) {
             double toX = pos.getX() + 0.5 - cameraPosition.x, toZ = pos.getZ() + 0.5 - cameraPosition.z;
             double across = Math.max(Math.sqrt(toX * toX + toZ * toZ), 1.0E-4);
             state.faceX = (float) (-toZ / across);
+            state.backX = (float) (toX / across);
+            state.backZ = (float) (toZ / across);
             state.faceZ = (float) (toX / across);
             state.beamX = (float) (toX / across * reach);
             state.beamZ = (float) (toZ / across * reach);
@@ -803,19 +954,29 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     public void submit(State state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
         if (state.custom) PedestalBody.submit(state.material, poseStack, collector, state.lightCoords);
+        submitLensGlass(state, poseStack, collector);
         if (!state.shown) return;
+        AppraisalLensVisuals.submitVelvet(state, poseStack, collector);
+        SanguineLensVisuals.submitMoonDisc(state, poseStack, collector);
         poseStack.pushPose();
-        float scale = state.iconScale * state.rise;
-        poseStack.translate(0.5F, state.iconY + state.bob - (1.0F - state.rise) * RISE_DROP, 0.5F);
+        float scale = state.rests ? Mth.lerp(state.rise, state.restScale, state.iconScale) : state.iconScale * state.rise;
+        poseStack.translate(0.5F, state.rests ? Mth.lerp(state.rise, state.restY, state.iconY + state.bob) : state.iconY + state.bob - (1.0F - state.rise) * RISE_DROP, 0.5F);
         poseStack.mulPose(Axis.YP.rotationDegrees(state.turn));
         tilt(state, poseStack, state.middle * state.rise);
+        if (state.rests && state.restsFlat && state.rise < 1.0F) {
+            float center = state.middle / state.iconScale * scale;
+            poseStack.translate(0.0F, center, 0.0F);
+            poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F * (1.0F - state.rise)));
+            poseStack.translate(0.0F, -center, 0.0F);
+        }
         poseStack.scale(scale, scale, scale);
         state.icon.submit(poseStack, collector, FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
         poseStack.popPose();
         if (state.mob != null) {
             poseStack.pushPose();
-            float mobScale = state.mobScale * state.rise * state.lieScale;
-            poseStack.translate(0.5F, MOB_FLOOR + state.lift + state.bob - (1.0F - state.rise) * RISE_DROP, 0.5F);
+            float mobScale = (state.rests ? Mth.lerp(state.rise, state.restMobScale, state.mobScale) : state.mobScale * state.rise) * state.lieScale;
+            float mobY = state.rests ? Mth.lerp(state.rise, REST_FLOOR, MOB_FLOOR + state.lift + state.bob) : MOB_FLOOR + state.lift + state.bob - (1.0F - state.rise) * RISE_DROP;
+            poseStack.translate(0.5F, mobY, 0.5F);
             poseStack.mulPose(Axis.YP.rotationDegrees(state.turn));
             tilt(state, poseStack, (ICON_Y + state.middle - MOB_FLOOR) * state.rise);
             poseStack.mulPose(Axis.YP.rotationDegrees(modelTurn(state.mob)));
@@ -828,10 +989,10 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
                 EntityRenderState runnerUp = state.podium[place];
                 if (runnerUp == null) continue;
                 poseStack.pushPose();
-                float runnerScale = state.podiumScale[place] * state.rise;
-                poseStack.translate(0.5F, MOB_FLOOR + state.lift + state.bob - (1.0F - state.rise) * RISE_DROP, 0.5F);
+                float shrink = state.rests ? Mth.lerp(state.rise, REST_SCALE, 1.0F) : state.rise, runnerScale = state.podiumScale[place] * shrink;
+                poseStack.translate(0.5F, mobY, 0.5F);
                 poseStack.mulPose(Axis.YP.rotationDegrees(state.turn));
-                poseStack.translate(PODIUM_SIDE[place] * state.rise, -PODIUM_DROP[place], -PODIUM_BACK);
+                poseStack.translate(PODIUM_SIDE[place] * shrink, -PODIUM_DROP[place] * (state.rests ? state.rise : 1.0F), -PODIUM_BACK * shrink);
                 poseStack.mulPose(Axis.YP.rotationDegrees(modelTurn(runnerUp)));
                 poseStack.scale(runnerScale, runnerScale, runnerScale);
                 poseStack.translate(0.0F, -sink(runnerUp), 0.0F);
@@ -1085,7 +1246,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         float fade = Mth.clamp(rise / LENS_FADE, 0.0F, 1.0F);
         fade = fade * fade * (3.0F - 2.0F * fade);
         int tint = ARGB.color((int) (255 * fade), ARGB.scaleRGB(rarity.color(), BREATH_DIM + (1.0F - BREATH_DIM) * breath));
-        if (state.showcaseLight && fade > 0.01F) {
+        if (state.showcaseLight && fade > 0.01F && state.glassLens == null && !state.bareWell) {
             collector.submitCustomGeometry(poseStack, RenderType.entityTranslucent(WELL_GLOW), (pose, consumer) -> litGlass(consumer, pose, tint));
         }
         boolean rings = state.detailed && rarity.rings() > 0, beam = state.effects && state.beam && rarity.beamHeight() > 0.0F;
@@ -1101,12 +1262,68 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static void light(State state, PedestalLight.Glow light, float lo, float hi, boolean rings, boolean beam, int glow) {
         PedestalRarity rarity = state.rarity;
         float up = GLASS_TOP + 0.002F;
-        if (state.showcaseLight) light.lens(up, LENS_GLOW_RADIUS, glow, LENS_GLOW_SEGMENTS);
+        float overlay = paleGlass(state.glassLens) ? PALE_OVERLAY : 1.0F;
+        if (state.showcaseLight && !state.bareWell) {
+            light.lens(up, LENS_GLOW_RADIUS, ARGB.color((int) (ARGB.alpha(glow) * overlay), glow), LENS_GLOW_SEGMENTS);
+        }
+        if (state.showcaseLight && state.glassLens != null && state.rise > 0.0F) {
+            int lit = ARGB.srgbLerp(0.35F, ARGB.opaque(rarity.color()), 0xFFFFFFFF);
+            light.lens(up + 0.001F, LENS_BREATH_RADIUS, ARGB.color((int) ((16.0F + 104.0F * lensBreath(state)) * overlay * state.rise), lit), LENS_GLOW_SEGMENTS);
+        }
         if (rings) submitRings(state, light, lo, hi);
         if (state.showcaseLight) showcase(light, up, rarity, state.size, state.rise, state.time);
         if (beam && !state.glass) submitBeam(state, light, up);
         if (state.effects && state.detailed && rarity.halos() > 0 && !state.glass) submitHalos(state, light);
         if (state.effects && state.detailed && rarity.crown() > 0) submitCrown(state, light);
+        if (state.detailed && state.lensEffects && state.lensFade > 0.0F) submitLens(state, light, up);
+    }
+
+    private static boolean displayLight(PedestalRarity rarity) {
+        return rarity == DISPLAY || LensLooks.isLight(rarity);
+    }
+
+    private static final float RUNE_SPIN = 0.02F;
+    private static final float HOLOGRAM_SCALE = 1.25F;
+    private static final float TIDE_BOB = 0.07F, ENDER_FLOAT = 0.14F, ENDER_TUMBLE = 16.0F;
+    /** What the lens fitted to a display pedestal draws around its item. */
+    private static final float LENS_FADE_TICKS = 8.0F, SOCKET_FADE_TICKS = 4.0F;
+    private static final ResourceLocation PLAIN_GLASS = TrophyPedestalsMod.id("textures/block/pedestal/lens.png");
+    private static final ResourceLocation BEZEL = TrophyPedestalsMod.id("textures/block/pedestal/bezel.png");
+    private static final float SOCKET_GLOW_Y = 14.08F / 16.0F;
+    private static final float BEZEL_FLOOR = 14.0F / 16.0F, BEZEL_TOP = 14.5F / 16.0F;
+    /** The bezel's pixels, a run a row: its row, first column and last. */
+    private static final int[][] BEZEL_RUNS = {{2, 6, 9}, {3, 4, 5}, {3, 10, 11}, {4, 3, 4}, {4, 11, 12}, {5, 3, 3}, {5, 12, 12}, {6, 2, 2}, {6, 13, 13}, {7, 2, 2}, {7, 13, 13}, {8, 2, 2}, {8, 13, 13}, {9, 2, 2}, {9, 13, 13}, {10, 3, 3}, {10, 12, 12}, {11, 3, 4}, {11, 11, 12}, {12, 4, 5}, {12, 10, 11}, {13, 6, 9}};
+
+    /** Eases a pedestal's lens effects toward shown or hidden, over {@link #LENS_FADE_TICKS}, from where they were last frame. */
+    private static float lensFade(PedestalBlockEntity pedestal, boolean shown, float time) {
+        Memory memory = memory(pedestal);
+        if (memory.lensFade == null) memory.lensFade = new float[] {shown ? 1.0F : 0.0F, time};
+        return fade(memory.lensFade, shown, time, LENS_FADE_TICKS);
+    }
+
+    private static float socketFade(PedestalBlockEntity pedestal, boolean shown, float time) {
+        Memory memory = memory(pedestal);
+        if (memory.socketFade == null) memory.socketFade = new float[] {shown ? 1.0F : 0.0F, time};
+        return fade(memory.socketFade, shown, time, SOCKET_FADE_TICKS);
+    }
+
+    private static float fade(float[] fade, boolean shown, float time, float ticks) {
+        float step = Mth.clamp(time - fade[1], 0.0F, ticks) / ticks;
+        fade[1] = time;
+        fade[0] = Mth.clamp(fade[0] + (shown ? step : -step), 0.0F, 1.0F);
+        return fade[0] * fade[0] * fade[0] * (fade[0] * (fade[0] * 6.0F - 15.0F) + 10.0F);
+    }
+
+    private static void submitLens(State state, PedestalLight.Glow glow, float up) {
+        // Everything a lens draws fades by how far its display has risen; fading its effects too is fading that.
+        float rise = state.rise;
+        state.shownRise = rise;
+        state.rise = rise * state.lensFade;
+        try {
+            LensVisuals.submit(state, glow, up);
+        } finally {
+            state.rise = rise;
+        }
     }
 
     private static void submitHalos(State state, PedestalLight.Glow glow) {
@@ -1196,8 +1413,8 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         return CAP_TOP + (PedestalBlock.CASE_HEIGHT - tall) / 2.0F;
     }
 
-    private static float coneTop(float floor, PedestalRarity rarity, float size, float rise) {
-        return floor + CONE_HEIGHT * (rarity != DISPLAY ? TROPHY_CONE : 1.0F) * size * rise;
+    public static float coneTop(float floor, PedestalRarity rarity, float size, float rise) {
+        return floor + CONE_HEIGHT * (displayLight(rarity) ? 1.0F : TROPHY_CONE) * size * rise;
     }
 
     private static void showcase(PedestalLight.Glow glow, float floor, PedestalRarity rarity, float size, float rise, float time) {
@@ -1223,6 +1440,8 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         float breath = 0.5F + 0.5F * Mth.sin(time * Mth.TWO_PI / BREATH_TICKS);
         int tint = ARGB.opaque(ARGB.scaleRGB(rarity.color(), BREATH_DIM + (1.0F - BREATH_DIM) * breath));
         OrderedSubmitNodeCollector later = collector.order(ITEM_LIGHT_ORDER);
+        collector.submitCustomGeometry(poseStack, RenderType.entitySolid(PLAIN_GLASS), (pose, consumer) -> glass(consumer, pose, 0xFFFFFFFF, FULL_BRIGHT));
+        collector.submitCustomGeometry(poseStack, RenderType.entitySolid(BEZEL), (pose, consumer) -> bezel(consumer, pose, FULL_BRIGHT));
         later.submitCustomGeometry(poseStack, RenderType.entityTranslucentEmissive(WELL_GLOW), (pose, consumer) -> litGlass(consumer, pose, tint));
         TextureAtlasSprite white = Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS).getSprite(ITEM_LIGHT_SPRITE);
         later.submitCustomGeometry(poseStack, RenderType.entityTranslucentEmissive(TextureAtlas.LOCATION_BLOCKS), (pose, consumer) -> {
@@ -1360,19 +1579,103 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         }
     }
 
+    /**
+     * The glass in the pedestal's bezel: none on a display pedestal with no lens, the fitted lens's own look (dimmed until
+     * its showcase light is on), or the plain dark glass of a trophy, leaderboard or mannequin.
+     */
+    private static void submitLensGlass(State state, PoseStack poseStack, SubmitNodeCollector collector) {
+        if (state.bareWell) {
+            submitSocketGlow(state);
+            return;
+        }
+        ResourceLocation texture = state.glassLens == null ? PLAIN_GLASS : state.glassLens.glass();
+        boolean lit = state.glassLens != null && state.shown && state.showcaseLight;
+        float glow = lit ? state.rise : 0.0F;
+        float peak = paleGlass(state.glassLens) ? PALE_PEAK : 1.0F;
+        float idle = LENS_OFF + (LENS_UNLIT - LENS_OFF) * state.powerFade;
+        float bright = idle + (peak - idle) * glow * (lit ? lensBreath(state) : 0.0F);
+        int tint = state.glassLens == null ? 0xFFFFFFFF : ARGB.opaque(ARGB.scaleRGB(state.lensTint, bright));
+        int light = state.glassLens != null ? FULL_BRIGHT : state.lightCoords;
+        collector.submitCustomGeometry(poseStack, RenderType.entitySolid(texture), (pose, consumer) -> glass(consumer, pose, tint, light));
+        collector.submitCustomGeometry(poseStack, RenderType.entitySolid(BEZEL), (pose, consumer) -> bezel(consumer, pose, state.lightCoords));
+    }
+
+    /** The gold bezel a lens sits in, one box a run of its pixels: the left half of its texture is its top, the right its sides. */
+    private static void bezel(VertexConsumer consumer, PoseStack.Pose pose, int light) {
+        for (int[] run : BEZEL_RUNS) {
+            float x0 = (4.0F + run[1] * 0.5F) / 16.0F, x1 = (4.0F + (run[2] + 1) * 0.5F) / 16.0F;
+            float z0 = (4.0F + run[0] * 0.5F) / 16.0F, z1 = z0 + 0.5F / 16.0F;
+            float u0 = run[1] / 32.0F, u1 = (run[2] + 1) / 32.0F, v0 = run[0] / 32.0F, v1 = (run[0] + 1) / 32.0F;
+            int top = 0xFFFFFFFF, across = ARGB.colorFromFloat(1.0F, 0.8F, 0.8F, 0.8F), along = ARGB.colorFromFloat(1.0F, 0.6F, 0.6F, 0.6F);
+            lens(consumer, pose, x0, BEZEL_TOP, z0, u0, v0, top, light);
+            lens(consumer, pose, x0, BEZEL_TOP, z1, u0, v1, top, light);
+            lens(consumer, pose, x1, BEZEL_TOP, z1, u1, v1, top, light);
+            lens(consumer, pose, x1, BEZEL_TOP, z0, u1, v0, top, light);
+            float su0 = u0 + 0.5F, su1 = u1 + 0.5F;
+            lens(consumer, pose, x1, BEZEL_TOP, z0, su1, v0, across, light);
+            lens(consumer, pose, x1, BEZEL_FLOOR, z0, su1, v1, across, light);
+            lens(consumer, pose, x0, BEZEL_FLOOR, z0, su0, v1, across, light);
+            lens(consumer, pose, x0, BEZEL_TOP, z0, su0, v0, across, light);
+            lens(consumer, pose, x0, BEZEL_TOP, z1, su0, v0, across, light);
+            lens(consumer, pose, x0, BEZEL_FLOOR, z1, su0, v1, across, light);
+            lens(consumer, pose, x1, BEZEL_FLOOR, z1, su1, v1, across, light);
+            lens(consumer, pose, x1, BEZEL_TOP, z1, su1, v0, across, light);
+            float left = su0, leftEnd = su0 + 1.0F / 32.0F, right = su1 - 1.0F / 32.0F;
+            lens(consumer, pose, x0, BEZEL_TOP, z0, left, v0, along, light);
+            lens(consumer, pose, x0, BEZEL_FLOOR, z0, left, v1, along, light);
+            lens(consumer, pose, x0, BEZEL_FLOOR, z1, leftEnd, v1, along, light);
+            lens(consumer, pose, x0, BEZEL_TOP, z1, leftEnd, v0, along, light);
+            lens(consumer, pose, x1, BEZEL_TOP, z1, su1, v0, along, light);
+            lens(consumer, pose, x1, BEZEL_FLOOR, z1, su1, v1, along, light);
+            lens(consumer, pose, x1, BEZEL_FLOOR, z0, right, v1, along, light);
+            lens(consumer, pose, x1, BEZEL_TOP, z0, right, v0, along, light);
+        }
+    }
+
+    /** Whether a lens's glass is nearly white already, so light added over it would wash its detail out. */
+    private static boolean paleGlass(@Nullable Lens lens) {
+        return lens == Lens.CLEAR || lens == Lens.FROST;
+    }
+
+    /** A fitted lens's glass breathing while it's lit, 0 to 1, each pedestal in its own time. */
+    private static float lensBreath(State state) {
+        return 0.5F + 0.5F * Mth.sin((state.time + (state.blockPos.hashCode() & 0xFF)) * Mth.TWO_PI / LENS_BREATH_TICKS);
+    }
+
+    /** The empty socket's soft glow while the When Powered option has the pedestal showing, breathing gently and easing in and out. */
+    private static void submitSocketGlow(State state) {
+        if (state.socketGlow <= 0.0F) return;
+        float breath = 0.82F + 0.18F * Mth.sin(state.socketTime * Mth.TWO_PI / BREATH_TICKS);
+        // Added to what's under it, so it dims evenly all the way out; a cut-out entity layer would drop its faint pixels early.
+        float strength = 1.0F + (breath - 1.0F) * state.socketGlow;
+        int argb = ARGB.color(Math.round(255.0F * strength * state.socketGlow), 0xFFFFFF);
+        PedestalLight.world(state.originX, state.originY, state.originZ, state.worldScale)
+                .flat(PedestalLight.Sprite.SOCKET_GLOW, SOCKET_GLOW_Y, 0.25F, 0.0F, argb);
+        PedestalLight.world(state.originX, state.originY, state.originZ, state.worldScale)
+                .flat(PedestalLight.Sprite.SOCKET_GLOW, SOCKET_GLOW_Y + 0.002F, 0.25F, 0.0F, ARGB.color(Math.round(120.0F * strength * state.socketGlow), 0xFFFFFF));
+    }
+
+    private static void glass(VertexConsumer consumer, PoseStack.Pose pose, int argb, int light) {
+        lensRows(consumer, pose, GLASS_TOP - 0.001F, argb, light);
+    }
+
     private static void litGlass(VertexConsumer consumer, PoseStack.Pose pose, int argb) {
+        lensRows(consumer, pose, GLASS_TOP, argb, FULL_BRIGHT);
+    }
+
+    private static void lensRows(VertexConsumer consumer, PoseStack.Pose pose, float y, int argb, int light) {
         for (int[] row : LENS_ROWS) {
             float z0 = (4.0F + row[0] * 0.5F) / 16.0F, z1 = z0 + 0.5F / 16.0F;
             float x0 = (4.0F + row[1] * 0.5F) / 16.0F, x1 = (4.0F + (row[2] + 1) * 0.5F) / 16.0F;
             float u0 = row[1] / 16.0F, u1 = (row[2] + 1) / 16.0F, v0 = row[0] / 16.0F, v1 = (row[0] + 1) / 16.0F;
-            lens(consumer, pose, x0, GLASS_TOP, z0, u0, v0, argb);
-            lens(consumer, pose, x0, GLASS_TOP, z1, u0, v1, argb);
-            lens(consumer, pose, x1, GLASS_TOP, z1, u1, v1, argb);
-            lens(consumer, pose, x1, GLASS_TOP, z0, u1, v0, argb);
+            lens(consumer, pose, x0, y, z0, u0, v0, argb, light);
+            lens(consumer, pose, x0, y, z1, u0, v1, argb, light);
+            lens(consumer, pose, x1, y, z1, u1, v1, argb, light);
+            lens(consumer, pose, x1, y, z0, u1, v0, argb, light);
         }
     }
 
-    private static void lens(VertexConsumer consumer, PoseStack.Pose pose, float x, float y, float z, float u, float v, int argb) {
-        consumer.addVertex(pose, x, y, z).setColor(argb).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, 0, 1, 0);
+    public static void lens(VertexConsumer consumer, PoseStack.Pose pose, float x, float y, float z, float u, float v, int argb, int light) {
+        consumer.addVertex(pose, x, y, z).setColor(argb).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(pose, 0, 1, 0);
     }
 }

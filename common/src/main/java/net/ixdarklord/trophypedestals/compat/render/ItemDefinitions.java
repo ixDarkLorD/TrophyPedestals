@@ -8,10 +8,13 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.MapCodec;
 import net.ixdarklord.coolcatcore.api.client.registry.ExtraModels;
+import net.ixdarklord.coolcatcore.api.client.registry.ItemColorRegistry;
 import net.ixdarklord.coolcatcore.api.client.registry.ItemRendererRegistry;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.compat.component.Components;
 import net.ixdarklord.trophypedestals.compat.component.DataComponentType;
+import net.ixdarklord.trophypedestals.pedestal.CuratorsStampItem;
+import net.ixdarklord.trophypedestals.pedestal.Lens;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -50,6 +53,9 @@ public final class ItemDefinitions {
         ExtraModels.register(ItemDefinitions::read);
         Stream.concat(Stream.concat(Pedestals.ITEMS_BY_STONE.values().stream(), Pedestals.DISPLAY_ITEMS.stream()), Stream.of(Pedestals.CUSTOM_ITEM))
                 .forEach(item -> ItemRendererRegistry.register(item, ItemDefinitions::render));
+        ItemRendererRegistry.register(Pedestals.CURATORS_STAMP, ItemDefinitions::render);
+        // The Clear Lens's glass is its second layer, tinted by its dye (26.1's "tints" in its item definition).
+        ItemColorRegistry.register((stack, layer) -> layer == 1 ? Lens.dyed(stack) : -1, Pedestals.LENSES.get(Lens.CLEAR));
     }
 
     private static List<ResourceLocation> read(ResourceManager resources) {
@@ -100,6 +106,14 @@ public final class ItemDefinitions {
                         node(json.getAsJsonObject("on_true"), models), node(json.getAsJsonObject("on_false"), models));
             }
             case "minecraft:select" -> {
+                if (json.get("property").getAsString().endsWith("custom_model_data")) {
+                    Map<String, Node> cases = new HashMap<>();
+                    for (JsonElement element : json.getAsJsonArray("cases")) {
+                        JsonObject entry = element.getAsJsonObject();
+                        cases.put(entry.get("when").getAsString(), node(entry.getAsJsonObject("model"), models));
+                    }
+                    return new SelectData(Map.copyOf(cases), json.has("fallback") ? node(json.getAsJsonObject("fallback"), models) : Empty.INSTANCE);
+                }
                 if (!json.get("property").getAsString().endsWith("display_context")) throw new IllegalArgumentException("unknown select " + json.get("property"));
                 Map<ItemDisplayContext, Node> cases = new EnumMap<>(ItemDisplayContext.class);
                 for (JsonElement element : json.getAsJsonArray("cases")) {
@@ -179,6 +193,15 @@ public final class ItemDefinitions {
         public void render(ItemStack stack, ItemDisplayContext context, PoseStack poseStack, MultiBufferSource buffers, int light, int overlay) {
             DataComponentType<?> type = Components.byId(component.toString());
             (type != null && Components.has(stack, type) ? onTrue : onFalse).render(stack, context, poseStack, buffers, light, overlay);
+        }
+    }
+
+    /** 26.1's select on an item's custom model data: the string the Curator's Stamp keeps on its tag. */
+    private record SelectData(Map<String, Node> cases, Node fallback) implements Node {
+        @Override
+        public void render(ItemStack stack, ItemDisplayContext context, PoseStack poseStack, MultiBufferSource buffers, int light, int overlay) {
+            String value = stack.getTag() == null ? "" : stack.getTag().getString(CuratorsStampItem.BADGE);
+            cases.getOrDefault(value, fallback).render(stack, context, poseStack, buffers, light, overlay);
         }
     }
 

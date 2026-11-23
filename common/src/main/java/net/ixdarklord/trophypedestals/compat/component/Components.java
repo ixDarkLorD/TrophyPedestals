@@ -1,5 +1,6 @@
 package net.ixdarklord.trophypedestals.compat.component;
 
+import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
@@ -45,9 +46,11 @@ public final class Components {
     public static void applyToBlockEntity(BlockEntity blockEntity, ItemStack stack) {
         CompoundTag carried = stack.getTag() != null && stack.getTag().contains("BlockEntityTag", Tag.TAG_COMPOUND)
                 ? stack.getTag().getCompound("BlockEntityTag") : null;
-        if (carried == null) return;
-        CompoundTag merged = blockEntity.saveWithoutMetadata();
-        merged.merge(carried);
-        blockEntity.load(merged);
+        if (carried != null) {
+            CompoundTag merged = blockEntity.saveWithoutMetadata();
+            merged.merge(carried);
+            blockEntity.load(merged);
+        }
+        if (blockEntity instanceof PedestalBlockEntity pedestal) pedestal.applyItemLens(stack);
     }
 }

@@ -33,25 +33,30 @@ public final class ShapedNbtRecipe {
         SERIALIZERS.register();
     }
 
+    /** A shaped recipe read from its JSON, with the data its result carries. */
+    public static ShapedRecipe read(ResourceLocation id, JsonObject json) {
+        JsonObject plain = json.deepCopy();
+        JsonObject result = plain.getAsJsonObject("result");
+        CompoundTag data = null;
+        if (result != null && result.has("nbt")) {
+            try {
+                data = result.get("nbt").isJsonObject() ? TagParser.parseTag(result.get("nbt").toString()) : TagParser.parseTag(result.get("nbt").getAsString());
+            } catch (CommandSyntaxException e) {
+                throw new JsonParseException("Invalid result nbt in " + id + ": " + e.getMessage());
+            }
+            result.remove("nbt");
+        }
+        ShapedRecipe read = RecipeSerializer.SHAPED_RECIPE.fromJson(id, plain);
+        if (data == null) return read;
+        ItemStack made = read.getResultItem(RegistryAccess.EMPTY).copy();
+        made.getOrCreateTag().merge(data);
+        return new ShapedRecipe(id, read.getGroup(), read.category(), read.getWidth(), read.getHeight(), read.getIngredients(), made, read.showNotification());
+    }
+
     private static final class Serializer implements RecipeSerializer<ShapedRecipe> {
         @Override
         public ShapedRecipe fromJson(ResourceLocation id, JsonObject json) {
-            JsonObject plain = json.deepCopy();
-            JsonObject result = plain.getAsJsonObject("result");
-            CompoundTag data = null;
-            if (result != null && result.has("nbt")) {
-                try {
-                    data = result.get("nbt").isJsonObject() ? TagParser.parseTag(result.get("nbt").toString()) : TagParser.parseTag(result.get("nbt").getAsString());
-                } catch (CommandSyntaxException e) {
-                    throw new JsonParseException("Invalid result nbt in " + id + ": " + e.getMessage());
-                }
-                result.remove("nbt");
-            }
-            ShapedRecipe read = RecipeSerializer.SHAPED_RECIPE.fromJson(id, plain);
-            if (data == null) return read;
-            ItemStack made = read.getResultItem(RegistryAccess.EMPTY).copy();
-            made.getOrCreateTag().merge(data);
-            return new ShapedRecipe(id, read.getGroup(), read.category(), read.getWidth(), read.getHeight(), read.getIngredients(), made, read.showNotification());
+            return read(id, json);
         }
 
         @Override
