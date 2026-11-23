@@ -246,6 +246,8 @@ public final class PedestalScreen extends Screen {
             if (!playerModel && !cased) tabs.add(Tab.STAND_POSE);
         }
         tabs.add(Tab.BEHAVIOR);
+        // Effects and Behavior are never turned off, so the row is never left empty
+        if (TrophyPedestalsClientConfig.HIDE_DISABLED_TABS.get()) tabs.removeIf(each -> !enabled(each));
         return tabs;
     }
 
