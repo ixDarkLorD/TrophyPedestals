@@ -18,8 +18,10 @@ import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -29,12 +31,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -46,7 +49,10 @@ public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategor
     public static final IRecipeType<Drop> TYPE = IRecipeType.create(TrophyPedestalsMod.id("mob_trophy"), Drop.class);
     private static final int WIDTH = 120, HEIGHT = 48, SLOT = 18, LABEL = 0xFF404040;
     private static final int MOB_WIDTH = 34, MOB_FIT = 38, TEXT_X = MOB_WIDTH + 4, ROW_Y = 6, RANK_Y = 28, CHANCE_Y = 38;
-    private static final float LOOK_X = 24.0F, LOOK_Y = 12.0F;
+    /** The isometric view: seen from 30 degrees above, turned 45 degrees toward the trophy. */
+    private static final float VIEW_PITCH = 30.0F * Mth.DEG_TO_RAD, VIEW_BODY = 225.0F, MOB_MARGIN = 0.9F;
+    /** The common rank's pale grey is lost on JEI's light background: it reads in a darker slate here. */
+    private static final int COMMON_TEXT = 0xFF4E5560;
     private static final Map<EntityType<?>, Optional<LivingEntity>> MOBS = new HashMap<>();
 
     private final IGuiHelper gui;
@@ -107,24 +113,44 @@ public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategor
     public void draw(Drop drop, IRecipeSlotsView slots, GuiGraphicsExtractor graphics, double mouseX, double mouseY) {
         LivingEntity mob = mob(drop.type());
         if (mob != null) {
-            int scale = Math.max(2, (int) (MOB_FIT / Math.max(mob.getBbHeight(), mob.getBbWidth() * 1.4F)));
-            drawMob(graphics, mob, scale);
+            drawMob(graphics, mob, isometricScale(mob));
         } else if (!drop.egg().isEmpty()) {
             graphics.item(drop.egg(), (MOB_WIDTH - 16) / 2, (HEIGHT - 16) / 2);
         }
         gui.getRecipeArrow().draw(graphics, TEXT_X + (WIDTH - SLOT - TEXT_X - 22) / 2, ROW_Y + 1);
         gui.getSlotDrawable().draw(graphics, WIDTH - SLOT, ROW_Y);
         Font font = Minecraft.getInstance().font;
-        graphics.text(font, drop.rarity().displayName(), TEXT_X, RANK_Y, 0xFF000000 | drop.rarity().color(), false);
-        Component chance = Component.translatable("jei.trophypedestals.mob_trophy.chance", percent(MobTrophies.chance(drop.type())));
+        int rankColor = drop.rarity() == PedestalRarities.COMMON ? COMMON_TEXT : 0xFF000000 | drop.rarity().color();
+        graphics.text(font, drop.rarity().displayName(), TEXT_X, RANK_Y, rankColor, false);
+        Component chance = Component.translatable("jei.trophypedestals.mob_trophy.chance", MobTrophies.chanceText(drop.type()));
         graphics.text(font, chance, TEXT_X, CHANCE_Y, LABEL, false);
+    }
+
+    /** The largest whole scale at which the mob, turned and tipped, fits its box. */
+    private static int isometricScale(LivingEntity mob) {
+        float across = mob.getBbWidth() * Mth.SQRT_OF_TWO;
+        float wide = MOB_WIDTH / Math.max(across, 0.1F);
+        float tall = MOB_FIT / Math.max(mob.getBbHeight() * Mth.cos(VIEW_PITCH) + across * Mth.sin(VIEW_PITCH), 0.1F);
+        return Math.max(2, (int) (Math.min(wide, tall) * MOB_MARGIN));
     }
 
     private static void drawMob(GuiGraphicsExtractor graphics, LivingEntity mob, int scale) {
         Vector2f at = graphics.pose().transformPosition(0.0F, 0.0F, new Vector2f());
         int x = Math.round(at.x()), y = Math.round(at.y());
-        InventoryScreen.extractEntityInInventoryFollowsMouse(graphics, x, y, x + MOB_WIDTH, y + HEIGHT, scale, 0.0625F,
-                x + MOB_WIDTH / 2.0F + LOOK_X, y + LOOK_Y, mob);
+        EntityRenderState state = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(mob).createRenderState(mob, 1.0F);
+        state.shadowPieces.clear();
+        state.outlineColor = 0;
+        if (state instanceof LivingEntityRenderState living) {
+            living.bodyRot = VIEW_BODY;
+            living.yRot = 0.0F;
+            living.xRot = 0.0F;
+            living.boundingBoxWidth /= living.scale;
+            living.boundingBoxHeight /= living.scale;
+            living.scale = 1.0F;
+        }
+        Quaternionf tip = new Quaternionf().rotateX(VIEW_PITCH);
+        Quaternionf rotation = new Quaternionf().rotateZ(Mth.PI).mul(tip);
+        graphics.entity(state, scale, new Vector3f(0.0F, state.boundingBoxHeight / 2.0F, 0.0F), rotation, tip, x, y, x + MOB_WIDTH, y + HEIGHT);
     }
 
     private static @Nullable LivingEntity mob(EntityType<?> type) {
@@ -142,11 +168,5 @@ public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategor
             MOBS.put(type, mob);
         }
         return mob.orElse(null);
-    }
-
-    private static String percent(double chance) {
-        String text = String.format(Locale.ROOT, "%.2f", chance * 100.0);
-        text = text.contains(".") ? text.replaceAll("0+$", "").replaceAll("\\.$", "") : text;
-        return text + "%";
     }
 }
