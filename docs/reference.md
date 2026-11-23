@@ -39,7 +39,7 @@ One with no material, or a block no longer in the game, is drawn as stone. Eithe
 A **lens** fitted to a display pedestal sets the look of its showcase. Every pedestal is crafted with one (any lens, in
 the top middle of its recipe) and comes with it: placed, the lens is fitted, and broken, the pedestal keeps it in its
 item. A display pedestal placed before lenses came has a Clear Lens. Use a lens on the top face of a display pedestal to swap it in
-(the old one comes back); with an empty hand on its top, once no item is shown, take it out. Trophies, leaderboards and mannequins keep their own looks, and a pedestal with no lens has the warm
+(the old one comes back); with an empty hand on its top, once no item is shown, take it out. Trophies and leaderboards keep their own looks. A mannequin shows its lens too, with Appraisal going by the rarest piece it wears or holds, and a pedestal with no lens has the warm
 light above.
 
 | Lens | Recipe | Look |
@@ -59,7 +59,7 @@ at, or never; none of the particles show in a glass case, where the item keeps s
 Each player can keep just the lenses' colours with `lens_effects` in their client config; the moving parts also follow
 `flourishes` and the pedestal's own flourishes setting.
 
-A pedestal its When Powered option turns off keeps what it shows: a flat item lies down on the lens, a block sits upright on it, and a mob or statue settles on to the pedestal, each a little smaller and quite still, with no animation, light or effects, and rises again when it turns back on.
+A pedestal its When Powered option turns off keeps what it shows: a flat item lies down on the lens, a block sits upright on it, and a mob or statue settles on to the pedestal, each facing the way the pedestal was placed (as a furnace does), a little smaller and quite still, with no animation, light or effects, and rises again when it turns back on.
 
 The **Curator's Stamp** (a stick, a gold ingot and an ink sac in a column) copies a pedestal to others. Sneak-use a pedestal to copy its settings and lens, use it on another to paste them, use the air to choose whether it pastes both, only the settings or only the lens before you copy, and sneak-use the air to clear it. The choice stays locked while the stamp holds a copy. Pasting follows the adjust screen's ownership, locks and server config, and never copies who may adjust a pedestal. A lens is only fitted to display pedestals; in survival it takes a matching one (same dye included) from your inventory and hands back the one it replaces, and without one the settings still paste.
 
@@ -222,16 +222,16 @@ empty or hidden by redstone.
 
 **Mannequins.** Use an armor stand on an empty display pedestal to install it, making it a mannequin pedestal. Armour
 then goes to its own slot, swapping with what was there, and anything else goes in its hand (a shield, or what's worn in
-an off hand, in its off hand). Its adjust screen (sneak and use an empty hand) gets two more tabs:
+an off hand, in its off hand). Its adjust screen (sneak and use an empty hand) gets a **Model** tab:
 
 - **Model:** show it as the armor stand, or as a player in the skin of the player who placed the pedestal. Either
   wears the outfit.
-- **Pose:** pick one of five presets (Standing, Walking, Waving, Pointing and Sitting), or turn each of the armor stand's
-  parts (head, body, arms and legs) about x, y and z, in steps of 5 degrees, each with a reset to the armor stand's own
-  pose. Under **Your Poses**, name the pose and save it, then pick it again on any mannequin or delete it. Saved poses
-  are kept on your own computer (`config/trophypedestals/poses.json`), so they follow you into every world and server.
-  The tab shows only while the model is the armor stand and there's no glass case over it: under glass the armor
-  stand stands in its own pose, at its full size, and its pose comes back when the glass comes off.
+- **Pose:** on the same tab, pick one of five presets (Standing, Walking, Waving, Pointing and Sitting), or turn the
+  model's head, body, arms and legs about x, y and z, in steps of 5 degrees, each with a reset to its default pose. Under
+  **Your Poses**, name the pose and save it, then pick it again on any mannequin or delete it. Saved poses are kept on
+  your own computer (`config/trophypedestals/poses.json`), so they follow you into every world and server. The pose
+  options are hidden under a glass case: there the mannequin stands in its own pose, at its full size, and its pose comes
+  back when the glass comes off.
 
 An empty hand takes the whole outfit back, then the armor stand. Breaking the pedestal drops both. Without an armor
 stand, armour goes on display like any other item.

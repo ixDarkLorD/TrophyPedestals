@@ -3,7 +3,7 @@ This file is for listing all the changes to this project
 
 ## v0.4.0 "Through the Lens" (unreleased)
 ### ✨ New Features
-- **Lenses:** nine lenses that give a display pedestal its own light and visual effects. Use one on the pedestal's top to swap it, or use an empty hand once no item is shown to take it out.
+- **Lenses:** nine lenses that give a display pedestal its own light and visual effects. Use one on the pedestal's top to swap it, or use an empty hand once no item is shown to take it out. Mannequin pedestals show their lens too, with Appraisal going by the rarest piece worn or held.
   - **Clear:** warm light with a turning sunburst and drifting glints. Can be dyed to color its light.
   - **Sanguine:** a bleeding eclipse with a burning corona and dark beam, a pool of blood, rising droplets, dark fog, red eyes and circling ravens.
   - **Prism:** rainbow rays, a turning stained glass halo and small prisms orbiting the item.
@@ -18,16 +18,17 @@ This file is for listing all the changes to this project
   - Use it in the air to choose what pastes: both, settings only or lens only. The choice locks while the stamp holds a copy.
   - Sneak-use it in the air to clear it.
   - It follows the adjust screen's ownership, lock and server rules. In survival, the lens comes from your inventory and the replaced one is returned.
-- **Powered-off pose:** a pedestal turned off by its When Powered option keeps showing its display at rest. Flat items lie on the lens, blocks sit upright, and mobs and statues settle onto the pedestal.
+- **Powered-off pose:** a pedestal turned off by its When Powered option keeps showing its display at rest. Flat items lie on the lens, blocks sit upright, and mobs and statues settle onto the pedestal, all facing the way the pedestal was placed, like a furnace.
 - **Effects visibility:** a pedestal's effects can show always, only while looked at, or never. Mods can set it with `PedestalSettings.Settings.effectsMode`, or `effectsMode` from KubeJS.
 - **New client options:** `lens_effects` turns lens effects off and keeps their colors. `hide_disabled_tabs`, on by default, hides the adjust screen tabs a server has turned off.
 
 ### 🔧 Changes
-- Pedestals are now crafted with a lens, in the top middle of the recipe, with the gold ingot moved to the bottom. A broken pedestal keeps its lens.
+- Pedestals are now crafted with a lens, in the top middle of the recipe, with the gold ingot moved to the bottom. A broken pedestal keeps its lens, and its item shows it.
 - A display pedestal needs a lens to hold an item. Display pedestals placed before this update get a Clear Lens.
 - Pedestals give a low light while their When Powered option has them on, even when empty.
 - The adjust screen has a new Effects tab for the showcase light, effects visibility and a legendary trophy's crown.
 - Ranked trophies' particles now show all the time by default, instead of only while looked at.
+- A mannequin's pose options moved into its Model tab and now work on the player model too.
 
 ## v0.3.2 Release | Nov 18, 2026
 ### 🐛 Fixes
