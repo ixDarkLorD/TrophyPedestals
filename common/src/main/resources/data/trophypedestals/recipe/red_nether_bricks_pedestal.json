@@ -1,15 +1,16 @@
 {
-  "type": "minecraft:crafting_shaped",
+  "type": "trophypedestals:pedestal",
   "category": "misc",
   "group": "trophypedestals:pedestal",
   "key": {
+    "L": "#trophypedestals:lenses",
     "G": "minecraft:gold_ingot",
     "S": "minecraft:red_nether_bricks"
   },
   "pattern": [
-    "SGS",
+    "SLS",
     " S ",
-    "SSS"
+    "SGS"
   ],
   "result": {
     "count": 1,

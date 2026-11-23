@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "G": "minecraft:gold_ingot",
+    "S": "minecraft:stick",
+    "I": "minecraft:ink_sac"
+  },
+  "pattern": [
+    "S",
+    "G",
+    "I"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trophypedestals:curators_stamp"
+  }
+}
