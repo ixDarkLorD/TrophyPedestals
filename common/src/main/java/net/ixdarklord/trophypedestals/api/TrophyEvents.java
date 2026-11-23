@@ -3,11 +3,12 @@ package net.ixdarklord.trophypedestals.api;
 import net.ixdarklord.coolcatcore.api.event.v2.core.EventInvoker;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Trophy Pedestals' events, for mods on either loader (KubeJS has no 26.2 build, so there are no script events here).
+ * Trophy Pedestals' events, for mods (on either loader) and, on NeoForge, KubeJS scripts ({@code TrophyPedestalsEvents}).
  * Both fire on the server.
  * <pre>{@code
  * TrophyEvents.MOB_TROPHY_DROP.register(drop -> {

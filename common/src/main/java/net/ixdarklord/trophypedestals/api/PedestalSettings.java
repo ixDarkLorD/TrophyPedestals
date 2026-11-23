@@ -29,7 +29,7 @@ public final class PedestalSettings {
     public static Settings get(PedestalBlockEntity pedestal) {
         return new Settings(pedestal.textMode(), pedestal.scale(), pedestal.height(), pedestal.yaw(), pedestal.pitch(), pedestal.roll(), pedestal.spins(), pedestal.animates(),
                 pedestal.effects(), pedestal.sounds(), pedestal.textHeight(), pedestal.redstone(), pedestal.statue(), pedestal.statuePose(),
-                pedestal.animation(), pedestal.textScale(), pedestal.crown(), pedestal.light());
+                pedestal.animation(), pedestal.textScale(), pedestal.crown(), pedestal.light(), pedestal.effectsMode());
     }
 
     /** Sets all its settings (each kept within its limits), whether it's locked or not. */
@@ -40,7 +40,7 @@ public final class PedestalSettings {
         pedestal.setRotation(settings.yaw(), settings.pitch(), settings.roll());
         pedestal.setSpins(settings.spins());
         pedestal.setAnimates(settings.animates());
-        pedestal.setEffects(settings.effects());
+        pedestal.setEffectsMode(settings.effectsMode());
         pedestal.setSounds(settings.sounds());
         pedestal.setTextHeight(settings.textHeight());
         pedestal.setRedstone(settings.redstone());
@@ -113,11 +113,26 @@ public final class PedestalSettings {
      * @param textScale  how large its text and frame are shown (half to three times)
      * @param crown      whether a legendary trophy wears its crown over what it shows
      * @param light      whether its showcase light shows (the lit lens, the cone of light out of the well, and its frame)
+     * @param effectsMode when its flourishes show: always, while looked at, or never ({@code effects} is false only for
+     *                    never); its showcase light, outlines and a lens's colour always show
      */
     public record Settings(PedestalBlockEntity.TextMode textMode, float scale, float height, float yaw, float pitch, float roll, boolean spins, boolean animates,
                            boolean effects, boolean sounds, float textHeight, PedestalBlockEntity.RedstoneMode redstone, boolean statue,
                            PedestalBlockEntity.StatuePose statuePose, String animation,
-                           float textScale, boolean crown, boolean light) {
+                           float textScale, boolean crown, boolean light, PedestalBlockEntity.TextMode effectsMode) {
+        public Settings {
+            if (effectsMode == null || effects && effectsMode == PedestalBlockEntity.TextMode.HIDDEN) effectsMode = PedestalBlockEntity.TextMode.ALWAYS;
+            if (!effects) effectsMode = PedestalBlockEntity.TextMode.HIDDEN;
+        }
+
+        /** Settings whose flourishes, when shown, always show (as before {@code effectsMode} came). */
+        public Settings(PedestalBlockEntity.TextMode textMode, float scale, float height, float yaw, float pitch, float roll, boolean spins, boolean animates,
+                        boolean effects, boolean sounds, float textHeight, PedestalBlockEntity.RedstoneMode redstone, boolean statue,
+                        PedestalBlockEntity.StatuePose statuePose, String animation, float textScale, boolean crown, boolean light) {
+            this(textMode, scale, height, yaw, pitch, roll, spins, animates, effects, sounds, textHeight, redstone, statue, statuePose, animation,
+                    textScale, crown, light, PedestalBlockEntity.TextMode.ALWAYS);
+        }
+
         /** A new pedestal's settings. */
         public static final Settings DEFAULT = new Settings(PedestalBlockEntity.TextMode.LOOKING, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, true, true, true, true, 0.0F,
                 PedestalBlockEntity.RedstoneMode.IGNORE, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, true);
@@ -143,6 +158,7 @@ public final class PedestalSettings {
         private String animation;
         private float textScale;
         private boolean crown, light;
+        private PedestalBlockEntity.TextMode effectsMode;
 
         private Builder(Settings from) {
             textMode = from.textMode();
@@ -163,6 +179,7 @@ public final class PedestalSettings {
             textScale = from.textScale();
             crown = from.crown();
             light = from.light();
+            effectsMode = from.effectsMode();
         }
 
         public Builder textMode(PedestalBlockEntity.TextMode textMode) {
@@ -215,6 +232,14 @@ public final class PedestalSettings {
 
         public Builder effects(boolean effects) {
             this.effects = effects;
+            if (effects && effectsMode == PedestalBlockEntity.TextMode.HIDDEN) effectsMode = PedestalBlockEntity.TextMode.ALWAYS;
+            return this;
+        }
+
+        /** When its flourishes show: always, while looked at, or never. */
+        public Builder effectsMode(PedestalBlockEntity.TextMode effectsMode) {
+            this.effectsMode = effectsMode;
+            this.effects = effectsMode != PedestalBlockEntity.TextMode.HIDDEN;
             return this;
         }
 
@@ -264,7 +289,7 @@ public final class PedestalSettings {
         }
 
         public Settings build() {
-            return new Settings(textMode, scale, height, yaw, pitch, roll, spins, animates, effects, sounds, textHeight, redstone, statue, statuePose, animation, textScale, crown, light);
+            return new Settings(textMode, scale, height, yaw, pitch, roll, spins, animates, effects, sounds, textHeight, redstone, statue, statuePose, animation, textScale, crown, light, effectsMode);
         }
     }
 }

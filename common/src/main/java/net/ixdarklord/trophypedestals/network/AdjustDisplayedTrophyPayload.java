@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
  * changed there (none that change its size or place, which stay as a new pedestal has them).
  */
 public record AdjustDisplayedTrophyPayload(BlockPos pos, int slot, PedestalBlockEntity.TextMode textMode, boolean spins, float yaw,
-                                           float pitch, float roll, boolean effects, PedestalBlockEntity.RedstoneMode redstone, boolean sounds, boolean animates,
+                                           float pitch, float roll, PedestalBlockEntity.TextMode effects, PedestalBlockEntity.RedstoneMode redstone, boolean sounds, boolean animates,
                                            boolean statue, PedestalBlockEntity.StatuePose statuePose, String animation, boolean crown,
                                            boolean light) implements CustomPacketPayload {
     public static final Type<AdjustDisplayedTrophyPayload> TYPE = new Type<>(TrophyPedestalsMod.id("adjust_displayed_trophy"));
