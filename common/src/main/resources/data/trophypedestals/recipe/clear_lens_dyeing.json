@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_dye",
+  "category": "misc",
+  "dye": "#minecraft:dyes",
+  "group": "clear_lens_dyeing",
+  "result": {
+    "id": "trophypedestals:clear_lens"
+  },
+  "target": [
+    "trophypedestals:clear_lens"
+  ]
+}
