@@ -80,11 +80,23 @@
         ]
       },
       "on_false": {
-        "type": "minecraft:special",
-        "base": "trophypedestals:block/custom_pedestal",
-        "model": {
-          "type": "trophypedestals:custom_pedestal"
-        }
+        "type": "minecraft:composite",
+        "models": [
+          {
+            "type": "minecraft:special",
+            "base": "trophypedestals:block/custom_pedestal",
+            "model": {
+              "type": "trophypedestals:custom_pedestal"
+            }
+          },
+          {
+            "type": "minecraft:special",
+            "base": "trophypedestals:block/custom_pedestal",
+            "model": {
+              "type": "trophypedestals:pedestal_lens"
+            }
+          }
+        ]
       }
     }
   }
