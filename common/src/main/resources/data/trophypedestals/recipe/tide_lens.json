@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "lens",
+  "key": {
+    "K": "minecraft:kelp",
+    "S": "minecraft:prismarine_shard",
+    "L": "trophypedestals:clear_lens"
+  },
+  "pattern": [
+    "K K",
+    " L ",
+    " S "
+  ],
+  "result": {
+    "count": 1,
+    "id": "trophypedestals:tide_lens"
+  }
+}

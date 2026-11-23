@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "lens",
+  "key": {
+    "E": "minecraft:emerald",
+    "G": "minecraft:gold_ingot",
+    "L": "trophypedestals:clear_lens"
+  },
+  "pattern": [
+    " E ",
+    "GLG"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trophypedestals:appraisal_lens"
+  }
+}

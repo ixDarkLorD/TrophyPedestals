@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "lens",
+  "key": {
+    "P": "minecraft:ender_pearl",
+    "C": "minecraft:popped_chorus_fruit",
+    "L": "trophypedestals:clear_lens"
+  },
+  "pattern": [
+    " P ",
+    "CLC",
+    " C "
+  ],
+  "result": {
+    "count": 1,
+    "id": "trophypedestals:ender_lens"
+  }
+}

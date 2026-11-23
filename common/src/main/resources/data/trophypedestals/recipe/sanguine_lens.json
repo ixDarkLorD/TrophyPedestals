@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "lens",
+  "key": {
+    "F": "minecraft:rotten_flesh",
+    "R": "minecraft:redstone",
+    "L": "trophypedestals:clear_lens"
+  },
+  "pattern": [
+    " F ",
+    "RLR",
+    " F "
+  ],
+  "result": {
+    "count": 1,
+    "id": "trophypedestals:sanguine_lens"
+  }
+}

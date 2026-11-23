@@ -14,7 +14,8 @@
               "trophypedestals:pedestal_material",
               "trophypedestals:pedestal",
               "trophypedestals:mob_trophy",
-              "minecraft:item_name"
+              "minecraft:item_name",
+              "trophypedestals:lens"
             ]
           }
         }

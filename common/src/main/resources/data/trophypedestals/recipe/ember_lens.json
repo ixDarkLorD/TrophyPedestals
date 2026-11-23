@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "lens",
+  "key": {
+    "B": "minecraft:blaze_powder",
+    "C": "minecraft:coal",
+    "L": "trophypedestals:clear_lens"
+  },
+  "pattern": [
+    " B ",
+    " L ",
+    "CCC"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trophypedestals:ember_lens"
+  }
+}
