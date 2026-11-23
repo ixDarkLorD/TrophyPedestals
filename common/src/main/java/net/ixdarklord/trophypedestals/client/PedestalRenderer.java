@@ -6,6 +6,7 @@ import com.mojang.math.Axis;
 import net.ixdarklord.coolcatcanvas.api.client.registry.BlockEntityRendererRegistry;
 import net.ixdarklord.coolcatcore.api.client.registry.BlockRenderLayers;
 import net.ixdarklord.coolcatcore.api.client.registry.TooltipComponentRegistry;
+import net.ixdarklord.coolcatcore.api.event.v2.client.ClientPlayerEvents;
 import net.ixdarklord.coolcatcore.api.event.v2.client.ItemTooltipEvents;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.api.PedestalRarities;
@@ -192,6 +193,8 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         BlockRenderLayers.register(Pedestals.CUSTOM, RenderType.cutout());
         BlockRenderLayers.register(Pedestals.VITRINE_TOP, RenderType.cutout());
         TooltipComponentRegistry.register(TrophyTooltip.class, TrophyTooltipLine::new);
+        // the mobs drawn on trophy items each hold on to their world, so they go when it does
+        ClientPlayerEvents.LEAVE.register(player -> TrophyIconRenderer.forgetMobs());
         ItemTooltipEvents.APPEND.register((stack, context, player, flag, lines) -> {
             PedestalRecord record = stack.get(Pedestals.RECORD.get());
             if (record != null) {
