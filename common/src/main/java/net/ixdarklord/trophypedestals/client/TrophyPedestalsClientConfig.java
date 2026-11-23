@@ -30,6 +30,10 @@ public final class TrophyPedestalsClientConfig {
             .comment("How far away, in blocks, what pedestals show is drawn (farther for one shown larger or higher). The pedestals themselves are drawn as far as other blocks.")
             .build();
 
+    public static final ConfigValue<Boolean> HIDE_DISABLED_TABS = BUILDER.bool("hide_disabled_tabs", true)
+            .comment("Whether the pedestal screen hides the tabs the server has turned off. Off, they stay in the row, greyed out, and say why.")
+            .build();
+
     public static final Config CONFIG = BUILDER.build();
 
     private TrophyPedestalsClientConfig() {}
