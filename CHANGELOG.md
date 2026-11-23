@@ -1,6 +1,34 @@
 # Changelog
 This file is for listing all the changes to this project
 
+## v0.4.0 "Through the Lens" (unreleased)
+### ✨ New Features
+- **Lenses:** nine lenses that give a display pedestal its own light and visual effects. Use one on the pedestal's top to swap it, or use an empty hand once no item is shown to take it out.
+  - **Clear:** warm light with a turning sunburst and drifting glints. Can be dyed to color its light.
+  - **Sanguine:** a bleeding eclipse with a burning corona and dark beam, a pool of blood, rising droplets, dark fog, red eyes and circling ravens.
+  - **Prism:** rainbow rays, a turning stained glass halo and small prisms orbiting the item.
+  - **Tide:** water rings, caustics, bubbles, swaying kelp and tropical fish, with the item bobbing.
+  - **Appraisal:** a showcase that grows with the item's rarity, from pebbles and linen up to a royal crown, banners and an aurora.
+  - **Ember:** flames, burning coals, a heat haze, sparks, smoke and ash.
+  - **Frost:** snow, icicles, ice crystals, falling fog and icy gusts.
+  - **Ender:** a torn rift onto the End's stars, floating islands, and a beam of energy from the lens.
+  - **Hologram:** climbing digital code, projector beams and rings of holographic mesh, with the item shown larger.
+- **Curator's Stamp:** copies a pedestal's settings and lens to other pedestals.
+  - Sneak-use a pedestal to copy, then use other pedestals to paste.
+  - Use it in the air to choose what pastes: both, settings only or lens only. The choice locks while the stamp holds a copy.
+  - Sneak-use it in the air to clear it.
+  - It follows the adjust screen's ownership, lock and server rules. In survival, the lens comes from your inventory and the replaced one is returned.
+- **Powered-off pose:** a pedestal turned off by its When Powered option keeps showing its display at rest. Flat items lie on the lens, blocks sit upright, and mobs and statues settle onto the pedestal.
+- **Effects visibility:** a pedestal's effects can show always, only while looked at, or never. Mods can set it with `PedestalSettings.Settings.effectsMode`, or `effectsMode` from KubeJS.
+- **New client options:** `lens_effects` turns lens effects off and keeps their colors. `hide_disabled_tabs`, on by default, hides the adjust screen tabs a server has turned off.
+
+### 🔧 Changes
+- Pedestals are now crafted with a lens, in the top middle of the recipe, with the gold ingot moved to the bottom. A broken pedestal keeps its lens.
+- A display pedestal needs a lens to hold an item. Display pedestals placed before this update get a Clear Lens.
+- Pedestals give a low light while their When Powered option has them on, even when empty.
+- The adjust screen has a new Effects tab for the showcase light, effects visibility and a legendary trophy's crown.
+- Ranked trophies' particles now show all the time by default, instead of only while looked at.
+
 ## v0.3.1 Release | Nov 17, 2026
 ### 🐛 Fixes
 - Ranked trophies' light, beam, halos, crown and flares stay centred on their pedestal far from spawn, instead of drifting up to a block off as they got near the world border.
@@ -16,6 +44,7 @@ This file is for listing all the changes to this project
 ### ✨ New Features
 - **Looting raises the trophy chance:** each level of Looting on the weapon adds half the chance again (`mob_trophies.looting_bonus`, 0.5), so Looting III makes a trophy two and a half times as likely.
 - **Trophy Hunter enchantment:** a one-level enchantment for swords, axes and maces (modded ones too), found in enchanting tables, loot and trades. Packs can allow it on other tools, such as pickaxes, by adding them to the `trophypedestals:enchantable/trophy_hunter` item tag. With the new `mob_trophies.require_enchantment` on (off by default), mob trophies drop only from a weapon that has it.
+- **KubeGroovy support** (NeoForge 26.1.2): Groovy server scripts get `$TrophyPedestals` and `$TrophyPedestalsEvents`, the same binding and events as on KubeJS.
 
 ### 🔧 Changes
 - **Drop chances:** mob trophies drop a little more often, `mob_trophies.chance` now 0.015 by default (about one kill in 67) instead of 0.01, and bosses (the epic and legendary mob trophy tags) have their own, higher chance, the new `mob_trophies.boss_chance` (0.15, about one in seven). A config file already written keeps its own `chance`.
@@ -38,8 +67,9 @@ This file is for listing all the changes to this project
 - **Cleaner outlines:** cabinets, shelves and pedestals outline as clean shapes that follow their silhouettes.
 - **Ledger hints:** hovering a mob not collected yet shows where it spawns ("Found in: Plains, Forest and 3 more").
 - **`/trophypedestals trophy`:** gives a titled trophy, with the icon, rank and pedestal named.
-- **Trophy events:** `TrophyEvents.MOB_TROPHY_DROP` (change or cancel a mob trophy about to drop) and `TrophyEvents.COLLECTED` (a trophy recorded in a player's ledger) in the Java API, for mods on either loader.
+- **Trophy events:** `TrophyPedestalsEvents.mobTrophyDrop` (change or cancel a mob trophy about to drop) and `TrophyPedestalsEvents.collected` (a trophy recorded in a player's ledger) for KubeJS server scripts, and the same as `TrophyEvents` in the Java API for mods on either loader.
 - **Client settings** (`config/trophypedestals-client`): each player can turn off trophies' flourishes, ambient sounds and moving mobs, and set how far away pedestals' displays are drawn, for a calmer or lighter trophy room.
+- **FTB Quests "Mob Trophy" task:** done once the player has collected a trophy of a named mob, or of a number of different mobs; it can ask for gilded ones. Trophies collected before the quest was added count too.
 - **Items in cabinets and shelves:** any item that isn't a block can go on a cabinet's or shelf's spot, standing there by itself beside the trophies (a block in hand still sets the trim).
 - **Ledger search and mod filter:** the Mob Trophies Ledger has a search box (collected mobs by name, any mob by its mod's name, so it gives away nothing not yet collected), a button showing one mod's mobs at a time (its count then that mod's), and a Missing toggle showing only the mobs not collected yet.
 - **Boss trophies once** (`mob_trophies.boss_trophies_once`, off by default): a boss drops its trophy only for a player who hasn't collected it yet.
