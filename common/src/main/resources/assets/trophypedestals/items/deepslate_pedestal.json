@@ -74,8 +74,20 @@
         ]
       },
       "on_false": {
-        "type": "minecraft:model",
-        "model": "trophypedestals:block/deepslate_pedestal"
+        "type": "minecraft:composite",
+        "models": [
+          {
+            "type": "minecraft:model",
+            "model": "trophypedestals:block/deepslate_pedestal"
+          },
+          {
+            "type": "minecraft:special",
+            "base": "trophypedestals:block/deepslate_pedestal",
+            "model": {
+              "type": "trophypedestals:pedestal_lens"
+            }
+          }
+        ]
       }
     }
   }

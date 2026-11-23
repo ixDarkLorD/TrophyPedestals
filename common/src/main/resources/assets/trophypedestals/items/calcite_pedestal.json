@@ -74,8 +74,20 @@
         ]
       },
       "on_false": {
-        "type": "minecraft:model",
-        "model": "trophypedestals:block/calcite_pedestal"
+        "type": "minecraft:composite",
+        "models": [
+          {
+            "type": "minecraft:model",
+            "model": "trophypedestals:block/calcite_pedestal"
+          },
+          {
+            "type": "minecraft:special",
+            "base": "trophypedestals:block/calcite_pedestal",
+            "model": {
+              "type": "trophypedestals:pedestal_lens"
+            }
+          }
+        ]
       }
     }
   }
