@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "lens",
+  "key": {
+    "S": {
+      "item": "minecraft:snowball"
+    },
+    "I": {
+      "item": "minecraft:packed_ice"
+    },
+    "L": {
+      "item": "trophypedestals:clear_lens"
+    }
+  },
+  "pattern": [
+    "S S",
+    " L ",
+    " I "
+  ],
+  "result": {
+    "count": 1,
+    "id": "trophypedestals:frost_lens"
+  }
+}
