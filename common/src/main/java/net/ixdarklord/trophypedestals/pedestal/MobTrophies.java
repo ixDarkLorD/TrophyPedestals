@@ -46,6 +46,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import org.jetbrains.annotations.Nullable;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -183,6 +185,14 @@ public final class MobTrophies {
         Double override = chanceOverride(type);
         if (override != null) return override;
         return tagged(type) != null ? TrophyPedestalsConfig.BOSS_TROPHY_CHANCE.get() : TrophyPedestalsConfig.MOB_TROPHY_CHANCE.get();
+    }
+
+    /** A mob's chance of dropping its trophy as players should read it: none while trophies are off or it has none. */
+    public static String chanceText(EntityType<?> type) {
+        double chance = TrophyPedestalsConfig.MOB_TROPHIES.get() && hasTrophy(type) ? chance(type) : 0.0;
+        if (chance <= 0.0) return "0%";
+        // from its decimal text, so that 0.015 reads 1.5 and not 1.4999...; a tiny chance keeps its digits instead of reading 0
+        return new BigDecimal(Double.toString(chance)).movePointRight(2).round(new MathContext(4)).stripTrailingZeros().toPlainString() + "%";
     }
 
     public static @Nullable Double chanceOverride(EntityType<?> type) {
