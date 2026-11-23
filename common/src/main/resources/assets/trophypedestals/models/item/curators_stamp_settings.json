@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "trophypedestals:item/curators_stamp",
+    "layer1": "trophypedestals:item/curators_stamp_settings"
+  }
+}
