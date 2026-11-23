@@ -1,6 +1,7 @@
 package net.ixdarklord.trophypedestals.compat.render;
 
 import com.mojang.authlib.GameProfile;
+import net.ixdarklord.trophypedestals.client.PosedFigure;
 import net.ixdarklord.trophypedestals.compat.ValueInput;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -21,12 +22,13 @@ import org.jetbrains.annotations.Nullable;
  * wearing the skin of the player its look names ({@code "profile"}), looked up as it's first shown (the default skin
  * until then).
  */
-public final class StatueFigure extends RemotePlayer {
+public final class StatueFigure extends RemotePlayer implements PosedFigure {
     private @Nullable GameProfile skinOf;
     boolean fallFlying;
     float swimAmount;
     int fallFlyingTicks;
     @Nullable Direction bed;
+    private float @Nullable [] pose;
 
     private StatueFigure(ClientLevel level) {
         super(level, new GameProfile(Util.NIL_UUID, ""));
@@ -59,6 +61,16 @@ public final class StatueFigure extends RemotePlayer {
         if (!tag.contains(key, Tag.TAG_LIST)) return;
         ListTag list = tag.getList(key, Tag.TAG_COMPOUND);
         for (int i = 0; i < slots.length && i < list.size(); i++) setItemSlot(slots[i], ItemStack.parseOptional(registryAccess(), list.getCompound(i)));
+    }
+
+    @Override
+    public float @Nullable [] trophypedestals$pose() {
+        return pose;
+    }
+
+    @Override
+    public void trophypedestals$setPose(float @Nullable [] pose) {
+        this.pose = pose;
     }
 
     @Override

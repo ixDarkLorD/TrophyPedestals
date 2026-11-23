@@ -87,6 +87,7 @@ public final class EntityRenderStates {
                 figure.fallFlying = humanoid.isFallFlying;
                 figure.fallFlyingTicks = state instanceof AvatarRenderState avatar ? (int) avatar.fallFlyingTimeInTicks : 0;
                 figure.bed = living.bedOrientation;
+                figure.trophypedestals$setPose(humanoid.trophypedestals$pose());
             }
         }
     }
