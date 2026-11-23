@@ -30,6 +30,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -58,6 +59,8 @@ public class PedestalBlockEntity extends BlockEntity {
             EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND);
     private static final String LEADERBOARD = "Leaderboard", LEADER_NAME = "LeaderName", LEADER_VALUE = "LeaderValue", RUNNERS_UP = "RunnersUp";
     private static final String DISPLAY = "Display";
+    private static final String LENS = "Lens";
+    private static final String NO_LENS = "NoLens";
     private static final String MOB_TROPHY = "MobTrophy";
     private static final String TEXT_MODE = "TextMode";
     private static final String OWNER = "Owner";
@@ -88,6 +91,7 @@ public class PedestalBlockEntity extends BlockEntity {
     private static final String OLD_FACING = "Facing";
     public static final float MAX_TILT = 180.0F;
     private static final String NO_EFFECTS = "NoEffects";
+    private static final String EFFECTS_MODE = "EffectsMode";
     private static final String MUTED = "Muted";
     private static final String REDSTONE = "Redstone";
     private static final String POWERED = "Powered";
@@ -110,6 +114,7 @@ public class PedestalBlockEntity extends BlockEntity {
     private List<Leaderboards.Leader> runnersUp = List.of();
     private @Nullable ResourceLocation material;
     private ItemStack display = ItemStack.EMPTY;
+    private ItemStack lens = ItemStack.EMPTY;
     private TextMode textMode = TextMode.LOOKING;
     private @Nullable UUID owner;
     private String ownerName = "";
@@ -129,13 +134,15 @@ public class PedestalBlockEntity extends BlockEntity {
     private float crownScale = 1.0F, crownX, crownY;
     private boolean light = true;
     private float yaw, pitch, roll;
-    private boolean effects = true;
+    private TextMode effectsMode = TextMode.ALWAYS;
     private boolean sounds = true;
     private RedstoneMode redstone = RedstoneMode.IGNORE;
     private boolean powered;
     private ItemStack iconOverride = ItemStack.EMPTY;
     private boolean scene;
     private @Nullable Entity shownMob;
+    /** What the client's renderer remembers of this pedestal. It lives and dies with it; a plain Object, so that a server never loads the renderer. */
+    private @Nullable Object renderMemory;
     private float glassReach, glassHeight;
     private long placedAt = Long.MIN_VALUE / 2;
     private long displayChangedAt = Long.MIN_VALUE / 2;
@@ -169,6 +176,14 @@ public class PedestalBlockEntity extends BlockEntity {
 
     public @Nullable ResourceLocation material() {
         return material;
+    }
+
+    public @Nullable Object renderMemory() {
+        return renderMemory;
+    }
+
+    public void setRenderMemory(Object memory) {
+        renderMemory = memory;
     }
 
     public @Nullable Entity shownMob() {
@@ -363,9 +378,30 @@ public class PedestalBlockEntity extends BlockEntity {
         refresh();
     }
 
+    /** The lens fitted to this display pedestal, or empty. */
+    public ItemStack lens() {
+        return lens;
+    }
+
+    /** Fits a lens, or takes it out with an empty stack, and gives back the one fitted before. */
+    public ItemStack setLens(ItemStack stack) {
+        ItemStack old = lens;
+        lens = stack;
+        setChanged();
+        refresh();
+        return old;
+    }
+
     public void syncLight() {
         BlockState state = getBlockState();
-        if (state.getValue(PedestalBlock.LIT) != on() || state.getValue(PedestalBlock.RANK) != PedestalBlock.rank(rarity())) refresh();
+        if (state.getValue(PedestalBlock.LIT) != on() || state.getValue(PedestalBlock.RANK) != PedestalBlock.rank(rarity())
+                || state.getValue(PedestalBlock.POWERED) != displayed()
+                || state.getValue(PedestalBlock.SOCKET) != emptySocket()) refresh();
+    }
+
+    /** Whether it's a display pedestal with no lens fitted, its socket open. */
+    public boolean emptySocket() {
+        return lens.isEmpty() && !isTrophy() && !mannequin() && leaderboard == null;
     }
 
     private void refresh() {
@@ -374,15 +410,22 @@ public class PedestalBlockEntity extends BlockEntity {
         boolean lit = on();
         int rank = PedestalBlock.rank(rarity());
         if (!level.isClientSide() && state.hasProperty(PedestalBlock.LIT)
-                && (state.getValue(PedestalBlock.LIT) != lit || state.getValue(PedestalBlock.RANK) != rank)) {
-            level.setBlock(worldPosition, state.setValue(PedestalBlock.LIT, lit).setValue(PedestalBlock.RANK, rank), Block.UPDATE_ALL);
+                && (state.getValue(PedestalBlock.LIT) != lit || state.getValue(PedestalBlock.RANK) != rank || state.getValue(PedestalBlock.POWERED) != displayed()
+                || state.getValue(PedestalBlock.SOCKET) != emptySocket())) {
+            level.setBlock(worldPosition, state.setValue(PedestalBlock.LIT, lit).setValue(PedestalBlock.RANK, rank).setValue(PedestalBlock.POWERED, displayed())
+                    .setValue(PedestalBlock.SOCKET, emptySocket()), Block.UPDATE_ALL);
         } else {
             level.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_ALL);
         }
     }
 
     public boolean on() {
-        return displayed() && (isTrophy() || !display.isEmpty() || leaderboard != null || armorStand);
+        return displayed() && hasShowpiece();
+    }
+
+    /** Whether it has something to show, shown right now or resting while its When Powered setting has it off. */
+    public boolean hasShowpiece() {
+        return isTrophy() || !display.isEmpty() || leaderboard != null || armorStand;
     }
 
     public void markPlaced() {
@@ -582,12 +625,26 @@ public class PedestalBlockEntity extends BlockEntity {
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
 
+    /** Whether its flourishes show at all (always, or while looked at). */
     public boolean effects() {
-        return effects;
+        return effectsMode != TextMode.HIDDEN;
     }
 
+    /** Shows its flourishes (as they were set to show, or always) or hides them. */
     public void setEffects(boolean effects) {
-        this.effects = effects;
+        setEffectsMode(!effects ? TextMode.HIDDEN : effectsMode == TextMode.HIDDEN ? TextMode.ALWAYS : effectsMode);
+    }
+
+    /**
+     * When its flourishes show: always, only while a player looks at it, or never. Its showcase light, outlines and a
+     * lens's colour aren't flourishes, and always show.
+     */
+    public TextMode effectsMode() {
+        return effectsMode;
+    }
+
+    public void setEffectsMode(TextMode mode) {
+        this.effectsMode = mode;
         setChanged();
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
@@ -736,6 +793,8 @@ public class PedestalBlockEntity extends BlockEntity {
         if (mobTrophy != null) output.store(MOB_TROPHY, MobTrophyRecord.CODEC, mobTrophy);
         if (material != null) output.store(MATERIAL, ResourceLocation.CODEC, material);
         if (!display.isEmpty()) output.store(DISPLAY, ItemStack.CODEC, display);
+        if (!lens.isEmpty()) output.store(LENS, ItemStack.CODEC, lens);
+        else output.putBoolean(NO_LENS, true);
         if (textMode != TextMode.LOOKING) output.store(TEXT_MODE, TextMode.CODEC, textMode);
         if (owner != null) {
             output.store(OWNER, UUIDUtil.CODEC, owner);
@@ -763,7 +822,7 @@ public class PedestalBlockEntity extends BlockEntity {
         if (yaw != 0.0F) output.putFloat(YAW, yaw);
         if (pitch != 0.0F) output.putFloat(PITCH, pitch);
         if (roll != 0.0F) output.putFloat(ROLL, roll);
-        if (!effects) output.putBoolean(NO_EFFECTS, true);
+        if (effectsMode != TextMode.ALWAYS) output.store(EFFECTS_MODE, TextMode.CODEC, effectsMode);
         if (!sounds) output.putBoolean(MUTED, true);
         if (redstone != RedstoneMode.IGNORE) output.store(REDSTONE, RedstoneMode.CODEC, redstone);
         if (powered) output.putBoolean(POWERED, true);
@@ -799,6 +858,8 @@ public class PedestalBlockEntity extends BlockEntity {
         if (!Objects.equals(shown, mobTrophy)) shownMob = null;
         material = input.read(MATERIAL, ResourceLocation.CODEC).orElse(null);
         display = input.read(DISPLAY, ItemStack.CODEC).orElse(ItemStack.EMPTY);
+        // A display pedestal placed before lenses came has the Clear Lens it would have been crafted with.
+        lens = input.read(LENS, ItemStack.CODEC).orElseGet(() -> input.getBooleanOr(NO_LENS, false) || isTrophy() ? ItemStack.EMPTY : clearLens());
         owner = input.read(OWNER, UUIDUtil.CODEC).orElse(null);
         ownerName = input.getStringOr(OWNER_NAME, "");
         scale = Mth.clamp(input.getFloatOr(SCALE, 1.0F), MIN_SCALE, MAX_SCALE);
@@ -823,7 +884,7 @@ public class PedestalBlockEntity extends BlockEntity {
         yaw = turned;
         pitch = Mth.clamp(input.getFloatOr(PITCH, 0.0F), -MAX_TILT, MAX_TILT);
         roll = Mth.clamp(input.getFloatOr(ROLL, 0.0F), -MAX_TILT, MAX_TILT);
-        effects = !input.getBooleanOr(NO_EFFECTS, false);
+        effectsMode = input.read(EFFECTS_MODE, TextMode.CODEC).orElse(input.getBooleanOr(NO_EFFECTS, false) ? TextMode.HIDDEN : TextMode.ALWAYS);
         sounds = !input.getBooleanOr(MUTED, false);
         redstone = input.read(REDSTONE, RedstoneMode.CODEC).orElse(RedstoneMode.IGNORE);
         powered = input.getBooleanOr(POWERED, false);
@@ -847,6 +908,8 @@ public class PedestalBlockEntity extends BlockEntity {
         record = components.get(Pedestals.RECORD.get());
         mobTrophy = components.get(Pedestals.MOB_TROPHY.get());
         material = components.get(Pedestals.PEDESTAL_MATERIAL.get());
+        ItemContainerContents fitted = components.get(Pedestals.LENS.get());
+        lens = fitted != null ? fitted.copyOne() : isTrophy() ? ItemStack.EMPTY : clearLens();
         if (level != null && level.isClientSide() && !synced && on()) displayChangedAt = level.getGameTime();
     }
 
@@ -856,6 +919,11 @@ public class PedestalBlockEntity extends BlockEntity {
         if (record != null) components.set(Pedestals.RECORD.get(), record);
         if (mobTrophy != null) components.set(Pedestals.MOB_TROPHY.get(), mobTrophy);
         if (material != null) components.set(Pedestals.PEDESTAL_MATERIAL.get(), material);
+        if (!isTrophy()) components.set(Pedestals.LENS.get(), Pedestals.lens(lens));
+    }
+
+    private static ItemStack clearLens() {
+        return new ItemStack(Pedestals.LENSES.get(Lens.CLEAR).get());
     }
 
     @Override
@@ -865,6 +933,8 @@ public class PedestalBlockEntity extends BlockEntity {
         output.discard(RECORD);
         output.discard(MOB_TROPHY);
         output.discard(MATERIAL);
+        output.discard(LENS);
+        output.discard(NO_LENS);
     }
 
     @Override

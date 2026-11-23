@@ -20,6 +20,8 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -29,6 +31,7 @@ import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -98,6 +101,7 @@ public final class Pedestals {
     private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.BLOCK_ENTITY_TYPE);
     private static final DeferredRegister<DataComponentType<?>> COMPONENTS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.DATA_COMPONENT_TYPE);
     private static final DeferredRegister<LootItemFunctionType<?>> LOOT_FUNCTIONS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.LOOT_FUNCTION_TYPE);
+    private static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.RECIPE_SERIALIZER);
     private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.CREATIVE_MODE_TAB);
     private static final DeferredRegister<ResourceLocation> STATS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.CUSTOM_STAT);
 
@@ -111,6 +115,15 @@ public final class Pedestals {
             () -> DataComponentType.<ResourceLocation>builder().persistent(ResourceLocation.CODEC).networkSynchronized(ResourceLocation.STREAM_CODEC).build());
     public static final RegistryEntry<DataComponentType<ResourceLocation>> TRIM_MATERIAL = COMPONENTS.register("trim_material",
             () -> DataComponentType.<ResourceLocation>builder().persistent(ResourceLocation.CODEC).networkSynchronized(ResourceLocation.STREAM_CODEC).build());
+    /** The lens a crafted pedestal comes with, fitted when it's placed; empty when it has none. */
+    public static final RegistryEntry<DataComponentType<ItemContainerContents>> LENS = COMPONENTS.register("lens",
+            () -> DataComponentType.<ItemContainerContents>builder().persistent(ItemContainerContents.CODEC).networkSynchronized(ItemContainerContents.STREAM_CODEC).build());
+
+    /** The lens a pedestal item comes with, held as its {@link #LENS} component. */
+    public static ItemContainerContents lens(ItemStack lens) {
+        return lens.isEmpty() ? ItemContainerContents.EMPTY : ItemContainerContents.fromItems(List.of(lens.copyWithCount(1)));
+    }
+    public static final RegistryEntry<RecipeSerializer<?>> PEDESTAL_RECIPE = RECIPE_SERIALIZERS.register("pedestal", () -> PedestalRecipe.SERIALIZER);
     public static final Map<Material, RegistryEntry<PedestalBlock>> BLOCKS_BY_STONE = new LinkedHashMap<>();
     public static final Map<Material, RegistryEntry<BlockItem>> ITEMS_BY_STONE = new LinkedHashMap<>();
 
@@ -137,6 +150,15 @@ public final class Pedestals {
             new Item.Properties().stacksTo(1)));
     public static final RegistryEntry<Item> LEADERBOARD_CREST = ITEMS.register("leaderboard_crest", () -> new Item(
             new Item.Properties()));
+    public static final RegistryEntry<Item> CURATORS_STAMP = ITEMS.register("curators_stamp", () -> new CuratorsStampItem(
+            new Item.Properties().stacksTo(1)));
+    public static final Map<Lens, RegistryEntry<Item>> LENSES = new EnumMap<>(Lens.class);
+
+    static {
+        for (Lens lens : Lens.values()) LENSES.put(lens, ITEMS.register(lens.id(), () -> new LensItem(lens,
+                new Item.Properties())));
+    }
+
     public static final RegistryEntry<BlockItem> CUSTOM_ITEM = ITEMS.register("custom_pedestal", () -> new CustomPedestalItem(CUSTOM.get(),
             new Item.Properties()));
 
@@ -179,6 +201,8 @@ public final class Pedestals {
                 DISPLAY_ITEMS.forEach(item -> items.accept(new ItemStack(item.get())));
                 items.accept(new ItemStack(TROPHY_LEDGER.get()));
                 items.accept(new ItemStack(LEADERBOARD_CREST.get()));
+                items.accept(new ItemStack(CURATORS_STAMP.get()));
+                LENSES.values().forEach(lens -> items.accept(new ItemStack(lens.get())));
             })
             .title(Component.translatable("itemGroup.trophypedestals.pedestals"))
             .icon(() -> new ItemStack(DEFAULT.get()))
@@ -197,6 +221,7 @@ public final class Pedestals {
         ITEMS.register();
         BLOCK_ENTITIES.register();
         LOOT_FUNCTIONS.register();
+        RECIPE_SERIALIZERS.register();
         TABS.register();
         STATS.register();
         MobTrophies.init();

@@ -22,8 +22,10 @@ import net.ixdarklord.trophypedestals.feat.TrophyLedger;
 import net.ixdarklord.trophypedestals.network.AdjustMannequinPayload;
 import net.ixdarklord.trophypedestals.network.AdjustPedestalPayload;
 import net.ixdarklord.trophypedestals.network.SetLeaderboardPayload;
+import net.ixdarklord.trophypedestals.pedestal.CuratorsStampItem;
 import net.ixdarklord.trophypedestals.pedestal.DisplayedTrophySettings;
 import net.ixdarklord.trophypedestals.pedestal.Leaderboards;
+import net.ixdarklord.trophypedestals.pedestal.Lens;
 import net.ixdarklord.trophypedestals.pedestal.MobLooks;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophies;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophyRecord;
@@ -70,8 +72,12 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.item.component.DyedItemColor;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
@@ -191,6 +197,9 @@ public final class TrophyPedestalsGameTests {
         ItemStack held = new ItemStack(Items.DIAMOND, 3);
         player.setItemInHand(InteractionHand.MAIN_HAND, held);
         state.useItemOn(held, helper.getLevel(), player, InteractionHand.MAIN_HAND, hit);
+        helper.assertTrue(pedestal.display().isEmpty() && held.getCount() == 3, "with no lens fitted, it takes no item");
+        pedestal.setLens(new ItemStack(Pedestals.LENSES.get(Lens.CLEAR).get()));
+        state.useItemOn(held, helper.getLevel(), player, InteractionHand.MAIN_HAND, hit);
         helper.assertTrue(pedestal.display().is(Items.DIAMOND) && pedestal.display().getCount() == 1 && held.getCount() == 2,
                 "an item in hand goes on display, one of it");
         helper.assertTrue(helper.getLevel().getBlockState(pos).getValue(PedestalBlock.LIT), "and the pedestal lights up");
@@ -200,7 +209,7 @@ public final class TrophyPedestalsGameTests {
         helper.assertFalse(helper.getLevel().getBlockState(pos).getValue(PedestalBlock.LIT), "going dark again");
         helper.assertTrue(pedestal.textMode() == PedestalBlockEntity.TextMode.LOOKING && pedestal.scale() == 1.0F, "its text shows when looked at by default, at the usual size");
         player.setPos(pos.getCenter());
-        AdjustPedestalPayload adjust = new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.HIDDEN, 1.5F, 1.0F, false, -2.0F, 90.0F, 30.0F, -45.0F, false, PedestalBlockEntity.RedstoneMode.SHOW, false, false, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE);
+        AdjustPedestalPayload adjust = new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.HIDDEN, 1.5F, 1.0F, false, -2.0F, 90.0F, 30.0F, -45.0F, PedestalBlockEntity.TextMode.HIDDEN, PedestalBlockEntity.RedstoneMode.SHOW, false, false, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE);
         adjust.apply(player);
         helper.assertTrue(pedestal.textMode() == PedestalBlockEntity.TextMode.HIDDEN && !pedestal.spins() && !pedestal.effects()
                 && pedestal.redstone() == PedestalBlockEntity.RedstoneMode.SHOW && !pedestal.displayed() && !pedestal.sounds(),
@@ -217,7 +226,7 @@ public final class TrophyPedestalsGameTests {
             helper.getLevel().setBlockAndUpdate(pos.north(), Blocks.REDSTONE_BLOCK.defaultBlockState());
             helper.assertTrue(pedestal.powered() && pedestal.displayed(), "a redstone signal shows a pedestal set to show while powered");
             helper.getLevel().setBlockAndUpdate(pos.north(), Blocks.AIR.defaultBlockState());
-            new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.ALWAYS, 99.0F, 99.0F, true, 0.0F, 0.0F, 0.0F, 0.0F, true, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(player);
+            new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.ALWAYS, 99.0F, 99.0F, true, 0.0F, 0.0F, 0.0F, 0.0F, PedestalBlockEntity.TextMode.ALWAYS, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(player);
             helper.assertTrue(pedestal.textMode() == PedestalBlockEntity.TextMode.ALWAYS && pedestal.scale() == PedestalBlockEntity.MAX_SCALE
                     && pedestal.height() == PedestalBlockEntity.MAX_HEIGHT, "within its limits");
         } finally {
@@ -248,7 +257,7 @@ public final class TrophyPedestalsGameTests {
         CompoundTag spot = new CompoundTag();
         spot.putFloat("facing", 45.0F);
         DisplayedTrophySettings oldSpot = DisplayedTrophySettings.CODEC.parse(NbtOps.INSTANCE, spot).getOrThrow();
-        DisplayedTrophySettings tilted = new DisplayedTrophySettings(PedestalBlockEntity.TextMode.LOOKING, true, 10.0F, 20.0F, -30.0F, true,
+        DisplayedTrophySettings tilted = new DisplayedTrophySettings(PedestalBlockEntity.TextMode.LOOKING, true, 10.0F, 20.0F, -30.0F, PedestalBlockEntity.TextMode.ALWAYS,
                 PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, true, true);
         helper.assertTrue(oldSpot.yaw() == 45.0F && tilted.equals(DisplayedTrophySettings.CODEC.parse(NbtOps.INSTANCE,
                 DisplayedTrophySettings.CODEC.encodeStart(NbtOps.INSTANCE, tilted).getOrThrow()).getOrThrow()), "and a spot's, which keeps its pitch and roll");
@@ -514,7 +523,7 @@ public final class TrophyPedestalsGameTests {
         pedestal.applyComponentsFromItemStack(TrophyPedestals.create(kind(), SUBJECT, PedestalRecord.Unlocker.PLAYER, victim.getName().getString()));
         helper.assertTrue(pedestal.canShowStatue() && !pedestal.statue(), "a player's achievement trophy can show their statue, and shows its icon by default");
         victim.setPos(pos.getCenter());
-        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.LOOKING, 1.0F, 0.0F, true, 0.0F, 0.0F, 0.0F, 0.0F, true, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, true, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(victim);
+        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.LOOKING, 1.0F, 0.0F, true, 0.0F, 0.0F, 0.0F, 0.0F, PedestalBlockEntity.TextMode.ALWAYS, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, true, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(victim);
         helper.assertTrue(pedestal.statue() && pedestal.showsStatue(), "the screen sets it to show the statue");
         PedestalSettings.set(pedestal, PedestalSettings.get(pedestal).toBuilder().statuePose(PedestalBlockEntity.StatuePose.SLEEPING).build());
         PedestalBlockEntity read = (PedestalBlockEntity) BlockEntity.loadStatic(pos, pedestal.getBlockState(),
@@ -558,7 +567,7 @@ public final class TrophyPedestalsGameTests {
                 && pedestal.roll() == -45.0F && PedestalSettings.isLocked(pedestal)
                 && !pedestal.canAdjust(player) && PedestalSettings.refusal(pedestal).orElseThrow().getString().equals("Hands off"),
                 "a mod sets its settings and locks them, with its message");
-        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.ALWAYS, 5.0F, 1.0F, true, 0.0F, 0.0F, 0.0F, 0.0F, true, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(player);
+        new AdjustPedestalPayload(pos, PedestalBlockEntity.TextMode.ALWAYS, 5.0F, 1.0F, true, 0.0F, 0.0F, 0.0F, 0.0F, PedestalBlockEntity.TextMode.ALWAYS, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, 1.0F, true, 1.0F, 0.0F, 0.0F, true, PedestalBlockEntity.Access.PRIVATE).apply(player);
         helper.assertTrue(pedestal.scale() == 2.0F && !pedestal.spins() && pedestal.textMode() == PedestalBlockEntity.TextMode.LOOKING,
                 "and a player's screen can't change them");
         PedestalBlockEntity read = (PedestalBlockEntity) BlockEntity.loadStatic(pos, pedestal.getBlockState(),
@@ -614,6 +623,127 @@ public final class TrophyPedestalsGameTests {
         helper.assertTrue(TrophyDisplayBlock.spotAt(level.getBlockState(pos), pos, new BlockHitResult(onSpot(pos), Direction.EAST, pos, false)) < 0
                 && TrophyDisplayBlock.spotAt(level.getBlockState(pos), pos, new BlockHitResult(new Vec3(pos.getX() + 0.5, pos.getY() + 4.0 / 16.0, pos.getZ() + 6.0 / 16.0), Direction.NORTH, pos, false)) < 0,
                 "a spot isn't aimed at through the shelf's side, nor under its board");
+        helper.succeed();
+    }
+
+    @GameTest
+    public static void curatorsStampCopiesSettingsAndLens(GameTestHelper helper) {
+        ServerPlayer player = player(helper);
+        player.setGameMode(GameType.SURVIVAL);
+        player.getInventory().clearContent();
+        ServerLevel level = helper.getLevel();
+        BlockPos from = helper.absolutePos(new BlockPos(1, 1, 1)), to = helper.absolutePos(new BlockPos(3, 1, 1));
+        level.setBlockAndUpdate(from, Pedestals.DEFAULT.get().defaultBlockState());
+        level.setBlockAndUpdate(to, Pedestals.DEFAULT.get().defaultBlockState());
+        PedestalBlockEntity source = (PedestalBlockEntity) level.getBlockEntity(from), target = (PedestalBlockEntity) level.getBlockEntity(to);
+        source.setSpins(false);
+        source.setSounds(false);
+        ItemStack lens = new ItemStack(Pedestals.LENSES.get(Lens.CLEAR).get());
+        lens.set(DataComponents.DYED_COLOR, new DyedItemColor(0x3366FF, true));
+        source.setLens(lens);
+        ItemStack stamp = new ItemStack(Pedestals.CURATORS_STAMP.get());
+        CuratorsStampItem.copy(stamp, source);
+        player.setItemInHand(InteractionHand.MAIN_HAND, stamp);
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(to), Direction.UP, to, false);
+        level.getBlockState(to).useItemOn(stamp, level, player, InteractionHand.MAIN_HAND, hit);
+        helper.assertTrue(!target.spins() && !target.sounds() && target.lens().isEmpty(), "with no matching lens in hand, only the settings are pasted");
+        player.getInventory().add(lens.copy());
+        target.setLens(new ItemStack(Pedestals.LENSES.get(Lens.FROST).get()));
+        level.getBlockState(to).useItemOn(stamp, level, player, InteractionHand.MAIN_HAND, hit);
+        helper.assertTrue(ItemStack.isSameItemSameComponents(target.lens(), lens), "a matching lens from the inventory is fitted");
+        helper.assertTrue(player.getInventory().countItem(lens.getItem()) == 0 && player.getInventory().countItem(Pedestals.LENSES.get(Lens.FROST).get()) == 1,
+                "using it up, and the old lens comes back");
+        target.setLens(new ItemStack(Pedestals.LENSES.get(Lens.FROST).get()));
+        target.setSpins(true);
+        player.getInventory().add(lens.copy());
+        CuratorsStampItem.setMode(stamp, CuratorsStampItem.Mode.SETTINGS);
+        level.getBlockState(to).useItemOn(stamp, level, player, InteractionHand.MAIN_HAND, hit);
+        helper.assertTrue(!target.spins() && Lens.of(target.lens()) == Lens.FROST, "set to settings, it leaves the lens alone");
+        target.setSpins(true);
+        CuratorsStampItem.setMode(stamp, CuratorsStampItem.Mode.LENS);
+        level.getBlockState(to).useItemOn(stamp, level, player, InteractionHand.MAIN_HAND, hit);
+        helper.assertTrue(target.spins() && Lens.of(target.lens()) == Lens.CLEAR, "set to lens, it leaves the settings alone");
+        helper.assertTrue(CuratorsStampItem.holdsCopy(stamp) && CuratorsStampItem.mode(stamp) == CuratorsStampItem.Mode.LENS, "and it keeps its copy and its choice");
+        level.setBlockAndUpdate(from, Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(to, Blocks.AIR.defaultBlockState());
+        helper.succeed();
+    }
+
+    @GameTest
+    public static void lensesFitDisplayPedestals(GameTestHelper helper) {
+        ServerPlayer player = player(helper);
+        player.setGameMode(GameType.SURVIVAL);
+        ServerLevel level = helper.getLevel();
+        BlockPos pos = helper.absolutePos(new BlockPos(1, 1, 1));
+        level.setBlockAndUpdate(pos, Pedestals.DEFAULT.get().defaultBlockState());
+        PedestalBlockEntity pedestal = (PedestalBlockEntity) level.getBlockEntity(pos);
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(pos).add(0.0, 0.4, 0.0), Direction.UP, pos, false);
+        ItemStack prism = new ItemStack(Pedestals.LENSES.get(Lens.PRISM).get(), 2);
+        player.setItemInHand(InteractionHand.MAIN_HAND, prism);
+        BlockHitResult side = new BlockHitResult(Vec3.atCenterOf(pos), Direction.NORTH, pos, false);
+        level.getBlockState(pos).useItemOn(prism, level, player, InteractionHand.MAIN_HAND, side);
+        helper.assertTrue(pedestal.lens().isEmpty() && pedestal.display().isEmpty() && prism.getCount() == 2, "a lens can't be fitted from a side");
+        level.getBlockState(pos).useItemOn(prism, level, player, InteractionHand.MAIN_HAND, hit);
+        helper.assertTrue(Lens.of(pedestal.lens()) == Lens.PRISM && pedestal.display().isEmpty() && prism.getCount() == 1,
+                "a lens is fitted, not shown as the item: " + pedestal.lens() + ", " + pedestal.display());
+        ItemStack diamond = new ItemStack(Items.DIAMOND);
+        level.getBlockState(pos).useItemOn(diamond, level, player, InteractionHand.MAIN_HAND, hit);
+        ItemStack dyed = new ItemStack(Pedestals.LENSES.get(Lens.CLEAR).get());
+        dyed.set(DataComponents.DYED_COLOR, new DyedItemColor(0x3366FF, true));
+        player.setItemInHand(InteractionHand.MAIN_HAND, dyed);
+        level.getBlockState(pos).useItemOn(dyed, level, player, InteractionHand.MAIN_HAND, hit);
+        helper.assertTrue(Lens.of(pedestal.lens()) == Lens.CLEAR && Lens.dyed(pedestal.lens()) == 0x3366FF && pedestal.display().is(Items.DIAMOND),
+                "another lens swaps in over a shown item, keeping its colour");
+        helper.assertTrue(player.getInventory().countItem(Pedestals.LENSES.get(Lens.PRISM).get()) == 1, "and the old lens comes back");
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        level.getBlockState(pos).useWithoutItem(level, player, hit);
+        helper.assertTrue(pedestal.display().isEmpty() && !pedestal.lens().isEmpty(), "an empty hand takes the item first");
+        level.getBlockState(pos).useWithoutItem(level, player, side);
+        helper.assertTrue(!pedestal.lens().isEmpty(), "and a lens can't be taken out from a side");
+        level.getBlockState(pos).useWithoutItem(level, player, hit);
+        helper.assertTrue(pedestal.lens().isEmpty() && player.getInventory().countItem(Pedestals.LENSES.get(Lens.CLEAR).get()) == 1, "then the lens");
+        helper.assertTrue(PedestalBlock.light(level.getBlockState(pos)) == PedestalBlock.SOCKET_LIGHT, "set to ignore redstone, an empty pedestal is lit without power");
+        level.setBlockAndUpdate(pos.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        helper.assertTrue(PedestalBlock.light(level.getBlockState(pos)) == PedestalBlock.SOCKET_LIGHT, "and with it");
+        pedestal.setLens(new ItemStack(Pedestals.LENSES.get(Lens.CLEAR).get()));
+        helper.assertTrue(PedestalBlock.light(level.getBlockState(pos)) == PedestalBlock.POWERED_LIGHT, "and with a lens fitted, a lower one");
+        pedestal.setLens(ItemStack.EMPTY);
+        level.setBlockAndUpdate(pos.east(), Blocks.AIR.defaultBlockState());
+        helper.assertTrue(PedestalBlock.light(level.getBlockState(pos)) == PedestalBlock.SOCKET_LIGHT, "and stays lit once the power's gone");
+        pedestal.setRedstone(PedestalBlockEntity.RedstoneMode.HIDE);
+        helper.assertTrue(PedestalBlock.light(level.getBlockState(pos)) == PedestalBlock.SOCKET_LIGHT, "set to hide while powered, it's lit without power");
+        level.setBlockAndUpdate(pos.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        helper.assertTrue(PedestalBlock.light(level.getBlockState(pos)) == 0, "and goes dark with it");
+        level.setBlockAndUpdate(pos.east(), Blocks.AIR.defaultBlockState());
+        pedestal.setRedstone(PedestalBlockEntity.RedstoneMode.SHOW);
+        helper.assertTrue(PedestalBlock.light(level.getBlockState(pos)) == 0, "set to show while powered, it's dark without power");
+        level.setBlockAndUpdate(pos.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        helper.assertTrue(PedestalBlock.light(level.getBlockState(pos)) == PedestalBlock.SOCKET_LIGHT, "and lit with it");
+        level.setBlockAndUpdate(pos.east(), Blocks.AIR.defaultBlockState());
+        pedestal.setRedstone(PedestalBlockEntity.RedstoneMode.IGNORE);
+        pedestal.setLens(new ItemStack(Pedestals.LENSES.get(Lens.FROST).get()));
+        List<ItemStack> drops = Block.getDrops(level.getBlockState(pos), level, pos, pedestal);
+        ItemStack dropped = drops.isEmpty() ? ItemStack.EMPTY : drops.getFirst();
+        ItemContainerContents kept = dropped.get(Pedestals.LENS.get());
+        helper.assertTrue(drops.size() == 1 && kept != null && Lens.of(kept.copyOne()) == Lens.FROST, "a broken pedestal keeps its lens in its item: " + drops);
+        level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(pos, Pedestals.DEFAULT.get().defaultBlockState());
+        PedestalBlockEntity placed = (PedestalBlockEntity) level.getBlockEntity(pos);
+        placed.applyComponentsFromItemStack(dropped);
+        helper.assertTrue(Lens.of(placed.lens()) == Lens.FROST, "and placed again, the lens is fitted");
+        placed.applyComponentsFromItemStack(new ItemStack(Pedestals.DEFAULT.get()));
+        helper.assertTrue(Lens.of(placed.lens()) == Lens.CLEAR, "a pedestal item from before lenses comes with a Clear Lens");
+        ItemStack bare = new ItemStack(Pedestals.DEFAULT.get());
+        bare.set(Pedestals.LENS.get(), ItemContainerContents.EMPTY);
+        placed.applyComponentsFromItemStack(bare);
+        helper.assertTrue(placed.lens().isEmpty(), "one whose lens was taken out comes with none");
+        ItemStack slate = new ItemStack(Items.POLISHED_DEEPSLATE), gold = new ItemStack(Items.GOLD_INGOT);
+        ItemStack ember = new ItemStack(Pedestals.LENSES.get(Lens.EMBER).get());
+        CraftingInput grid = CraftingInput.of(3, 3, List.of(slate, ember, slate, ItemStack.EMPTY, slate, ItemStack.EMPTY, slate, gold, slate));
+        ItemStack crafted = level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, grid, level).map(recipe -> recipe.value().assemble(grid, level.registryAccess())).orElse(ItemStack.EMPTY);
+        ItemContainerContents craftedLens = crafted.get(Pedestals.LENS.get());
+        helper.assertTrue(crafted.is(Pedestals.DEFAULT.get().asItem()) && craftedLens != null && Lens.of(craftedLens.copyOne()) == Lens.EMBER,
+                "a pedestal is crafted with a lens, which it keeps: " + crafted);
         helper.succeed();
     }
 
@@ -886,6 +1016,7 @@ public final class TrophyPedestalsGameTests {
         level.setBlockAndUpdate(pos, Pedestals.DEFAULT.get().defaultBlockState());
         PedestalBlockEntity pedestal = (PedestalBlockEntity) level.getBlockEntity(pos);
         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false);
+        pedestal.setLens(new ItemStack(Pedestals.LENSES.get(Lens.CLEAR).get()));
         use(level, pos, player, new ItemStack(Items.DIAMOND), hit);
         use(level, pos, player, new ItemStack(Items.RED_STAINED_GLASS), hit);
         helper.assertTrue(pedestal.glass() && pedestal.glassColor() == DyeColor.RED && pedestal.display().is(Items.DIAMOND), "red stained glass closes a red case over a displayed item");
@@ -969,6 +1100,7 @@ public final class TrophyPedestalsGameTests {
         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false);
         level.setBlockAndUpdate(pos, Pedestals.DEFAULT.get().defaultBlockState());
         helper.assertTrue(level.getBlockState(pos).getAnalogOutputSignal(level, pos) == 0, "an empty pedestal gives no signal");
+        ((PedestalBlockEntity) level.getBlockEntity(pos)).setLens(new ItemStack(Pedestals.LENSES.get(Lens.CLEAR).get()));
         use(level, pos, player, new ItemStack(Items.DIAMOND), hit);
         helper.assertTrue(level.getBlockState(pos).getAnalogOutputSignal(level, pos) == 1, "one showing an item gives 1");
         BlockPos trophyPos = helper.absolutePos(new BlockPos(3, 1, 3));

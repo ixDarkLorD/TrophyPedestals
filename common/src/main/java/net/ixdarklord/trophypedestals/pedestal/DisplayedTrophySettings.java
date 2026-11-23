@@ -10,11 +10,11 @@ import java.util.Optional;
  * for the spot it's on.
  */
 public record DisplayedTrophySettings(PedestalBlockEntity.TextMode textMode, boolean spins, float yaw, float pitch, float roll,
-                                      boolean effects,
+                                      PedestalBlockEntity.TextMode effects,
                                       PedestalBlockEntity.RedstoneMode redstone, boolean sounds, boolean animates, boolean statue,
                                       PedestalBlockEntity.StatuePose statuePose, String animation, boolean crown, boolean light) {
-    public static final DisplayedTrophySettings DEFAULT = new DisplayedTrophySettings(PedestalBlockEntity.TextMode.LOOKING, true, 0.0F, 0.0F, 0.0F, true,
-            PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, true, true);
+    public static final DisplayedTrophySettings DEFAULT = new DisplayedTrophySettings(PedestalBlockEntity.TextMode.LOOKING, true, 0.0F, 0.0F, 0.0F,
+            PedestalBlockEntity.TextMode.ALWAYS, PedestalBlockEntity.RedstoneMode.IGNORE, true, true, false, PedestalBlockEntity.StatuePose.STANDING, PedestalBlockEntity.IDLE, true, true);
 
     public static final Codec<DisplayedTrophySettings> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             PedestalBlockEntity.TextMode.CODEC.optionalFieldOf("text", DEFAULT.textMode).forGetter(DisplayedTrophySettings::textMode),
@@ -23,7 +23,8 @@ public record DisplayedTrophySettings(PedestalBlockEntity.TextMode textMode, boo
             Codec.FLOAT.optionalFieldOf("facing").forGetter(settings -> Optional.empty()),
             Codec.FLOAT.optionalFieldOf("pitch", 0.0F).forGetter(DisplayedTrophySettings::pitch),
             Codec.FLOAT.optionalFieldOf("roll", 0.0F).forGetter(DisplayedTrophySettings::roll),
-            Codec.BOOL.optionalFieldOf("effects", true).forGetter(DisplayedTrophySettings::effects),
+            Codec.BOOL.optionalFieldOf("effects", true).forGetter(settings -> settings.effects != PedestalBlockEntity.TextMode.HIDDEN),
+            PedestalBlockEntity.TextMode.CODEC.optionalFieldOf("effects_mode").forGetter(settings -> Optional.of(settings.effects)),
             PedestalBlockEntity.RedstoneMode.CODEC.optionalFieldOf("redstone", DEFAULT.redstone).forGetter(DisplayedTrophySettings::redstone),
             Codec.BOOL.optionalFieldOf("sounds", true).forGetter(DisplayedTrophySettings::sounds),
             Codec.BOOL.optionalFieldOf("animates", true).forGetter(DisplayedTrophySettings::animates),
@@ -32,15 +33,16 @@ public record DisplayedTrophySettings(PedestalBlockEntity.TextMode textMode, boo
             Codec.STRING.optionalFieldOf("animation", DEFAULT.animation).forGetter(DisplayedTrophySettings::animation),
             Codec.BOOL.optionalFieldOf("crown", true).forGetter(DisplayedTrophySettings::crown),
             Codec.BOOL.optionalFieldOf("light", true).forGetter(DisplayedTrophySettings::light)
-    ).apply(instance, (text, spins, yaw, facing, pitch, roll, effects, redstone, sounds, animates, statue, pose, animation, crown, light) ->
-            new DisplayedTrophySettings(text, spins, yaw.or(() -> facing).orElse(0.0F), pitch, roll, effects, redstone, sounds, animates,
+    ).apply(instance, (text, spins, yaw, facing, pitch, roll, effects, effectsMode, redstone, sounds, animates, statue, pose, animation, crown, light) ->
+            new DisplayedTrophySettings(text, spins, yaw.or(() -> facing).orElse(0.0F), pitch, roll,
+                    effectsMode.orElse(effects ? PedestalBlockEntity.TextMode.ALWAYS : PedestalBlockEntity.TextMode.HIDDEN), redstone, sounds, animates,
                     statue, pose, animation, crown, light)));
 
     public void applyTo(PedestalBlockEntity pedestal, boolean powered) {
         pedestal.setTextMode(textMode);
         pedestal.setSpins(spins);
         pedestal.setRotation(yaw, pitch, roll);
-        pedestal.setEffects(effects);
+        pedestal.setEffectsMode(effects);
         pedestal.setRedstone(redstone);
         pedestal.setSounds(sounds);
         pedestal.setAnimates(animates);

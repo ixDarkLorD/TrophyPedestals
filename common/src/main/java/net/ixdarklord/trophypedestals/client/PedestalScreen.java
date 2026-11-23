@@ -86,7 +86,7 @@ public final class PedestalScreen extends Screen {
     private static final int GOLD_FRAME = 0xFFE0AC3C, GOLD_TOP = 0xFFFFF0A8, GOLD_LIT = 0xFFFFC24A, LIST = 0xF00E121A, LIST_HOVER = 0xFF252C3C;
 
     private enum Tab {
-        DISPLAY, TEXT, POSE, MODEL, STAND_POSE, BEHAVIOR;
+        DISPLAY, EFFECTS, TEXT, POSE, MODEL, STAND_POSE, BEHAVIOR;
 
         Component label() {
             return Component.translatable("trophypedestals.pedestal.screen.tab." + name().toLowerCase(Locale.ROOT));
@@ -101,7 +101,8 @@ public final class PedestalScreen extends Screen {
     private final Component owner;
     private PedestalBlockEntity.TextMode textMode;
     private float scale, lift, textLift, textScale, yaw, pitch, roll, crownScale, crownX, crownY;
-    private boolean spins, effects, sounds, animates, statue, crown, light;
+    private boolean spins, sounds, animates, statue, crown, light;
+    private PedestalBlockEntity.TextMode effectsMode;
     private int mouseX, mouseY;
     private PedestalBlockEntity.StatuePose statuePose;
     private String animation;
@@ -167,7 +168,7 @@ public final class PedestalScreen extends Screen {
         this.yaw = pedestal.yaw();
         this.pitch = pedestal.pitch();
         this.roll = pedestal.roll();
-        this.effects = pedestal.effects();
+        this.effectsMode = pedestal.effectsMode();
         this.sounds = pedestal.sounds();
         this.redstone = pedestal.redstone();
         this.access = pedestal.access();
@@ -235,6 +236,7 @@ public final class PedestalScreen extends Screen {
     private List<Tab> tabs() {
         List<Tab> tabs = new ArrayList<>();
         tabs.add(Tab.DISPLAY);
+        tabs.add(Tab.EFFECTS);
         tabs.add(Tab.TEXT);
         if (posed()) tabs.add(Tab.POSE);
         if (mannequin) {
@@ -326,6 +328,7 @@ public final class PedestalScreen extends Screen {
         int sections = column - BAR_GAP;
         switch (tab()) {
             case DISPLAY -> initDisplay(x, sections);
+            case EFFECTS -> initEffects(x, sections);
             case TEXT -> initText(x, sections);
             case BEHAVIOR -> initBehavior(x, sections);
             case POSE -> initPose(x, sections);
@@ -597,9 +600,7 @@ public final class PedestalScreen extends Screen {
     private void initBehavior(int x, int column) {
         List<Toggle> toggles = new ArrayList<>();
         toggles.add(new Toggle("spin", () -> spins, () -> spins = !spins));
-        if (trophy) toggles.add(new Toggle("flourishes", () -> effects, () -> effects = !effects));
         toggles.add(new Toggle("sounds", () -> sounds, () -> sounds = !sounds));
-        if (crowned) toggles.add(new Toggle("crown", () -> crown, () -> crown = !crown));
         Component[] labels = new Component[toggles.size()];
         for (int i = 0; i < labels.length; i++) labels[i] = Component.translatable("trophypedestals.pedestal.screen.toggle." + toggles.get(i).key());
         int[][] spans = split(x, column, labels);
@@ -610,14 +611,13 @@ public final class PedestalScreen extends Screen {
                 preview();
             })), "trophypedestals.pedestal.screen.toggle." + toggle.key());
         }
-        lightChoices(x, column, top + section(1, false) + 12);
         PedestalBlockEntity.RedstoneMode[] redstoneModes = PedestalBlockEntity.RedstoneMode.values();
         Component[] redstoneLabels = new Component[redstoneModes.length];
         for (int i = 0; i < redstoneModes.length; i++) redstoneLabels[i] = Component.translatable("trophypedestals.pedestal.screen.redstone." + redstoneModes[i].getSerializedName());
         spans = split(x, column, redstoneLabels);
         for (int i = 0; i < redstoneModes.length; i++) {
             PedestalBlockEntity.RedstoneMode mode = redstoneModes[i];
-            addRenderableWidget(new Choice(spans[i][0], top + section(2, false) + 12, spans[i][1], 18, redstoneLabels[i], () -> redstone == mode, () -> {
+            addRenderableWidget(new Choice(spans[i][0], top + section(1, false) + 12, spans[i][1], 18, redstoneLabels[i], () -> redstone == mode, () -> {
                 redstone = mode;
                 preview();
             }));
@@ -662,14 +662,31 @@ public final class PedestalScreen extends Screen {
         }
     }
 
-    private void lightChoices(int x, int column, int y) {
+    /** The Effects tab: everything it shows around what it shows, from its showcase light to its flourishes and crown. */
+    private void initEffects(int x, int column) {
+        onOff(x, column, top + section(0, false) + 12, () -> light, on -> light = on);
+        PedestalBlockEntity.TextMode[] modes = PedestalBlockEntity.TextMode.values();
+        Component[] labels = new Component[modes.length];
+        for (int i = 0; i < modes.length; i++) labels[i] = Component.translatable("trophypedestals.pedestal.screen.text." + modes[i].getSerializedName());
+        int[][] spans = split(x, column, labels);
+        for (int i = 0; i < modes.length; i++) {
+            PedestalBlockEntity.TextMode mode = modes[i];
+            addRenderableWidget(new Choice(spans[i][0], top + section(1, false) + 12, spans[i][1], 18, labels[i], () -> effectsMode == mode, () -> {
+                effectsMode = mode;
+                preview();
+            }));
+        }
+        if (crowned) onOff(x, column, top + section(2, false) + 12, () -> crown, on -> crown = on);
+    }
+
+    private void onOff(int x, int column, int y, BooleanSupplier on, Consumer<Boolean> set) {
         int half = (column - 2) / 2;
-        addRenderableWidget(new Choice(x, y, half, 18, Component.translatable("trophypedestals.pedestal.screen.on"), () -> light, () -> {
-            light = true;
+        addRenderableWidget(new Choice(x, y, half, 18, Component.translatable("trophypedestals.pedestal.screen.on"), on, () -> {
+            set.accept(true);
             preview();
         }));
-        addRenderableWidget(new Choice(x + half + 2, y, half, 18, Component.translatable("trophypedestals.pedestal.screen.off"), () -> !light, () -> {
-            light = false;
+        addRenderableWidget(new Choice(x + half + 2, y, half, 18, Component.translatable("trophypedestals.pedestal.screen.off"), () -> !on.getAsBoolean(), () -> {
+            set.accept(false);
             preview();
         }));
     }
@@ -885,7 +902,7 @@ public final class PedestalScreen extends Screen {
             boneSliders.forEach(AngleSlider::sync);
         }
         spins = true;
-        effects = true;
+        effectsMode = PedestalBlockEntity.TextMode.ALWAYS;
         sounds = true;
         redstone = PedestalBlockEntity.RedstoneMode.IGNORE;
         crown = true;
@@ -913,7 +930,7 @@ public final class PedestalScreen extends Screen {
             pedestal.setCrownPlacement(crownScale, crownX, crownY);
             pedestal.setLight(light);
             pedestal.setRotation(yaw, pitch, roll);
-            pedestal.setEffects(effects);
+            pedestal.setEffectsMode(effectsMode);
             pedestal.setRedstone(redstone);
             pedestal.setSounds(sounds);
             pedestal.setAnimates(animates);
@@ -933,11 +950,11 @@ public final class PedestalScreen extends Screen {
     @Override
     public void removed() {
         if (fixedSize()) {
-            Network.sendToServer(new AdjustDisplayedTrophyPayload(pos, slot, textMode, spins, yaw, pitch, roll, effects, redstone, sounds, animates, statue, statuePose, animation, crown, light));
+            Network.sendToServer(new AdjustDisplayedTrophyPayload(pos, slot, textMode, spins, yaw, pitch, roll, effectsMode, redstone, sounds, animates, statue, statuePose, animation, crown, light));
             return;
         }
         if (mannequin) Network.sendToServer(new AdjustMannequinPayload(pos, playerModel, standPose()));
-        Network.sendToServer(new AdjustPedestalPayload(pos, textMode, scale, lift, spins, textLift, yaw, pitch, roll, effects, redstone, sounds, animates, statue, statuePose, animation, textScale, crown, crownScale, crownX, crownY, light, access));
+        Network.sendToServer(new AdjustPedestalPayload(pos, textMode, scale, lift, spins, textLift, yaw, pitch, roll, effectsMode, redstone, sounds, animates, statue, statuePose, animation, textScale, crown, crownScale, crownX, crownY, light, access));
     }
 
     @Override
@@ -973,7 +990,7 @@ public final class PedestalScreen extends Screen {
                         Component.translatable("trophypedestals.pedestal.screen.height_value", height(lift)), valueRight);
                 rotationLabel(graphics, x, valueRight, section(2, true));
                 if (crowned) {
-                    label(graphics, "trophypedestals.pedestal.screen.crown", x, section(3, true),
+                    label(graphics, "trophypedestals.pedestal.screen.crown_position", x, section(3, true),
                             Component.translatable("trophypedestals.pedestal.screen.crown_value", size(crownScale), height(crownX), height(crownY)), valueRight);
                 }
             }
@@ -984,10 +1001,14 @@ public final class PedestalScreen extends Screen {
                         Component.translatable("trophypedestals.pedestal.screen.height_value", height(textLift)), valueRight);
                 label(graphics, "trophypedestals.pedestal.screen.text_size", x, section(2, false), Component.literal(size(textScale)), valueRight);
             }
+            case EFFECTS -> {
+                label(graphics, "trophypedestals.pedestal.screen.light", x, section(0, false), null, 0);
+                label(graphics, "trophypedestals.pedestal.screen.flourishes", x, section(1, false), null, 0);
+                if (crowned) label(graphics, "trophypedestals.pedestal.screen.crown", x, section(2, false), null, 0);
+            }
             case BEHAVIOR -> {
                 label(graphics, "trophypedestals.pedestal.screen.toggles", x, section(0, false), null, 0);
-                label(graphics, "trophypedestals.pedestal.screen.light", x, section(1, false), null, 0);
-                label(graphics, "trophypedestals.pedestal.screen.redstone", x, section(2, false), null, 0);
+                label(graphics, "trophypedestals.pedestal.screen.redstone", x, section(1, false), null, 0);
             }
             case MODEL -> label(graphics, "trophypedestals.pedestal.screen.model", x, section(0, false), null, 0);
             case STAND_POSE -> {

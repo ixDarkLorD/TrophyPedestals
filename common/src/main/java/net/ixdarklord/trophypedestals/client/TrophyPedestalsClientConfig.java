@@ -16,6 +16,9 @@ public final class TrophyPedestalsClientConfig {
     public static final ConfigValue<Boolean> FLOURISHES = BUILDER.bool("flourishes", true)
             .comment("Whether ranked trophies show their flourishes: beams, halos, flares, crowns and particles. Their showcase light and outlines stay.")
             .build();
+    public static final ConfigValue<Boolean> LENS_EFFECTS = BUILDER.bool("lens_effects", true)
+            .comment("Whether the lenses fitted to display pedestals show their effects: ripples, runes, embers, snowflakes, scanlines and the item's motion. Off, a lens only colours the light.")
+            .build();
     public static final ConfigValue<Boolean> AMBIENT_SOUNDS = BUILDER.bool("ambient_sounds", true)
             .comment("Whether ranked trophies play their ambient sounds and chimes now and then.")
             .build();

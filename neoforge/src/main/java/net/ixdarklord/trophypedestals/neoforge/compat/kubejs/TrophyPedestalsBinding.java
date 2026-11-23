@@ -41,6 +41,7 @@ public final class TrophyPedestalsBinding {
         map.put("spins", settings.spins());
         map.put("animates", settings.animates());
         map.put("effects", settings.effects());
+        map.put("effectsMode", settings.effectsMode().getSerializedName());
         map.put("sounds", settings.sounds());
         map.put("textHeight", settings.textHeight());
         map.put("textScale", settings.textScale());
@@ -99,6 +100,7 @@ public final class TrophyPedestalsBinding {
                 case "spins" -> builder.spins(bool(value));
                 case "animates" -> builder.animates(bool(value));
                 case "effects" -> builder.effects(bool(value));
+                case "effectsMode" -> builder.effectsMode(PedestalBlockEntity.TextMode.valueOf(upper(value)));
                 case "sounds" -> builder.sounds(bool(value));
                 case "statue" -> builder.statue(bool(value));
                 case "redstone" -> builder.redstone(PedestalBlockEntity.RedstoneMode.valueOf(upper(value)));

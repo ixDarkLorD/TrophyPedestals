@@ -10,6 +10,7 @@ import com.mojang.serialization.MapCodec;
 import net.ixdarklord.coolcatcore.api.client.registry.ExtraModels;
 import net.ixdarklord.coolcatcore.api.client.registry.ItemRendererRegistry;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
+import net.ixdarklord.trophypedestals.pedestal.CuratorsStampItem;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -30,6 +31,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -47,7 +49,7 @@ public final class ItemDefinitions {
 
     public static void init() {
         ExtraModels.register(ItemDefinitions::read);
-        Stream.concat(Stream.concat(Pedestals.ITEMS_BY_STONE.values().stream(), Pedestals.DISPLAY_ITEMS.stream()), Stream.of(Pedestals.CUSTOM_ITEM))
+        Stream.concat(Stream.concat(Pedestals.ITEMS_BY_STONE.values().stream(), Pedestals.DISPLAY_ITEMS.stream()), Stream.of(Pedestals.CUSTOM_ITEM, Pedestals.CURATORS_STAMP))
                 .forEach(item -> ItemRendererRegistry.register(item, ItemDefinitions::render));
     }
 
@@ -99,6 +101,15 @@ public final class ItemDefinitions {
                         node(json.getAsJsonObject("on_true"), models), node(json.getAsJsonObject("on_false"), models));
             }
             case "minecraft:select" -> {
+                // 26.1 picks the stamp's badge by a string in its custom model data; here that string is its mode
+                if (json.get("property").getAsString().endsWith("custom_model_data")) {
+                    Map<String, Node> modes = new HashMap<>();
+                    for (JsonElement element : json.getAsJsonArray("cases")) {
+                        JsonObject entry = element.getAsJsonObject();
+                        modes.put(entry.get("when").getAsString(), node(entry.getAsJsonObject("model"), models));
+                    }
+                    return new StampMode(Map.copyOf(modes), node(json.getAsJsonObject("fallback"), models));
+                }
                 if (!json.get("property").getAsString().endsWith("display_context")) throw new IllegalArgumentException("unknown select " + json.get("property"));
                 Map<ItemDisplayContext, Node> cases = new EnumMap<>(ItemDisplayContext.class);
                 for (JsonElement element : json.getAsJsonArray("cases")) {
@@ -178,6 +189,13 @@ public final class ItemDefinitions {
         public void render(ItemStack stack, ItemDisplayContext context, PoseStack poseStack, MultiBufferSource buffers, int light, int overlay) {
             DataComponentType<?> type = BuiltInRegistries.DATA_COMPONENT_TYPE.get(component);
             (type != null && stack.has(type) ? onTrue : onFalse).render(stack, context, poseStack, buffers, light, overlay);
+        }
+    }
+
+    private record StampMode(Map<String, Node> cases, Node fallback) implements Node {
+        @Override
+        public void render(ItemStack stack, ItemDisplayContext context, PoseStack poseStack, MultiBufferSource buffers, int light, int overlay) {
+            cases.getOrDefault(CuratorsStampItem.mode(stack).name().toLowerCase(Locale.ROOT), fallback).render(stack, context, poseStack, buffers, light, overlay);
         }
     }
 
