@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "lens",
+  "key": {
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "I": {
+      "item": "minecraft:glow_ink_sac"
+    },
+    "L": {
+      "item": "trophypedestals:clear_lens"
+    }
+  },
+  "pattern": [
+    "R R",
+    " L ",
+    " I "
+  ],
+  "result": {
+    "item": "trophypedestals:hologram_lens",
+    "count": 1
+  }
+}

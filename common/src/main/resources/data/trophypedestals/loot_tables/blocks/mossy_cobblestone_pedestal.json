@@ -21,6 +21,16 @@
                   "source": "MobTrophy",
                   "target": "BlockEntityTag.MobTrophy",
                   "op": "replace"
+                },
+                {
+                  "source": "Lens",
+                  "target": "BlockEntityTag.Lens",
+                  "op": "replace"
+                },
+                {
+                  "source": "NoLens",
+                  "target": "BlockEntityTag.NoLens",
+                  "op": "replace"
                 }
               ]
             }

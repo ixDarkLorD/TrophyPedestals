@@ -1,8 +1,11 @@
 {
-  "type": "minecraft:crafting_shaped",
+  "type": "trophypedestals:pedestal",
   "category": "misc",
   "group": "trophypedestals:pedestal",
   "key": {
+    "L": {
+      "tag": "trophypedestals:lenses"
+    },
     "G": {
       "item": "minecraft:gold_ingot"
     },
@@ -11,9 +14,9 @@
     }
   },
   "pattern": [
-    "SGS",
+    "SLS",
     " S ",
-    "SSS"
+    "SGS"
   ],
   "result": {
     "item": "trophypedestals:diorite_pedestal",

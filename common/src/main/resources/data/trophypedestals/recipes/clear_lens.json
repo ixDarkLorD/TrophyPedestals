@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "N": {
+      "item": "minecraft:gold_nugget"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    }
+  },
+  "pattern": [
+    " N ",
+    "NGN",
+    " N "
+  ],
+  "result": {
+    "item": "trophypedestals:clear_lens",
+    "count": 1
+  }
+}

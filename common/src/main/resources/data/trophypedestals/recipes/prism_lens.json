@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "lens",
+  "key": {
+    "A": {
+      "item": "minecraft:amethyst_shard"
+    },
+    "C": {
+      "item": "minecraft:prismarine_crystals"
+    },
+    "L": {
+      "item": "trophypedestals:clear_lens"
+    }
+  },
+  "pattern": [
+    " A ",
+    "CLC",
+    " A "
+  ],
+  "result": {
+    "item": "trophypedestals:prism_lens",
+    "count": 1
+  }
+}
