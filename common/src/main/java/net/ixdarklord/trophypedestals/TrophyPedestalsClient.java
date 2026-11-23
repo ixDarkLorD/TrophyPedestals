@@ -5,6 +5,7 @@ import net.ixdarklord.coolcatcore.api.core.ClientModConstructor;
 import net.ixdarklord.trophypedestals.client.CustomPedestalItemRenderer;
 import net.ixdarklord.trophypedestals.client.DisplayTrimItemRenderer;
 import net.ixdarklord.trophypedestals.client.MobTrophiesTab;
+import net.ixdarklord.trophypedestals.client.PedestalLensItemRenderer;
 import net.ixdarklord.trophypedestals.client.PedestalRenderer;
 import net.ixdarklord.trophypedestals.client.TrophyIconRenderer;
 import net.ixdarklord.trophypedestals.client.TrophyPedestalsClientConfig;
@@ -23,6 +24,7 @@ public final class TrophyPedestalsClient implements ClientModConstructor {
         MobTrophiesTab.init();
         CustomPedestalItemRenderer.init();
         ItemDefinitions.init();
+        PedestalLensItemRenderer.init();
         DisplayTrimItemRenderer.init();
         // A dyed Clear Lens's glass (26.1's item definition says this with its dye tint).
         ItemColorRegistry.register((stack, layer) -> layer == 1 ? DyedItemColor.getOrDefault(stack, -1) : -1, Pedestals.LENSES.get(Lens.CLEAR));
