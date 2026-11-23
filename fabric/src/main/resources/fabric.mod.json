@@ -39,6 +39,10 @@
     ]
   },
 
+  "mixins": [
+    "${modid}.common.mixins.json"
+  ],
+
   "depends": {
     "java": ">=${versions.java.get()}",
     "minecraft": ">=${project.supported_min_mc_version} <=${max_mc_version}",

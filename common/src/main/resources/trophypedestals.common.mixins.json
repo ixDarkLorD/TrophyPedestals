@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "compatibilityLevel": "JAVA_25",
+  "package": "net.ixdarklord.trophypedestals.mixin",
+  "client": [
+    "client.HumanoidModelMixin",
+    "client.HumanoidRenderStateMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,6 +1,7 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
-#moj_import <coolcatcanvas:vfx.glsl>
+#include <coolcatcanvas:vfx.glsl>
 
 // A sheen of light on a pedestal's displayed item. It is drawn on a quad through the item's middle and kept only where the
 // scene's nearest surface lies close to that quad, which is the item itself, so the light follows the item's shape and
@@ -8,10 +9,10 @@
 uniform sampler2D Sampler0;
 uniform sampler2D DepthSampler;
 
-in vec2 texCoord;
-in vec4 vertexColor;
+layout(location = 0) in vec2 texCoord;
+layout(location = 1) in vec4 vertexColor;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 const float VIEW_HEIGHT = 1.4;      // how many blocks the screen's height covers per block of distance, near the usual field of view
 const float ITEM_DEPTH = 0.57;      // how far from the quad a surface still counts as the item, in quad heights, so it grows with the item

@@ -1,6 +1,7 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
-#moj_import <coolcatcanvas:vfx.glsl>
+#include <coolcatcanvas:vfx.glsl>
 
 // The inside of the Ender lens's rift and glass: layers of stars that hold still on the screen rather than the surface, as
 // in an end portal, so moving past it slides the surface over a sky that seems to lie far behind it. The stars are sized in
@@ -9,10 +10,10 @@
 uniform sampler2D Sampler0;
 uniform sampler2D DepthSampler;
 
-in vec2 texCoord;
-in vec4 vertexColor;
+layout(location = 0) in vec2 texCoord;
+layout(location = 1) in vec4 vertexColor;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 const int LAYERS = 10;
 const float STAR_PIXELS = 5.0;      // a star is drawn on a grid this many pixels from its middle to its tip
