@@ -60,6 +60,12 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
         }
     };
     private static final Set<EntityType<?>> UNDRAWABLE = ConcurrentHashMap.newKeySet();
+
+    /** Lets go of the mobs kept for drawing, which would otherwise keep the world they were made in loaded after leaving it. */
+    public static void forgetMobs() {
+        MOBS.clear();
+    }
+
     private static final int MAX_MOBS = 512;
     private static final CameraRenderState CAMERA = new CameraRenderState();
     private static final float SLOT_TIME = 0.0F;
