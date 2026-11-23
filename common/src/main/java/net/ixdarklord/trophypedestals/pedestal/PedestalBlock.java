@@ -57,6 +57,12 @@ public class PedestalBlock extends BaseEntityBlock {
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
     public static final IntegerProperty RANK = IntegerProperty.create("rank", 0, MAX_RANK);
     public static final BooleanProperty CASED = BooleanProperty.create("cased");
+    /** Whether its When Powered setting has it on: it gives a low light then, even with nothing on it. */
+    public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+    public static final int POWERED_LIGHT = 3;
+    /** Whether it's a display pedestal with no lens fitted: with power, its open socket gives a little more light. */
+    public static final BooleanProperty SOCKET = BooleanProperty.create("socket");
+    public static final int SOCKET_LIGHT = 6;
     public static final float CASE_HEIGHT = 1.1F;
     private static final int[] LIGHT_BY_RANK = {10, 11, 12, 13, 14, 15};
     private static final VoxelShape SHAPE = Shapes.or(
@@ -78,12 +84,12 @@ public class PedestalBlock extends BaseEntityBlock {
 
     public PedestalBlock(Properties properties) {
         super(properties);
-        registerDefaultState(defaultBlockState().setValue(LIT, false).setValue(RANK, 0).setValue(CASED, false));
+        registerDefaultState(defaultBlockState().setValue(LIT, false).setValue(RANK, 0).setValue(CASED, false).setValue(POWERED, false).setValue(SOCKET, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(LIT, RANK, CASED);
+        builder.add(LIT, RANK, CASED, POWERED, SOCKET);
     }
 
     @Override
@@ -94,7 +100,7 @@ public class PedestalBlock extends BaseEntityBlock {
 
     @Override
     protected boolean isRandomlyTicking(BlockState state) {
-        return state.getValue(LIT) && state.getValue(RANK) == 0;
+        return state.getValue(LIT) && state.getValue(RANK) == 0 || !state.getValue(POWERED);
     }
 
     @Override
@@ -103,7 +109,7 @@ public class PedestalBlock extends BaseEntityBlock {
     }
 
     public static int light(BlockState state) {
-        return state.getValue(LIT) ? LIGHT_BY_RANK[state.getValue(RANK)] : 0;
+        return Math.max(state.getValue(LIT) ? LIGHT_BY_RANK[state.getValue(RANK)] : 0, !state.getValue(POWERED) ? 0 : state.getValue(SOCKET) ? SOCKET_LIGHT : POWERED_LIGHT);
     }
 
     public static int rank(@Nullable Identifier rarity) {
@@ -148,6 +154,9 @@ public class PedestalBlock extends BaseEntityBlock {
 
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (stack.getItem() instanceof CuratorsStampItem stamp && level.getBlockEntity(pos) instanceof PedestalBlockEntity target) {
+            return stamp.paste(stack, level, player, target);
+        }
         if (isCaseGlass(stack) && level.getBlockEntity(pos) instanceof PedestalBlockEntity cased && caseable(cased)) {
             if (!level.getBlockState(pos.above()).canBeReplaced()) {
                 if (player instanceof ServerPlayer server) server.sendOverlayMessage(Component.translatable("trophypedestals.pedestal.no_room_for_case"));
@@ -179,6 +188,19 @@ public class PedestalBlock extends BaseEntityBlock {
                 return InteractionResult.SUCCESS;
             }
         }
+        if (stack.getItem() instanceof LensItem && level.getBlockEntity(pos) instanceof PedestalBlockEntity lensed && lensable(lensed)) {
+            if (hit.getDirection() != Direction.UP) {
+                if (player instanceof ServerPlayer server) server.sendOverlayMessage(Component.translatable("trophypedestals.pedestal.lens_from_top"));
+                return InteractionResult.FAIL;
+            }
+            if (!level.isClientSide()) {
+                ItemStack old = lensed.setLens(stack.copyWithCount(1));
+                stack.consume(1, player);
+                if (!old.isEmpty() && !player.getInventory().add(old)) player.drop(old, false, Prediction.SERVER_ONLY);
+                if (lensed.sounds()) level.playSound(null, pos, SoundEvents.SPYGLASS_USE, SoundSource.BLOCKS, 1.0F, 1.3F);
+            }
+            return InteractionResult.SUCCESS;
+        }
         if (stack.is(Pedestals.LEADERBOARD_CREST.get()) && level.getBlockEntity(pos) instanceof PedestalBlockEntity board
                 && !board.isTrophy() && board.display().isEmpty() && !board.mannequin() && !player.isSecondaryUseActive()) {
             if (player instanceof ServerPlayer server) Leaderboards.openPicker(server, pos, board);
@@ -186,6 +208,10 @@ public class PedestalBlock extends BaseEntityBlock {
         }
         if (stack.isEmpty() || level.getBlockEntity(pos) instanceof PedestalBlockEntity shown && shown.leaderboard() != null || !(level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) || pedestal.isTrophy() || !pedestal.display().isEmpty()) {
             return InteractionResult.TRY_WITH_EMPTY_HAND;
+        }
+        if (pedestal.lens().isEmpty()) {
+            if (player instanceof ServerPlayer server) server.sendOverlayMessage(Component.translatable("trophypedestals.pedestal.needs_lens"));
+            return InteractionResult.FAIL;
         }
         if (!level.isClientSide()) {
             pedestal.setDisplay(stack.copyWithCount(1));
@@ -217,6 +243,11 @@ public class PedestalBlock extends BaseEntityBlock {
             }
             return EventResult.interrupt();
         });
+    }
+
+    /** Lenses fit display pedestals: not trophies, leaderboards or mannequins. */
+    private static boolean lensable(PedestalBlockEntity pedestal) {
+        return !pedestal.isTrophy() && pedestal.leaderboard() == null && !pedestal.mannequin();
     }
 
     private static boolean caseable(PedestalBlockEntity pedestal) {
@@ -323,6 +354,14 @@ public class PedestalBlock extends BaseEntityBlock {
         }
         if (pedestal.mobTrophy() != null) {
             if (!level.isClientSide() && pedestal.sounds()) MobTrophies.playSound(level, pos, pedestal);
+            return InteractionResult.SUCCESS;
+        }
+        if (pedestal.display().isEmpty() && !pedestal.lens().isEmpty() && hit.getDirection() == Direction.UP && TrophyPedestalsConfig.PEDESTAL_TAKE_ITEMS.get()) {
+            if (!level.isClientSide()) {
+                ItemStack lens = pedestal.setLens(ItemStack.EMPTY);
+                if (!player.getInventory().add(lens)) player.drop(lens, false, Prediction.SERVER_ONLY);
+                if (pedestal.sounds()) pop(level, pos);
+            }
             return InteractionResult.SUCCESS;
         }
         if (pedestal.display().isEmpty() || !TrophyPedestalsConfig.PEDESTAL_TAKE_ITEMS.get()) return InteractionResult.PASS;

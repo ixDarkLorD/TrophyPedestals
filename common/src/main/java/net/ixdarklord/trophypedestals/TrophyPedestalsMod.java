@@ -36,6 +36,10 @@ public final class TrophyPedestalsMod implements ModConstructor {
         }
     }
 
+    @Override
+    public void onCommonSetup() {
+    }
+
     public static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(MOD_ID, path.toLowerCase(Locale.ROOT));
     }
