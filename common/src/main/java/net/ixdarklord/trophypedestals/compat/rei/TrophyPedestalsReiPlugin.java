@@ -29,7 +29,6 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -110,9 +109,8 @@ public class TrophyPedestalsReiPlugin implements REIClientPlugin {
             widgets.add(Widgets.createArrow(new Point(x + 30, y)));
             widgets.add(Widgets.createSlot(new Point(x + 64, y)).entries(drop.getOutputEntries().get(0)).markOutput());
             widgets.add(Widgets.createLabel(new Point(x, y + 22), drop.rarity().displayName().copy().withStyle(style -> style.withColor(drop.rarity().color()))).leftAligned().noShadow());
-            double chance = MobTrophies.chance(drop.type()) * 100.0;
             widgets.add(Widgets.createLabel(new Point(x + 70, y + 22), Component.translatable("jei.trophypedestals.mob_trophy.chance",
-                    String.format(Locale.ROOT, chance < 1.0 ? "%.2f" : "%.0f", chance))).leftAligned().noShadow().color(0xFF404040));
+                    MobTrophies.chanceText(drop.type()))).leftAligned().noShadow().color(0xFF404040));
             return widgets;
         }
     }
