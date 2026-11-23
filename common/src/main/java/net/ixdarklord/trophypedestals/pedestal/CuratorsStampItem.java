@@ -132,7 +132,7 @@ public class CuratorsStampItem extends Item {
         }
         Mode mode = mode(stamp);
         ItemStack lens = mode == Mode.SETTINGS ? ItemStack.EMPTY : copiedLens(stamp);
-        boolean takesLens = !lens.isEmpty() && !pedestal.glass() && !pedestal.isTrophy() && pedestal.leaderboard() == null && !pedestal.mannequin();
+        boolean takesLens = !lens.isEmpty() && !pedestal.glass() && !pedestal.isTrophy() && pedestal.leaderboard() == null;
         if (mode == Mode.LENS && !takesLens) {
             server.sendOverlayMessage(Component.translatable(lens.isEmpty() ? "trophypedestals.stamp.no_lens_copied" : "trophypedestals.stamp.lens_unfit"));
             return InteractionResult.FAIL;

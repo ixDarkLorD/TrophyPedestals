@@ -13,6 +13,9 @@ logoFile = "mod_logo.png"
 displayURL = "${mod_page_url}"
 updateJSONURL = "${mod_neoforge_update_url}"
 
+[[mixins]]
+config = "${modid}.common.mixins.json"
+
 [[dependencies.${modid}]]
 modId = "neoforge"
 type = "required"

@@ -305,6 +305,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         shown.shadowRadius = 0.0F;
         shown.shadowPieces.clear();
         shown.nameTag = null;
+        if (shown instanceof HumanoidRenderState) ((PosedFigure) shown).trophypedestals$setPose(figurePose(pedestal));
         boolean moving = pedestal.on() && pedestal.animates() && TrophyPedestalsClientConfig.MOVING_MOBS.get();
         shown.ageInTicks = moving ? time : 0.0F;
         idle(shown, shown.ageInTicks);
@@ -650,6 +651,22 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static final class Memory {
         private float @Nullable [] lensFade, socketFade;
         private @Nullable LastDisplay last;
+        private @Nullable List<Float> figureFrom;
+        private float @Nullable [] figurePose;
+    }
+
+    /** The pose a player-model mannequin holds, or null to leave it its own stance: when it's in the default pose, or under glass. */
+    private static float @Nullable [] figurePose(PedestalBlockEntity pedestal) {
+        if (!pedestal.mannequin() || !pedestal.playerModel() || pedestal.glass()) return null;
+        List<Float> pose = pedestal.standPose();
+        if (pose.equals(PedestalBlockEntity.DEFAULT_STAND_POSE)) return null;
+        Memory memory = memory(pedestal);
+        if (memory.figureFrom != pose) {
+            memory.figureFrom = pose;
+            memory.figurePose = new float[pose.size()];
+            for (int i = 0; i < pose.size(); i++) memory.figurePose[i] = pose.get(i);
+        }
+        return memory.figurePose;
     }
 
     private static Memory memory(PedestalBlockEntity pedestal) {
@@ -712,7 +729,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         state.custom = pedestal.getBlockState().is(Pedestals.CUSTOM.get());
         state.material = pedestal.material();
         state.glassLens = LensLooks.lens(pedestal);
-        state.bareWell = state.glassLens == null && !pedestal.isTrophy() && !pedestal.mannequin() && pedestal.leaderboard() == null;
+        state.bareWell = state.glassLens == null && !pedestal.isTrophy() && pedestal.leaderboard() == null;
         state.powerFade = pedestal.getLevel() != null
                 ? socketFade(pedestal, pedestal.displayed(), pedestal.getLevel().getGameTime() + partialTicks) : 1.0F;
         state.socketGlow = state.bareWell ? state.powerFade : 0.0F;
@@ -767,6 +784,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         else state.mob = null;
         extractPodium(pedestal, state, partialTicks);
         if (state.mob != null) {
+            state.itemRarity = LensLooks.tier(LensLooks.appraised(pedestal));
             items.updateForTopItem(state.icon, ItemStack.EMPTY, ItemDisplayContext.GROUND, pedestal.getLevel(), null, 0);
             Entity mob = pedestal.shownMob();
             state.middle = MOB_FLOOR + (state.mobLift + Math.max(0.1F, mob.getBbHeight()) / 2.0F) * state.mobScale - ICON_Y;
@@ -841,8 +859,11 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             if (state.lens == Lens.TIDE) state.bob = Mth.sin(time / 16.0F) * TIDE_BOB * state.size;
             if (state.lens == Lens.ENDER) {
                 state.bob = ENDER_FLOAT * state.size + Mth.sin(time / 20.0F) * 0.04F * state.size;
-                state.pitch += Mth.sin(time / 23.0F) * ENDER_TUMBLE;
-                state.roll += Mth.cos(time / 31.0F) * ENDER_TUMBLE * 0.8F;
+                // a mannequin floats but stays upright, so that its pose still reads
+                if (!pedestal.mannequin()) {
+                    state.pitch += Mth.sin(time / 23.0F) * ENDER_TUMBLE;
+                    state.roll += Mth.cos(time / 31.0F) * ENDER_TUMBLE * 0.8F;
+                }
             }
         }
         state.rests = pedestal.hasShowpiece();
@@ -852,7 +873,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             state.restY = state.restsFlat ? REST_FLOOR + Math.max(0.02F, state.restDepth * state.restScale) - state.middle / state.iconScale * state.restScale
                     : REST_FLOOR + 0.01F - state.restBottom * state.restScale;
             state.restMobScale = state.mobScale / Math.max(1.0F, state.size) * REST_SCALE;
-            state.turn = Mth.rotLerp(state.rise, pedestal.yaw(), state.turn);
+            state.turn = Mth.rotLerp(state.rise, pedestal.yaw() + pedestal.restTurn(), state.turn);
             state.pitch *= state.rise;
             state.roll *= state.rise;
             state.bob *= state.rise;
@@ -1439,6 +1460,13 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             showcase(light, up, rarity, 1.0F, 1.0F, time);
             if (withRings) itemRings(light, rarity, time, up, coneTop(up, rarity, 1.0F, 1.0F), Math.max(RING_TO, iconMiddle));
         });
+    }
+
+    /** The lens fitted in a pedestal's item, in its bezel, as it looks on an unlit pedestal. */
+    public static void submitItemLens(PoseStack poseStack, SubmitNodeCollector collector, Lens lens, int tint, int light) {
+        int shown = ARGB.opaque(ARGB.scaleRGB(tint, LENS_UNLIT));
+        collector.submitCustomGeometry(poseStack, RenderTypes.entitySolid(lens.glass()), (pose, consumer) -> glass(consumer, pose, shown, FULL_BRIGHT));
+        collector.submitCustomGeometry(poseStack, RenderTypes.entitySolid(BEZEL), (pose, consumer) -> bezel(consumer, pose, light));
     }
 
     private static void submitRings(State state, PedestalLight.Glow glow, float lo, float hi) {
