@@ -18,6 +18,7 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
@@ -102,9 +103,9 @@ public final class LensLooks {
         });
     }
 
-    /** The lens on a display pedestal, or null: trophies, leaderboards and mannequins keep their own looks. */
+    /** The lens on a display or mannequin pedestal, or null: trophies and leaderboards keep their own looks. */
     public static @Nullable Lens lens(PedestalBlockEntity pedestal) {
-        if (pedestal.isTrophy() || pedestal.mannequin() || pedestal.leaderboard() != null) return null;
+        if (pedestal.isTrophy() || pedestal.leaderboard() != null) return null;
         return Lens.of(pedestal.lens());
     }
 
@@ -118,7 +119,7 @@ public final class LensLooks {
         return switch (lens) {
             case CLEAR -> Lens.isDyed(pedestal.lens()) ? light(Lens.dyed(pedestal.lens())) : null;
             case PRISM -> light(prism(time, 0.0F));
-            case APPRAISAL -> light(rarityColor(pedestal.display()));
+            case APPRAISAL -> light(rarityColor(appraised(pedestal)));
             case EMBER -> {
                 int step = (int) (flicker(time, pedestal.getBlockPos()) * EMBER_STEPS);
                 yield light(ARGB.scaleRGB(lens.color, 0.72F + 0.28F * step / EMBER_STEPS) & 0xFFFFFF);
@@ -142,6 +143,17 @@ public final class LensLooks {
         if (styled != null) return styled.getValue() & 0xFFFFFF;
         Integer named = shown.getRarity().color.getColor();
         return named != null ? named & 0xFFFFFF : RARITY_LIGHT[3];
+    }
+
+    /** What the Appraisal Lens ranks a pedestal by: the item it shows, or the rarest piece a mannequin wears or holds. */
+    public static ItemStack appraised(PedestalBlockEntity pedestal) {
+        if (!pedestal.mannequin()) return pedestal.display();
+        ItemStack rarest = ItemStack.EMPTY;
+        for (EquipmentSlot slot : PedestalBlockEntity.OUTFIT_SLOTS) {
+            ItemStack worn = pedestal.outfit(slot);
+            if (!worn.isEmpty() && (rarest.isEmpty() || worn.getRarity().ordinal() > rarest.getRarity().ordinal())) rarest = worn;
+        }
+        return rarest;
     }
 
     /** An item's rarity as the Appraisal Lens reads it: 0 common, 1 uncommon, 2 rare, 3 epic (and any rarity a mod added). */
@@ -229,8 +241,8 @@ public final class LensLooks {
             }
             case APPRAISAL -> {
                 // An epic item sparkles with glints in its colour and circling sparkles; the lower ranks show their light in the renderer.
-                int tier = tier(pedestal.display());
-                int color = rarityColor(pedestal.display());
+                int tier = tier(appraised(pedestal));
+                int color = rarityColor(appraised(pedestal));
                 if (tier == 3 && random.nextFloat() < 0.4F * around) {
                     double r = random.nextDouble() * 0.46 * size;
                     WorldParticles.spawn(sized(GOLD_FALL, size), x + cos * r, y + (0.85 + random.nextDouble() * 0.4) * size, z + sin * r,

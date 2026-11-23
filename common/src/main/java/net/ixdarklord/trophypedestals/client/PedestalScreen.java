@@ -86,7 +86,7 @@ public final class PedestalScreen extends Screen {
     private static final int GOLD_FRAME = 0xFFE0AC3C, GOLD_TOP = 0xFFFFF0A8, GOLD_LIT = 0xFFFFC24A, LIST = 0xF00E121A, LIST_HOVER = 0xFF252C3C;
 
     private enum Tab {
-        DISPLAY, EFFECTS, TEXT, POSE, MODEL, STAND_POSE, BEHAVIOR;
+        DISPLAY, EFFECTS, TEXT, POSE, MODEL, BEHAVIOR;
 
         Component label() {
             return Component.translatable("trophypedestals.pedestal.screen.tab." + name().toLowerCase(Locale.ROOT));
@@ -241,7 +241,6 @@ public final class PedestalScreen extends Screen {
         if (posed()) tabs.add(Tab.POSE);
         if (mannequin) {
             tabs.add(Tab.MODEL);
-            if (!playerModel && !cased) tabs.add(Tab.STAND_POSE);
         }
         tabs.add(Tab.BEHAVIOR);
         // Effects and Behavior are never turned off, so the row is never left empty
@@ -335,7 +334,6 @@ public final class PedestalScreen extends Screen {
             case BEHAVIOR -> initBehavior(x, sections);
             case POSE -> initPose(x, sections);
             case MODEL -> initModel(x, sections);
-            case STAND_POSE -> initStandPose(x, sections);
         }
         addingScrolled = false;
         int bottom = top + VIEW_TOP;
@@ -481,6 +479,12 @@ public final class PedestalScreen extends Screen {
         int row = top + section(0, false) + 12;
         addRenderableWidget(new Choice(spans[0][0], row, spans[0][1], 18, stand, () -> !playerModel, () -> setPlayerModel(false)));
         addRenderableWidget(new Choice(spans[1][0], row, spans[1][1], 18, player, () -> playerModel, () -> setPlayerModel(true)));
+        if (posesModel()) initStandPose(x, column);
+    }
+
+    /** Whether the Model tab also poses the model, under the choice of it: either model can be, unless it's under glass. */
+    private boolean posesModel() {
+        return !cased;
     }
 
     private void setPlayerModel(boolean player) {
@@ -500,7 +504,7 @@ public final class PedestalScreen extends Screen {
         STAND_PRESETS.put("sitting", List.of(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, -40.0F, 0.0F, -10.0F, -40.0F, 0.0F, 10.0F, -90.0F, -10.0F, 0.0F, -90.0F, 10.0F, 0.0F));
     }
 
-    private static final int SAVED_SECTION = 7, SAVED_ROW = 20;
+    private static final int SAVED_SECTION = 8, SAVED_ROW = 20;
     private String poseName = "";
 
     private void initStandPose(int x, int column) {
@@ -511,13 +515,13 @@ public final class PedestalScreen extends Screen {
             int[][] spans = split(x, column, labels);
             for (int i = 0; i < names.size(); i++) {
                 List<Float> preset = STAND_PRESETS.get(names.get(i));
-                tip(addRenderableWidget(new Choice(spans[i][0], top + section(0, false) + 12 + line * 20, spans[i][1], 18, labels[i],
+                tip(addRenderableWidget(new Choice(spans[i][0], top + section(1, false) + 12 + line * 20, spans[i][1], 18, labels[i],
                         () -> standPose().equals(preset), () -> applyStandPose(preset))), "trophypedestals.pedestal.screen.stand_preset." + names.get(i));
             }
         }
         int slider = column - RESET - 4, gap = 6, third = (slider - 2 * gap) / 3;
         for (int part = 0; part < PedestalBlockEntity.STAND_PARTS.size(); part++) {
-            int label = section(part + 1, true), row = top + label + 14, first = part * 3;
+            int label = section(part + 2, true), row = top + label + 14, first = part * 3;
             List<AngleSlider> sliders = new ArrayList<>();
             for (int axis = 0; axis < 3; axis++) {
                 int index = first + axis, at = x + axis * (third + gap);
@@ -707,12 +711,17 @@ public final class PedestalScreen extends Screen {
             needed += wide[i];
             if (wide[i] > room / count) even = false;
         }
+        // too wide for the row: every button gives up its share, so the row always ends at the frame
+        boolean tight = needed > room;
+        if (tight) {
+            for (int i = 0; i < count; i++) wide[i] = wide[i] * room / needed;
+        }
         int spare = Math.max(0, room - needed);
         int[][] spans = new int[count][2];
         int at = x;
         for (int i = 0; i < count; i++) {
             int w = even ? room / count : wide[i] + spare / count;
-            if (i == count - 1 && (even || spare > 0)) w = x + width - at;
+            if (i == count - 1 && (even || tight || spare > 0)) w = x + width - at;
             spans[i][0] = at;
             spans[i][1] = w;
             at += w + 2;
@@ -1012,14 +1021,16 @@ public final class PedestalScreen extends Screen {
                 label(graphics, "trophypedestals.pedestal.screen.toggles", x, section(0, false), null, 0);
                 label(graphics, "trophypedestals.pedestal.screen.redstone", x, section(1, false), null, 0);
             }
-            case MODEL -> label(graphics, "trophypedestals.pedestal.screen.model", x, section(0, false), null, 0);
-            case STAND_POSE -> {
-                label(graphics, "trophypedestals.pedestal.screen.stand_presets", x, section(0, false), null, 0);
-                label(graphics, "trophypedestals.pedestal.screen.saved_poses", x, section(SAVED_SECTION, true), null, 0);
-                for (int part = 0; part < PedestalBlockEntity.STAND_PARTS.size(); part++) {
-                    label(graphics, "trophypedestals.pedestal.screen.stand_pose." + PedestalBlockEntity.STAND_PARTS.get(part), x, section(part + 1, true),
-                            Component.translatable("trophypedestals.pedestal.screen.rotation_value", Math.round(standPose[part * 3]),
-                                    Math.round(standPose[part * 3 + 1]), Math.round(standPose[part * 3 + 2])), valueRight);
+            case MODEL -> {
+                label(graphics, "trophypedestals.pedestal.screen.model", x, section(0, false), null, 0);
+                if (posesModel()) {
+                    label(graphics, "trophypedestals.pedestal.screen.stand_presets", x, section(1, false), null, 0);
+                    label(graphics, "trophypedestals.pedestal.screen.saved_poses", x, section(SAVED_SECTION, true), null, 0);
+                    for (int part = 0; part < PedestalBlockEntity.STAND_PARTS.size(); part++) {
+                        label(graphics, "trophypedestals.pedestal.screen.stand_pose." + PedestalBlockEntity.STAND_PARTS.get(part), x, section(part + 2, true),
+                                Component.translatable("trophypedestals.pedestal.screen.rotation_value", Math.round(standPose[part * 3]),
+                                        Math.round(standPose[part * 3 + 1]), Math.round(standPose[part * 3 + 2])), valueRight);
+                    }
                 }
             }
             case POSE -> {

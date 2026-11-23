@@ -35,7 +35,9 @@
       "net.ixdarklord.trophypedestals.compat.jade.TrophyPedestalsJadePlugin"
     ]
   },
+
   "mixins": [
+    "${modid}.common.mixins.json",
     "trophypedestals.fabric.mixins.json"
   ],
 

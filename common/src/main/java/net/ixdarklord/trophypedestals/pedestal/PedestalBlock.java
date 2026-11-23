@@ -125,6 +125,7 @@ public class PedestalBlock extends BaseEntityBlock {
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) {
+            if (placer != null) pedestal.faceFront(placer.getDirection().getOpposite());
             pedestal.applyItemLens(stack);
             pedestal.markPlaced();
             if (placer instanceof Player player) pedestal.setOwner(player);
@@ -265,9 +266,9 @@ public class PedestalBlock extends BaseEntityBlock {
         });
     }
 
-    /** Lenses fit display pedestals: not trophies, leaderboards or mannequins. */
+    /** Lenses fit display and mannequin pedestals: not trophies or leaderboards. */
     private static boolean lensable(PedestalBlockEntity pedestal) {
-        return !pedestal.isTrophy() && pedestal.leaderboard() == null && !pedestal.mannequin();
+        return !pedestal.isTrophy() && pedestal.leaderboard() == null;
     }
 
     private static boolean caseable(PedestalBlockEntity pedestal) {
@@ -299,7 +300,8 @@ public class PedestalBlock extends BaseEntityBlock {
     }
 
     private static @Nullable EquipmentSlot mannequinSlot(ItemStack stack, PedestalBlockEntity pedestal) {
-        if (!pedestal.mannequin()) return null;
+        // a lens goes in the pedestal, not in the mannequin's hand
+        if (!pedestal.mannequin() || stack.getItem() instanceof LensItem) return null;
         Equipable equippable = Equipable.get(stack);
         EquipmentSlot slot = equippable == null ? null : equippable.getEquipmentSlot();
         if (slot != null && slot.getType() == EquipmentSlot.Type.ARMOR) return slot;

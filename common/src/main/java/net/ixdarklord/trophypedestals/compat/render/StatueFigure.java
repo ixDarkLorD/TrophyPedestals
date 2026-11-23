@@ -28,6 +28,7 @@ public final class StatueFigure extends RemotePlayer {
     float swimAmount;
     int fallFlyingTicks;
     @Nullable Direction bed;
+    private float @Nullable [] standPose;
 
     private StatueFigure(ClientLevel level) {
         super(level, new GameProfile(Util.NIL_UUID, ""));
@@ -35,6 +36,15 @@ public final class StatueFigure extends RemotePlayer {
 
     public static StatueFigure create(ClientLevel level) {
         return new StatueFigure(level);
+    }
+
+    /** The mannequin pose its model takes (see HumanoidModelMixin), or null for its own stance. */
+    public float @Nullable [] standPose() {
+        return standPose;
+    }
+
+    void standPose(float @Nullable [] pose) {
+        standPose = pose;
     }
 
     @Override
