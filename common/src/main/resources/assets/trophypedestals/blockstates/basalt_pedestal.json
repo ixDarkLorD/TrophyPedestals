@@ -1,10 +1,19 @@
 {
   "variants": {
-    "lit=false": {
+    "facing=south": {
       "model": "trophypedestals:block/basalt_pedestal"
     },
-    "lit=true": {
-      "model": "trophypedestals:block/basalt_pedestal"
+    "facing=west": {
+      "model": "trophypedestals:block/basalt_pedestal",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "trophypedestals:block/basalt_pedestal",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "trophypedestals:block/basalt_pedestal",
+      "y": 270
     }
   }
 }

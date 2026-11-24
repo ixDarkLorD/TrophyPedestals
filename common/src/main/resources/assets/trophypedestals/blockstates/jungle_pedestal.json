@@ -1,10 +1,19 @@
 {
   "variants": {
-    "lit=false": {
+    "facing=south": {
       "model": "trophypedestals:block/jungle_pedestal"
     },
-    "lit=true": {
-      "model": "trophypedestals:block/jungle_pedestal"
+    "facing=west": {
+      "model": "trophypedestals:block/jungle_pedestal",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "trophypedestals:block/jungle_pedestal",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "trophypedestals:block/jungle_pedestal",
+      "y": 270
     }
   }
 }

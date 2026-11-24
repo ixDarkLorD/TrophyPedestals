@@ -593,6 +593,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         public int itemRarity;
         public float backX, backZ;
         public float rise = 1.0F;
+        public float bodyTurn;
         public boolean rests, restsFlat;
         public float restScale, restY, restMobScale, restDepth, restBottom;
         public PedestalRarity rarity = DISPLAY;
@@ -728,6 +729,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         state.scene = pedestal.inScene();
         state.beam = true;
         state.custom = pedestal.getBlockState().is(Pedestals.CUSTOM.get());
+        state.bodyTurn = pedestal.restTurn();
         state.material = pedestal.material();
         state.glassLens = LensLooks.lens(pedestal);
         state.bareWell = state.glassLens == null && !pedestal.isTrophy() && pedestal.leaderboard() == null;
@@ -960,7 +962,15 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     @Override
     public void submit(State state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
-        if (state.custom) PedestalBody.submit(state.material, poseStack, collector, state.lightCoords);
+        if (state.custom) {
+            // the other pedestals turn through their block state; this one's body is drawn here
+            poseStack.pushPose();
+            poseStack.translate(0.5F, 0.0F, 0.5F);
+            poseStack.mulPose(Axis.YP.rotationDegrees(state.bodyTurn));
+            poseStack.translate(-0.5F, 0.0F, -0.5F);
+            PedestalBody.submit(state.material, poseStack, collector, state.lightCoords);
+            poseStack.popPose();
+        }
         submitLensGlass(state, poseStack, collector);
         if (!state.shown) return;
         AppraisalLensVisuals.submitVelvet(state, poseStack, collector);

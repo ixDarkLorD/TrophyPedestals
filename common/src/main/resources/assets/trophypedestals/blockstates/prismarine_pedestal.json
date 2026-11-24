@@ -1,10 +1,19 @@
 {
   "variants": {
-    "lit=false": {
+    "facing=south": {
       "model": "trophypedestals:block/prismarine_pedestal"
     },
-    "lit=true": {
-      "model": "trophypedestals:block/prismarine_pedestal"
+    "facing=west": {
+      "model": "trophypedestals:block/prismarine_pedestal",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "trophypedestals:block/prismarine_pedestal",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "trophypedestals:block/prismarine_pedestal",
+      "y": 270
     }
   }
 }
