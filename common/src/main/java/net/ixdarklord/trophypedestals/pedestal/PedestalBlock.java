@@ -35,7 +35,9 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.StainedGlassBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -44,6 +46,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -57,6 +60,8 @@ public class PedestalBlock extends BaseEntityBlock {
     public static final int MAX_RANK = 5;
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
     public static final IntegerProperty RANK = IntegerProperty.create("rank", 0, MAX_RANK);
+    /** The way its front looks: toward whoever placed it, as a furnace's. Pedestals from before this was added face south. */
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty CASED = BooleanProperty.create("cased");
     /** Whether its When Powered setting has it on: it gives a low light then, even with nothing on it. */
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
@@ -85,7 +90,7 @@ public class PedestalBlock extends BaseEntityBlock {
 
     public PedestalBlock(Properties properties) {
         super(properties);
-        registerDefaultState(defaultBlockState().setValue(LIT, false).setValue(RANK, 0).setValue(CASED, false).setValue(POWERED, false).setValue(SOCKET, false));
+        registerDefaultState(defaultBlockState().setValue(FACING, Direction.SOUTH).setValue(LIT, false).setValue(RANK, 0).setValue(CASED, false).setValue(POWERED, false).setValue(SOCKET, false));
     }
 
     @Override
@@ -95,13 +100,23 @@ public class PedestalBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(LIT, RANK, CASED, POWERED, SOCKET);
+        builder.add(FACING, LIT, RANK, CASED, POWERED, SOCKET);
     }
 
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         BlockState state = super.getStateForPlacement(context);
-        return state == null ? null : state.setValue(LIT, Pedestals.isTrophy(context.getItemInHand())).setValue(RANK, rank(Pedestals.rarity(context.getItemInHand())));
+        return state == null ? null : state.setValue(FACING, context.getHorizontalDirection().getOpposite()).setValue(LIT, Pedestals.isTrophy(context.getItemInHand())).setValue(RANK, rank(Pedestals.rarity(context.getItemInHand())));
+    }
+
+    @Override
+    protected BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+    }
+
+    @Override
+    protected BlockState mirror(BlockState state, Mirror mirror) {
+        return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
 
     @Override
@@ -127,7 +142,6 @@ public class PedestalBlock extends BaseEntityBlock {
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof PedestalBlockEntity pedestal) {
-            if (placer != null) pedestal.faceFront(placer.getDirection().getOpposite());
             pedestal.markPlaced();
             if (placer instanceof Player player) pedestal.setOwner(player);
         }
