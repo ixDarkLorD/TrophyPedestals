@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "trophypedestals:item/ender_lens"
+    "layer0": "trophypedestals:item/void_rift_lens"
   }
 }
