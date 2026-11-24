@@ -1,34 +1,31 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v0.4.0 "Through the Lens" (unreleased)
+## v0.4.0 "Through the Lens" Release | Nov 24, 2026
 ### ✨ New Features
-- **Lenses:** nine lenses that give a display pedestal its own light and visual effects. Use one on the pedestal's top to swap it, or use an empty hand once no item is shown to take it out. Mannequin pedestals show their lens too, with Appraisal going by the rarest piece worn or held.
-  - **Clear:** warm light with a turning sunburst and drifting glints. Can be dyed to color its light.
-  - **Sanguine:** a bleeding eclipse with a burning corona and dark beam, a pool of blood, rising droplets, dark fog, red eyes and circling ravens.
-  - **Prism:** rainbow rays, a turning stained glass halo and small prisms orbiting the item.
-  - **Tide:** water rings, caustics, bubbles, swaying kelp and tropical fish, with the item bobbing.
-  - **Appraisal:** a showcase that grows with the item's rarity, from pebbles and linen up to a royal crown, banners and an aurora.
-  - **Ember:** flames, burning coals, a heat haze, sparks, smoke and ash.
-  - **Frost:** snow, icicles, ice crystals, falling fog and icy gusts.
-  - **Ender:** a torn rift onto the End's stars, floating islands, and a beam of energy from the lens.
-  - **Hologram:** climbing digital code, projector beams and rings of holographic mesh, with the item shown larger.
+- **Lenses:** nine lenses that give display and mannequin pedestals their own light and visual effects: Clear, Blood Moon, Prism, Coral Reef, Curator's, Inferno, Blizzard, Void Rift and Cipher. Use a lens on a pedestal's top to fit or swap it. To take it out, remove the displayed item, then use an empty hand on the top.
 - **Curator's Stamp:** copies a pedestal's settings and lens to other pedestals.
   - Sneak-use a pedestal to copy, then use other pedestals to paste.
   - Use it in the air to choose what pastes: both, settings only or lens only. The choice locks while the stamp holds a copy.
   - Sneak-use it in the air to clear it.
   - It follows the adjust screen's ownership, lock and server rules. In survival, the lens comes from your inventory and the replaced one is returned.
-- **Powered-off pose:** a pedestal turned off by its When Powered option keeps showing its display at rest. Flat items lie on the lens, blocks sit upright, and mobs and statues settle onto the pedestal, all facing the way the pedestal was placed, like a furnace.
+- **Powered-off pose:** a pedestal turned off by its When Powered option keeps showing its display at rest. Flat items lie on the lens, blocks sit upright, and mobs and statues settle onto the pedestal, all facing the way the pedestal was placed.
 - **Effects visibility:** a pedestal's effects can show always, only while looked at, or never. Mods can set it with `PedestalSettings.Settings.effectsMode`, or `effectsMode` from KubeJS.
 - **New client options:** `lens_effects` turns lens effects off and keeps their colors. `hide_disabled_tabs`, on by default, hides the adjust screen tabs a server has turned off.
 
 ### 🔧 Changes
 - Pedestals are now crafted with a lens, in the top middle of the recipe, with the gold ingot moved to the bottom. A broken pedestal keeps its lens, and its item shows it.
+- Pedestals now face whoever places them.
 - A display pedestal needs a lens to hold an item. Display pedestals placed before this update get a Clear Lens.
 - Pedestals give a low light while their When Powered option has them on, even when empty.
 - The adjust screen has a new Effects tab for the showcase light, effects visibility and a legendary trophy's crown.
 - Ranked trophies' particles now show all the time by default, instead of only while looked at.
 - A mannequin's pose options moved into its Model tab and now work on the player model too.
+- JEI's Mob Trophies page shows each mob in an isometric view, with an easier to read Common rank.
+
+### 🐛 Fixes
+- JEI and REI now show the exact drop chance, including very small ones, and 0% when a mob can't drop a trophy.
+- Leaving a world no longer keeps it in memory through the mobs drawn on trophy items.
 
 ## v0.3.1 Release | Nov 17, 2026
 ### 🐛 Fixes
