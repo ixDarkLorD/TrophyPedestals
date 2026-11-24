@@ -5,7 +5,6 @@ import net.ixdarklord.trophypedestals.TrophyPedestalsConfig;
 import net.ixdarklord.trophypedestals.api.PedestalTeams;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentGetter;
@@ -72,7 +71,6 @@ public class PedestalBlockEntity extends BlockEntity {
     private static final String STILL = "Still";
     private static final String FROZEN = "Frozen";
     private static final String PLACED_AT = "PlacedAt";
-    private static final String REST_TURN = "RestTurn";
     private static final String MATERIAL = "Material";
     private static final String STATUE = "Statue";
     private static final String LOCKED = "Locked";
@@ -148,7 +146,6 @@ public class PedestalBlockEntity extends BlockEntity {
     private @Nullable Object renderMemory;
     private float glassReach, glassHeight;
     private long placedAt = Long.MIN_VALUE / 2;
-    private float restTurn;
     private long displayChangedAt = Long.MIN_VALUE / 2;
     private boolean wasOn, synced;
 
@@ -432,14 +429,10 @@ public class PedestalBlockEntity extends BlockEntity {
         return isTrophy() || !display.isEmpty() || leaderboard != null || armorStand;
     }
 
-    /** How far what it shows is turned while it rests, in degrees, so that it faces the way the pedestal was placed. */
+    /** How far what it shows is turned while it rests, in degrees, so that it looks the way the pedestal's front does. */
     public float restTurn() {
-        return restTurn;
-    }
-
-    /** Sets the pedestal's front, toward whoever placed it, as a furnace's. */
-    public void faceFront(Direction front) {
-        if (front.getAxis().isHorizontal()) restTurn = (360.0F - front.toYRot()) % 360.0F;
+        BlockState state = getBlockState();
+        return state.hasProperty(PedestalBlock.FACING) ? (360.0F - state.getValue(PedestalBlock.FACING).toYRot()) % 360.0F : 0.0F;
     }
 
     public void markPlaced() {
@@ -842,7 +835,6 @@ public class PedestalBlockEntity extends BlockEntity {
         if (redstone != RedstoneMode.IGNORE) output.store(REDSTONE, RedstoneMode.CODEC, redstone);
         if (powered) output.putBoolean(POWERED, true);
         if (placedAt > Long.MIN_VALUE / 2) output.putLong(PLACED_AT, placedAt);
-        if (restTurn != 0.0F) output.putFloat(REST_TURN, restTurn);
     }
 
     @Override
@@ -905,7 +897,6 @@ public class PedestalBlockEntity extends BlockEntity {
         powered = input.getBooleanOr(POWERED, false);
         textMode = input.read(TEXT_MODE, TextMode.CODEC).orElse(input.getBooleanOr(TEXT_ALWAYS, false) ? TextMode.ALWAYS : TextMode.LOOKING);
         placedAt = input.getLongOr(PLACED_AT, Long.MIN_VALUE / 2);
-        restTurn = input.getFloatOr(REST_TURN, 0.0F);
         boolean on = on();
         if (level == null) {
             wasOn = on;
