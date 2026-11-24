@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "trophypedestals:item/appraisal_lens"
+    "layer0": "trophypedestals:item/curators_lens"
   }
 }
