@@ -66,8 +66,8 @@ The server config (`config/trophypedestals-server`, per world) has three groups.
 | `display_pedestal_settings.display` | `false` | whether a display pedestal's screen has a Display tab: its item's size, height and rotation |
 | `display_pedestal_settings.text` | `false` | whether a display pedestal's screen has its text's height and size, on a Text tab |
 
-Both `display_pedestal_settings` are off by default. A display pedestal's screen has the Display, Text and Behavior
-(spin, sounds, showcase light and redstone) tabs; while `display` is off, its Display tab shows greyed out and says, while
+Both `display_pedestal_settings` are off by default. A display pedestal's screen has the Display, Effects, Text and Behavior
+(spin, sounds and redstone) tabs; while `display` is off, its Display tab shows greyed out and says, while
 hovered, that the server turned it off, and while `text` is off its Text tab has only when its text shows. A trophy's tab
 turned off by `trophy_settings` shows the same way.
 
@@ -77,9 +77,11 @@ It only takes away: a pedestal whose owner turned its flourishes or sounds off s
 | Option | Default | Meaning |
 |---|---|---|
 | `flourishes` | `true` | whether ranked trophies show their beams, halos, flares, crowns and particles (their showcase light and outlines stay) |
+| `lens_effects` | `true` | whether lenses on display pedestals show their effects (ripples, runes, particles, scanlines, the item's motion); off, a lens only colours the light |
 | `ambient_sounds` | `true` | whether ranked trophies play their ambient sounds and chimes |
 | `moving_mobs` | `true` | whether mobs and statues on trophies move and play their animations |
 | `display_distance` | `64` | how far away, in blocks (16 to 256), what pedestals show is drawn |
+| `hide_disabled_tabs` | `true` | whether the pedestal screen hides the tabs the server has turned off; off, they stay greyed out and say why |
 
 ## Other mods
 
@@ -103,7 +105,7 @@ Server scripts get a `TrophyPedestals` binding:
 | Call | Does |
 |---|---|
 | `TrophyPedestals.isPedestal(level, pos)` | whether there's a pedestal there |
-| `TrophyPedestals.pedestalSettings(level, pos)`, `setPedestal(level, pos, {...})` | a pedestal's settings, by name: `textMode`, `scale`, `height`, `yaw`, `pitch`, `roll`, `spins`, `animates`, `effects`, `sounds`, `textHeight`, `textScale`, `crown`, `light`, `redstone`, `statue`, `statuePose`, `animation` (and `locked`) |
+| `TrophyPedestals.pedestalSettings(level, pos)`, `setPedestal(level, pos, {...})` | a pedestal's settings, by name: `textMode`, `scale`, `height`, `yaw`, `pitch`, `roll`, `spins`, `animates`, `effects`, `effectsMode` (`always`, `looking` or `hidden`), `sounds`, `textHeight`, `textScale`, `crown`, `light`, `redstone`, `statue`, `statuePose`, `animation` (and `locked`) |
 | `TrophyPedestals.forcePedestal(level, pos, {...}, message)`, `lockPedestal(level, pos[, message])`, `unlockPedestal(level, pos)` | set and lock its settings against every player, with a refusal message (or `null`, silently) |
 
 And `TrophyPedestalsEvents`, both on the server:

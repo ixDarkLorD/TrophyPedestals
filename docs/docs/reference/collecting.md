@@ -66,16 +66,16 @@ empty or hidden by redstone.
 
 **Mannequins.** Use an armor stand on an empty display pedestal to install it, making it a mannequin pedestal. Armour
 then goes to its own slot, swapping with what was there, and anything else goes in its hand (a shield, or what's worn in
-an off hand, in its off hand). Its adjust screen (sneak and use an empty hand) gets two more tabs:
+an off hand, in its off hand). Its adjust screen (sneak and use an empty hand) gets a **Model** tab:
 
 - **Model:** show it as the armor stand, or as a player in the skin of the player who placed the pedestal. Either
   wears the outfit.
-- **Pose:** pick one of five presets (Standing, Walking, Waving, Pointing and Sitting), or turn each of the armor stand's
-  parts (head, body, arms and legs) about x, y and z, in steps of 5 degrees, each with a reset to the armor stand's own
-  pose. Under **Your Poses**, name the pose and save it, then pick it again on any mannequin or delete it. Saved poses
-  are kept on your own computer (`config/trophypedestals/poses.json`), so they follow you into every world and server.
-  The tab shows only while the model is the armor stand and there's no glass case over it: under glass the armor
-  stand stands in its own pose, at its full size, and its pose comes back when the glass comes off.
+- **Pose:** on the same tab, pick one of five presets (Standing, Walking, Waving, Pointing and Sitting), or turn the
+  model's head, body, arms and legs about x, y and z, in steps of 5 degrees, each with a reset to its default pose. Under
+  **Your Poses**, name the pose and save it, then pick it again on any mannequin or delete it. Saved poses are kept on
+  your own computer (`config/trophypedestals/poses.json`), so they follow you into every world and server. The pose
+  options are hidden under a glass case: there the mannequin stands in its own pose, at its full size, and its pose comes
+  back when the glass comes off.
 
 An empty hand takes the whole outfit back, then the armor stand. Breaking the pedestal drops both. Without an armor
 stand, armour goes on display like any other item.
