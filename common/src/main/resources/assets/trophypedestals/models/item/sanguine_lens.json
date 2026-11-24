@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "trophypedestals:item/sanguine_lens"
+    "layer0": "trophypedestals:item/blood_moon_lens"
   }
 }
