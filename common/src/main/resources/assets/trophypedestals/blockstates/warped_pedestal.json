@@ -1,10 +1,19 @@
 {
   "variants": {
-    "lit=false": {
+    "facing=south": {
       "model": "trophypedestals:block/warped_pedestal"
     },
-    "lit=true": {
-      "model": "trophypedestals:block/warped_pedestal"
+    "facing=west": {
+      "model": "trophypedestals:block/warped_pedestal",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "trophypedestals:block/warped_pedestal",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "trophypedestals:block/warped_pedestal",
+      "y": 270
     }
   }
 }
