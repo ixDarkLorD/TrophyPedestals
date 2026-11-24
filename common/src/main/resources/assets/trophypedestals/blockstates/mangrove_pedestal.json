@@ -1,10 +1,19 @@
 {
   "variants": {
-    "lit=false": {
+    "facing=south": {
       "model": "trophypedestals:block/mangrove_pedestal_placed"
     },
-    "lit=true": {
-      "model": "trophypedestals:block/mangrove_pedestal_placed"
+    "facing=west": {
+      "model": "trophypedestals:block/mangrove_pedestal_placed",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "trophypedestals:block/mangrove_pedestal_placed",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "trophypedestals:block/mangrove_pedestal_placed",
+      "y": 270
     }
   }
 }
