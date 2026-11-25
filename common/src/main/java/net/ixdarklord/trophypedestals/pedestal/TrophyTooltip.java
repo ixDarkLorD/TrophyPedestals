@@ -6,7 +6,6 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.Optional;
 
-/** A ranked trophy's rank, shown as a badge after its name in its tooltip. */
 public record TrophyTooltip(ItemStack stack) implements TooltipComponent {
     public static Optional<TooltipComponent> of(ItemStack stack) {
         PedestalRecord record = stack.get(Pedestals.RECORD.get());

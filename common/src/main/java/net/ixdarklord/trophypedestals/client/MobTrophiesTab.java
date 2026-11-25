@@ -8,7 +8,6 @@ import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.CreativeModeTab;
 
-/** The "Trophy Pedestals: Mobs" creative tab, kept in step with {@code mob_trophies.chance_overrides}. */
 public final class MobTrophiesTab {
     private MobTrophiesTab() {}
 

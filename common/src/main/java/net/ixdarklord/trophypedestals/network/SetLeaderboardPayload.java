@@ -14,7 +14,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 
-/** From a client's board picker: show this board on the pedestal at {@code pos}. */
 public record SetLeaderboardPayload(BlockPos pos, Identifier board) implements CustomPacketPayload {
     public static final Type<SetLeaderboardPayload> TYPE = new Type<>(TrophyPedestalsMod.id("set_leaderboard"));
     private static final double REACH = 8.0;

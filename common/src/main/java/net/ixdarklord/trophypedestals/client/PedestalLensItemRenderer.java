@@ -18,10 +18,6 @@ import org.joml.Vector3fc;
 
 import java.util.function.Consumer;
 
-/**
- * The lens in a display pedestal's item: the {@code trophypedestals:pedestal_lens} special item model. An item with no lens
- * recorded is placed with a Clear Lens, so it shows one; one whose lens was taken out shows its open socket.
- */
 public final class PedestalLensItemRenderer implements SpecialModelRenderer<PedestalLensItemRenderer.Fitted> {
     public static final Identifier TYPE = TrophyPedestalsMod.id("pedestal_lens");
     private static final PedestalLensItemRenderer INSTANCE = new PedestalLensItemRenderer();

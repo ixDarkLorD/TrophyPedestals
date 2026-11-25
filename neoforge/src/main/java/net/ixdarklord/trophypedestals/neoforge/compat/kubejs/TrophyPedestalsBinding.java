@@ -14,10 +14,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * What server scripts see as {@code TrophyPedestals}: a pedestal's settings, read, changed or locked against players,
- * as {@code PedestalSettings} does for Java mods.
- */
 public final class TrophyPedestalsBinding {
     public static final TrophyPedestalsBinding INSTANCE = new TrophyPedestalsBinding();
 

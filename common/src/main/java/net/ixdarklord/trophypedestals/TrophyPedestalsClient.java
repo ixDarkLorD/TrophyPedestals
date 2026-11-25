@@ -9,7 +9,6 @@ import net.ixdarklord.trophypedestals.client.PedestalRenderer;
 import net.ixdarklord.trophypedestals.client.TrophyIconRenderer;
 import net.ixdarklord.trophypedestals.client.TrophyPedestalsClientConfig;
 
-/** Client mod constructor (CoolCatLib). */
 public final class TrophyPedestalsClient implements ClientModConstructor {
     @Override
     public void onConstructMod() {

@@ -13,15 +13,12 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 
-/** The Appraisal Lens: a showcase that grows with the shown item's rarity, on a velvet cap coloured by rank. */
 public final class AppraisalLensVisuals extends LensVisuals {
     private static final float[] APPRAISAL_AURA = {35.0F, 55.0F, 70.0F, 85.0F}, STAR_SPOTS = {-0.26F, 0.2F, 0.28F, 0.08F, -0.17F, -0.22F, 0.2F, -0.26F};
     private static final int GLEAM_FRAMES = 12, PEBBLES = 6, ORBIT_TAIL = 5, FLARE_TRAIL = 22, CROWN_FRAMES = 16, SPIRAL_ARMS = 2, SPIRAL_STEPS = 36, ORBS = 6, DIAMONDS = 4, DIAMOND_TRAIL = 4;
     private static final float CROWN_TICKS = 4.0F, CROWN_HALF = 0.19F, CROWN_LIFT = 0.05F, CROWN_MIDDLE = 18.0F / 32.0F, ORB_POP = 0.86F, BANNER_HALF = 0.17F, BANNER_SIDE = 0.5F, BANNER_BACK = 0.12F, ORB_TICKS = 96.0F;
     private static final float GLEAM_TICKS = 90.0F, GLEAM_SHARE = 0.27F, STAR_TICKS = 52.0F;
-    /** How far the Appraisal Lens's draped trim hangs below the others: its top starts halfway down the cap's side, under the velvet. */
     private static final float APPRAISAL_TRIM_DROP = 1.0F / 16.0F;
-    /** The Appraisal Lens's velvet for each rarity: slate, gold, teal and red. */
     private static final Identifier[] VELVETS = {TrophyPedestalsMod.id("textures/block/pedestal/velvet_common.png"), TrophyPedestalsMod.id("textures/block/pedestal/velvet_uncommon.png"),
             TrophyPedestalsMod.id("textures/block/pedestal/velvet_rare.png"), TrophyPedestalsMod.id("textures/block/pedestal/velvet_epic.png")};
 
@@ -30,11 +27,6 @@ public final class AppraisalLensVisuals extends LensVisuals {
         submitAppraisal(state, glow, lift, middle, color);
     }
 
-    /**
-     * The Appraisal Lens puts on a show that grows with the item's rarity, under a draped trim richer with each rank, with a
-     * sheen sweeping across the item and cut-gem facets glittering in the lens at all of them: common has hovering pebbles; uncommon adds rising experience orbs;
-     * rare, circling cut diamonds; epic, a glinting crown, royal banners, shafts of light, an aurora, falling gold and its enchanted glint.
-     */
     private static void submitAppraisal(State state, PedestalLight.Glow glow, float lift, float middle, int color) {
         int tier = state.itemRarity;
         float pulse = 0.82F + 0.18F * Mth.sin(state.time / 16.0F);
@@ -64,7 +56,6 @@ public final class AppraisalLensVisuals extends LensVisuals {
         submitCapBand(state, glow, PedestalLight.Sprite.APPRAISAL_GLOW_0.frame(tier), CAP_TOP_EDGE - APPRAISAL_TRIM_DROP, CAP_BOTTOM_EDGE - APPRAISAL_TRIM_DROP, ARGB.color((int) ((90 + 110 * pulse) * state.rise), 0xFFFFFF));
     }
 
-    /** Every few seconds a band of light sweeps across the displayed item, its shader keeping the light on the item alone. */
     private static void submitGleam(State state, PedestalLight.Glow glow, float middle, int shine) {
         float cycle = (state.time + (state.blockPos.hashCode() & 0xFF)) / GLEAM_TICKS % 1.0F;
         if (cycle >= GLEAM_SHARE) return;
@@ -73,7 +64,6 @@ public final class AppraisalLensVisuals extends LensVisuals {
         upright(state, glow, PedestalLight.Sprite.GLEAM_0.frame(frame), 0.5F, middle - half, 0.5F, half * 1.3F, half * 2.0F, ARGB.color((int) (255 * state.rise), shine));
     }
 
-    /** Epic: two royal banners of purple and gold waving on either side of the item, a little behind it, their rods level with the middle of the crown. */
     private static void submitRoyalBanners(State state, PedestalLight.Glow glow) {
         float half = BANNER_HALF * state.size, height = half * 4.0F;
         float top = state.displayTop + state.bob + (CROWN_LIFT + CROWN_HALF * 2.0F * CROWN_MIDDLE) * state.size;
@@ -85,7 +75,6 @@ public final class AppraisalLensVisuals extends LensVisuals {
         }
     }
 
-    /** Epic: a royal crown floating over the item, velvet under gold arches on an ermine band, a glint sweeping across it and flashing off its orb. */
     private static void submitEpicCrown(State state, PedestalLight.Glow glow) {
         float half = CROWN_HALF * state.size, sway = 0.012F * Mth.sin(state.time / 21.0F) * state.size;
         float bottom = state.displayTop + state.bob + sway + CROWN_LIFT * state.size;
@@ -99,17 +88,16 @@ public final class AppraisalLensVisuals extends LensVisuals {
         }
     }
 
-    /** A soft bloom of the rarity's light behind the item, slowly breathing. */
     private static void submitBackBloom(State state, PedestalLight.Glow glow, float middle, float half, float strength, int tint) {
         float breath = 0.75F + 0.25F * Mth.sin(state.time / 22.0F);
         float x = 0.5F + state.backX * CIRCLE_BACK * state.size, z = 0.5F + state.backZ * CIRCLE_BACK * state.size;
         glow.billboard(PedestalLight.Sprite.APPRAISAL_BLOOM, x, middle, z, half * state.size * (0.92F + 0.08F * breath), 0.0F, ARGB.color((int) (strength * breath * state.rise), tint));
     }
 
-    /** Lights orbiting the item on a tilted path, each drawn in smooth lines of light; with {@code bloom}, a soft glow, a comet's tail and a level streak of glare instead. */
     private static void submitOrbitLights(State state, PedestalLight.Glow glow, float middle, int lights, float radius, float tilt, float speed, int tint, boolean bloom) {
         float reach = radius * state.size, rise = tilt * state.size, direction = Math.signum(speed);
         for (int light = 0; light < lights; light++) {
+            // Lights spaced evenly round a tilted elliptical orbit.
             float angle = state.time * speed + light * Mth.TWO_PI / lights;
             float x = 0.5F + Mth.cos(angle) * reach, y = middle + Mth.sin(angle) * rise, z = 0.5F + Mth.sin(angle) * reach;
             float pulse = 0.82F + 0.18F * Mth.sin(state.time / 7.0F + light * 2.1F);
@@ -128,10 +116,6 @@ public final class AppraisalLensVisuals extends LensVisuals {
         }
     }
 
-    /**
-     * A flare drawn in smooth lines, as the spotlight's shafts are: a slim beam rising from the lens through the light, brightest
-     * at the light and fading to nothing past it, and a seamless arc of light trailing behind it along its orbit.
-     */
     private static void submitFlareLines(State state, PedestalLight.Glow glow, float angle, float reach, float rise, float middle, float direction, float pulse, int tint) {
         float cos = Mth.cos(angle), sin = Mth.sin(angle), x = 0.5F + cos * reach, y = middle + sin * rise, z = 0.5F + sin * reach;
         float footY = PedestalRenderer.GLASS_TOP + RIPPLE_LIFT, footX = 0.5F + cos * reach * 0.25F, footZ = 0.5F + sin * reach * 0.25F;
@@ -155,19 +139,18 @@ public final class AppraisalLensVisuals extends LensVisuals {
         }
     }
 
-    /** One length of a camera-facing line of light, from one width and colour to another. */
     private static void flareSegment(State state, PedestalLight.Glow glow, float x0, float y0, float z0, float half0, int color0, float x1, float y1, float z1, float half1, int color1) {
         glow.quad(x0 - state.faceX * half0, y0, z0 - state.faceZ * half0, x0 + state.faceX * half0, y0, z0 + state.faceZ * half0,
                 x1 + state.faceX * half1, y1, z1 + state.faceZ * half1, x1 - state.faceX * half1, y1, z1 - state.faceZ * half1, color0, color0, color1, color1);
     }
 
-    /** Rare: two ribbons of light winding up around the item, narrowing as they climb, with waves of brightness running along them. */
     private static void submitLightSpiral(State state, PedestalLight.Glow glow, float lift) {
         float top = state.displayTop + state.bob + 0.1F * state.size, width = 0.014F * state.size;
         for (int arm = 0; arm < SPIRAL_ARMS; arm++) {
             float offset = state.time * 0.05F + arm * Mth.TWO_PI / SPIRAL_ARMS;
             for (int step = 0; step < SPIRAL_STEPS; step++) {
                 float t0 = step / (float) SPIRAL_STEPS, t1 = (step + 1) / (float) SPIRAL_STEPS;
+                // Rising helix: 1.6 turns per arm, radius shrinking with height.
                 float a0 = t0 * Mth.TWO_PI * 1.6F + offset, a1 = t1 * Mth.TWO_PI * 1.6F + offset;
                 float r0 = (0.42F - 0.14F * t0) * state.size, r1 = (0.42F - 0.14F * t1) * state.size;
                 float x0 = 0.5F + Mth.cos(a0) * r0, z0 = 0.5F + Mth.sin(a0) * r0, y0 = lift + (top - lift) * t0;
@@ -179,11 +162,11 @@ public final class AppraisalLensVisuals extends LensVisuals {
     }
 
     private static int spiralColor(State state, float t) {
+        // Travelling bright bands, with alpha fading in and out along the spiral.
         float wave = Math.max(0.0F, Mth.sin(t * Mth.TWO_PI * 2.0F - state.time * 0.12F));
         return ARGB.color((int) (Mth.sin(t * Mth.PI) * (70.0F + 185.0F * wave) * state.rise), ARGB.srgbLerp(wave * 0.7F, 0xFF55FFFF, 0xFFFFFFFF));
     }
 
-    /** Common: rough pebbles of cobblestone hovering around the item, turning slowly and shedding a little dust. */
     private static void submitPebbles(State state, PedestalLight.Glow glow, float lift) {
         for (int pebble = 0; pebble < PEBBLES; pebble++) {
             float angle = state.time * 0.004F + pebble * Mth.TWO_PI / PEBBLES, radius = (0.3F + 0.05F * (pebble % 2)) * state.size;
@@ -198,10 +181,6 @@ public final class AppraisalLensVisuals extends LensVisuals {
         }
     }
 
-    /**
-     * Uncommon: chunky orbs of experience spiralling up around the item, trailing smaller orbs, flickering between
-     * yellow and green as experience does, each bursting into a flare at the top of its climb.
-     */
     private static void submitExperienceOrbs(State state, PedestalLight.Glow glow, float lift) {
         float top = state.displayTop + state.bob + 0.12F * state.size;
         for (int orb = 0; orb < ORBS; orb++) {
@@ -213,6 +192,7 @@ public final class AppraisalLensVisuals extends LensVisuals {
             for (int trail = 2; trail >= 0; trail--) {
                 float then = age - trail * 0.02F;
                 if (then <= 0.0F) continue;
+                // Orb climbs a helix whose radius wobbles with height.
                 float angle = then * Mth.TWO_PI * 1.25F + orb * 2.4F;
                 float radius = (0.3F + 0.05F * Mth.sin(then * Mth.TWO_PI * 2.0F + orb)) * state.size;
                 float x = 0.5F + Mth.cos(angle) * radius, y = lift + 0.04F + (top - lift) * then, z = 0.5F + Mth.sin(angle) * radius;
@@ -226,7 +206,6 @@ public final class AppraisalLensVisuals extends LensVisuals {
         }
     }
 
-    /** Rare: cut diamonds circling the item on a tilted path, turning as they go, flashing with glare now and then and leaving a soft trail of light. */
     private static void submitDiamonds(State state, PedestalLight.Glow glow, float middle) {
         float radius = 0.42F * state.size, half = 0.08F * state.size;
         for (int gem = 0; gem < DIAMONDS; gem++) {
@@ -249,7 +228,6 @@ public final class AppraisalLensVisuals extends LensVisuals {
         }
     }
 
-    /** Rare and up: bright star glints flashing one after another around the item, as light catching a cut gem. */
     private static void submitStarGlints(State state, PedestalLight.Glow glow, float middle, int stars, int shine) {
         float fx = -state.backX * 0.24F * state.size, fz = -state.backZ * 0.24F * state.size;
         for (int star = 0; star < stars; star++) {
@@ -262,7 +240,6 @@ public final class AppraisalLensVisuals extends LensVisuals {
         }
     }
 
-    /** Epic: shafts of light rising from the lens behind the item. */
     private static void submitGodRays(State state, PedestalLight.Glow glow, float floor, int rays, int shine, float strength) {
         float top = floor + 1.2F * state.size;
         float bx = state.backX * 0.1F * state.size, bz = state.backZ * 0.1F * state.size;
@@ -279,13 +256,11 @@ public final class AppraisalLensVisuals extends LensVisuals {
         }
     }
 
-    /** Epic: an aurora's curtain rippling behind the item. */
     private static void submitAurora(State state, PedestalLight.Glow glow, float floor) {
         float x = 0.5F + state.backX * CIRCLE_BACK * state.size, z = 0.5F + state.backZ * CIRCLE_BACK * state.size;
         upright(state, glow, PedestalLight.Sprite.AURORA_0.playing(state.time), x, floor, z, 0.66F * state.size, 1.3F * state.size, ARGB.color((int) (235 * state.rise), 0xFFFFFF));
     }
 
-    /** Velvet in the item's rarity's colour on the Appraisal pedestal's cap: its step, raised rim and well, and the sides of its cap and rim. Lit by the world, as cloth is. */
     public static void submitVelvet(State state, PoseStack poseStack, SubmitNodeCollector collector) {
         if (state.lens != Lens.APPRAISAL || !state.lensEffects || !state.detailed || state.lensFade <= 0.0F) return;
         int alpha = (int) (255 * state.lensFade * state.rise), light = state.lightCoords;

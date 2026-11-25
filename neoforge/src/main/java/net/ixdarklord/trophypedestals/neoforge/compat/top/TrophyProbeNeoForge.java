@@ -18,7 +18,6 @@ import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;
 
 import java.util.function.Function;
 
-/** Adds what a looked-at pedestal holds to The One Probe ({@link PedestalInfo}). */
 public final class TrophyProbeNeoForge implements IProbeInfoProvider {
     private static final Identifier ID = TrophyPedestalsMod.id("pedestal");
 
