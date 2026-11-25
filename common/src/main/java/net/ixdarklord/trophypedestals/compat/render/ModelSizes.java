@@ -15,13 +15,6 @@ import org.joml.Vector3f;
 
 import java.util.function.Consumer;
 
-/**
- * Where a mob's model reaches, found by drawing it into a buffer that only notes where its corners land (1.21.1 builds
- * some models as a list of parts, with no tree of parts to walk as 26.1 does): <ul> <li>{@link #measure}: at rest, as
- * {reach from its middle, height, below its feet, width}, in blocks;</li> <li>{@link #pose}, {@link #visitModel} and
- * {@link #visitItem}: posed as it's drawn this frame, every corner of its model and of what it holds (26.1's model set
- * up from its state, and its held items' extents).</li> </ul>
- */
 public final class ModelSizes {
     private static final float MODEL_FEET = 1.501F;
 

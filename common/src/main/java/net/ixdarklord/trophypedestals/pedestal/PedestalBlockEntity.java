@@ -43,10 +43,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * A placed pedestal's record ({@link PedestalRecord} for an achievement trophy, {@link MobTrophyRecord} for a mob's),
- * or none for a crafted one.
- */
 public class PedestalBlockEntity extends BlockEntity {
     private static final String RECORD = "Record";
     private static final String GLASS = "Glass", GLASS_COLOR = "GlassColor";
@@ -141,7 +137,6 @@ public class PedestalBlockEntity extends BlockEntity {
     private ItemStack iconOverride = ItemStack.EMPTY;
     private boolean scene;
     private @Nullable Entity shownMob;
-    /** What the client's renderer remembers of this pedestal. It lives and dies with it; a plain Object, so that a server never loads the renderer. */
     private @Nullable Object renderMemory;
     private float glassReach, glassHeight;
     private long placedAt = Long.MIN_VALUE / 2;
@@ -378,12 +373,10 @@ public class PedestalBlockEntity extends BlockEntity {
         refresh();
     }
 
-    /** The lens fitted to this display pedestal, or empty. */
     public ItemStack lens() {
         return lens;
     }
 
-    /** Fits a lens, or takes it out with an empty stack, and gives back the one fitted before. */
     public ItemStack setLens(ItemStack stack) {
         ItemStack old = lens;
         lens = stack;
@@ -399,7 +392,6 @@ public class PedestalBlockEntity extends BlockEntity {
                 || state.getValue(PedestalBlock.SOCKET) != emptySocket()) refresh();
     }
 
-    /** Whether it's a display pedestal with no lens fitted, its socket open. */
     public boolean emptySocket() {
         return lens.isEmpty() && !isTrophy() && leaderboard == null;
     }
@@ -423,12 +415,10 @@ public class PedestalBlockEntity extends BlockEntity {
         return displayed() && hasShowpiece();
     }
 
-    /** Whether it has something to show, shown right now or resting while its When Powered setting has it off. */
     public boolean hasShowpiece() {
         return isTrophy() || !display.isEmpty() || leaderboard != null || armorStand;
     }
 
-    /** How far what it shows is turned while it rests, in degrees, so that it looks the way the pedestal's front does. */
     public float restTurn() {
         BlockState state = getBlockState();
         return state.hasProperty(PedestalBlock.FACING) ? (360.0F - state.getValue(PedestalBlock.FACING).toYRot()) % 360.0F : 0.0F;
@@ -631,20 +621,14 @@ public class PedestalBlockEntity extends BlockEntity {
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
 
-    /** Whether its flourishes show at all (always, or while looked at). */
     public boolean effects() {
         return effectsMode != TextMode.HIDDEN;
     }
 
-    /** Shows its flourishes (as they were set to show, or always) or hides them. */
     public void setEffects(boolean effects) {
         setEffectsMode(!effects ? TextMode.HIDDEN : effectsMode == TextMode.HIDDEN ? TextMode.ALWAYS : effectsMode);
     }
 
-    /**
-     * When its flourishes show: always, only while a player looks at it, or never. Its showcase light, outlines and a
-     * lens's colour aren't flourishes, and always show.
-     */
     public TextMode effectsMode() {
         return effectsMode;
     }
@@ -864,7 +848,6 @@ public class PedestalBlockEntity extends BlockEntity {
         if (!Objects.equals(shown, mobTrophy)) shownMob = null;
         material = input.read(MATERIAL, ResourceLocation.CODEC).orElse(null);
         display = input.read(DISPLAY, ItemStack.CODEC).orElse(ItemStack.EMPTY);
-        // A display pedestal placed before lenses came has the Clear Lens it would have been crafted with.
         lens = input.read(LENS, ItemStack.CODEC).orElseGet(() -> input.getBooleanOr(NO_LENS, false) || isTrophy() ? ItemStack.EMPTY : clearLens());
         owner = input.read(OWNER, UUIDUtil.CODEC).orElse(null);
         ownerName = input.getStringOr(OWNER_NAME, "");

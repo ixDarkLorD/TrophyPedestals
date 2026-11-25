@@ -18,11 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * Sets of mob trophies: a trophy cabinet whose four spots all hold trophies of different mobs from one set (Nether,
- * End, Ocean, Bosses, Illagers, Undead, Arthropods, Farm Animals, Wildlife) shows the set's name over it in a gold
- * frame.
- */
 public final class TrophySets {
     private TrophySets() {}
 

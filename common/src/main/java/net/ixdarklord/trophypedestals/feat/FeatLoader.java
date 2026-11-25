@@ -16,10 +16,6 @@ import java.io.Reader;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Reads {@code data/<namespace>/trophypedestals/feats/*.json} on world load and {@code /reload}, and hands them to
- * {@link Feats}.
- */
 public final class FeatLoader extends SimplePreparableReloadListener<Map<ResourceLocation, Feat>> {
     public static final ResourceLocation ID = TrophyPedestalsMod.id("feats");
     private static final FileToIdConverter FEATS = FileToIdConverter.json("trophypedestals/feats");

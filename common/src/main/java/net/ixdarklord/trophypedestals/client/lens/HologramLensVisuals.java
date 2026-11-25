@@ -4,9 +4,7 @@ import net.ixdarklord.trophypedestals.client.PedestalLight;
 import net.ixdarklord.trophypedestals.client.PedestalRenderer;
 import net.ixdarklord.trophypedestals.client.PedestalRenderer.State;
 import net.ixdarklord.trophypedestals.compat.ARGB;
-import net.ixdarklord.trophypedestals.pedestal.Lens;
 
-/** The Hologram Lens: climbing code, a grid on the lens, scanlines and projector beams. */
 final class HologramLensVisuals extends LensVisuals {
     private static final float SCAN_TICKS = 66.0F, SCAN_TRAIL = 0.14F;
     private static final int SCAN_LINES = 3;
@@ -22,7 +20,6 @@ final class HologramLensVisuals extends LensVisuals {
                 ARGB.color((int) (230 * flicker * state.rise), 0xFFFFFF));
     }
 
-    /** Beams of light from the lens's corners up to the item, as a projector's. */
     private static void submitProjection(State state, PedestalLight.Glow glow, float floor, float flicker) {
         float middle = state.iconY + state.middle + state.bob;
         float lo = 0.5F - PedestalRenderer.FRAME_HALF + 0.02F, hi = 0.5F + PedestalRenderer.FRAME_HALF - 0.02F;
@@ -37,16 +34,13 @@ final class HologramLensVisuals extends LensVisuals {
         }
     }
 
-    /**
-     * The hologram scanning what it shows: square rings of mesh, like the grid on its lens, rise up past the top of the
-     * item, each a flat collar with a band of mesh hanging from it, fading away as they reach the top.
-     */
     private static void submitScanlines(State state, PedestalLight.Glow glow, float floor, float flicker) {
         float cone = Math.max(PedestalRenderer.coneTop(floor, state.rarity, state.size, state.shownRise) - floor, 0.01F);
         float top = Math.max(floor + 0.25F * state.size, state.displayTop + state.bob + 0.05F * state.size);
         int accent = state.rarity.accent();
         for (int line = 0; line < SCAN_LINES; line++) {
             float t = (state.time / SCAN_TICKS + line / (float) SCAN_LINES) % 1.0F;
+            // Smoothstep easing so each scan line slows at both ends.
             float y = floor + (top - floor) * t * t * (3.0F - 2.0F * t);
             float fade = Math.min(1.0F, t * 7.0F) * (float) Math.pow(1.0F - t, 1.35F) * flicker * state.rise;
             if (fade <= 0.0F) continue;

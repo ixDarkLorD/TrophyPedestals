@@ -24,12 +24,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * A trophy pedestal's light and sound, from its rank ({@link PedestalRarity}), glowing in its colors (CoolCatLib's
- * luminous particles, with Trophy Pedestals's own textures): a spiral of four-point sparkles rising out of the turning
- * icon, a soft halo on the cap under it as from a projector, glints drifting up, sparks circling the icon and bursts of
- * light; and its ambient sound now and then while the player is near.
- */
 public final class PedestalParticles {
     private static final double SPIRAL_RADIUS = 0.36, ORBIT_RADIUS = 0.5, SOUND_RANGE = 12.0, PARTICLE_REACH = 32.0;
     private static final int BURST_SPARKS = 16;
@@ -74,6 +68,7 @@ public final class PedestalParticles {
         if (rarity.spiralArms() > 0 && (int) ((time + 1) * rate) > (int) (time * rate)) {
             double angle = time * 0.33;
             for (int arm = 0; arm < rarity.spiralArms(); arm++) {
+                // Arms sit evenly around the circle; velocity is tangent to it, so the spiral curls upward.
                 double a = angle + arm * Math.PI * 2.0 / rarity.spiralArms();
                 double cos = Math.cos(a), sin = Math.sin(a);
                 WorldParticles.spawn(looks.spiral, x + cos * SPIRAL_RADIUS * size, y, z + sin * SPIRAL_RADIUS * size,

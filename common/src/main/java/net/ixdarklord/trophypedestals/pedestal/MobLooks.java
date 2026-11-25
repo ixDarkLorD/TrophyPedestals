@@ -8,12 +8,6 @@ import net.minecraft.world.entity.LivingEntity;
 
 import java.util.Set;
 
-/**
- * How a mob trophy keeps the look of the mob it shows: the mob's saved data when it was slain, less everything about
- * where it was, what it was doing and what it knew, so what's left is how it looked (its variant, color, size, whether
- * it was a baby, its gear and saddle, its name, a sheep's wool, a villager's profession), mods' mobs' own look
- * included.
- */
 public final class MobLooks {
     public static final int MAX_BYTES = 16 * 1024;
 

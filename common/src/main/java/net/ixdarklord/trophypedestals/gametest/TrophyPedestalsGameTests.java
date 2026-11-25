@@ -105,10 +105,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Trophy Pedestals in a running game: pedestals, trophies of a test kind of achievement (registered here, as another
- * mod would), mob trophies, statues and the settings mods can lock.
- */
 public final class TrophyPedestalsGameTests {
     private static final ResourceLocation SUBJECT = TrophyPedestalsMod.id("test_achievement");
 

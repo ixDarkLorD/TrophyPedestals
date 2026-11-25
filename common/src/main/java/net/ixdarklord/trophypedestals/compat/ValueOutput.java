@@ -7,10 +7,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 
-/**
- * 1.21.1's stand-in for 26.1's {@code ValueOutput}: the same calls, writing into a block entity's saved tag, so the
- * code saving pedestals is the same on every version.
- */
 public final class ValueOutput {
     private final CompoundTag tag;
     private final DynamicOps<Tag> ops;

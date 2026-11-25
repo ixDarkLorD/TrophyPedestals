@@ -18,11 +18,6 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 
-/**
- * A trophy cabinet's or shelf's settings, for its owner (opened with the Trophy Ledger, or sneaking on an empty spot):
- * who else may use it (Private, Team, Everyone) and when the name of the set its trophies make shows over it (Shown, On
- * Look, Hidden).
- */
 public final class CabinetScreen extends Screen {
     private static final ResourceLocation PANEL = TrophyPedestalsMod.id("pedestal/panel");
     private static final ResourceLocation SEGMENT = TrophyPedestalsMod.id("pedestal/segment");

@@ -11,10 +11,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-/**
- * 1.21.1's stand-in for 26.1's {@code ValueInput}: the same calls, reading a saved tag, so the code loading pedestals
- * is the same on every version.
- */
 public final class ValueInput {
     private final CompoundTag tag;
     private final @Nullable HolderLookup.Provider registries;

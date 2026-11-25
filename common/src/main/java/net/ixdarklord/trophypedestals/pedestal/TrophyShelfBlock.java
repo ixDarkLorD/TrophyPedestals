@@ -18,10 +18,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
-/**
- * A trophy shelf: a wooden board half a block deep hung on a wall on two brackets, with a short rim along its back,
- * trimmed in gold, holding two trophies side by side against the rim.
- */
 public class TrophyShelfBlock extends TrophyDisplayBlock {
     public static final MapCodec<TrophyShelfBlock> CODEC = simpleCodec(TrophyShelfBlock::new);
     public static final BooleanProperty LEFT = BooleanProperty.create("left"), RIGHT = BooleanProperty.create("right");

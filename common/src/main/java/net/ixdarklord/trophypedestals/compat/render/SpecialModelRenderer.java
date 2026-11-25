@@ -8,11 +8,6 @@ import org.joml.Vector3fc;
 
 import java.util.function.Consumer;
 
-/**
- * 1.21.1's stand-in for 26.1's {@code SpecialModelRenderer}: the code-drawn part of an item model, named by an item
- * definition's {@code "type": "minecraft:special"} entry, which {@link ItemDefinitions} draws (1.21.1 has no item
- * definitions of its own).
- */
 public interface SpecialModelRenderer<T> {
     void submit(@Nullable T argument, PoseStack poseStack, SubmitNodeCollector collector, int light, int overlay, boolean foil, int outlineColor);
 

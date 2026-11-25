@@ -14,9 +14,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Mobs made only to be drawn (on a pedestal, in a slot, on a recipe page) never join a level, so nothing numbers them.
- */
 public final class DrawnMobs {
     private static final AtomicInteger NEXT = new AtomicInteger(-1_000_000);
     private static final PoseStack OWN_POSE = new PoseStack();

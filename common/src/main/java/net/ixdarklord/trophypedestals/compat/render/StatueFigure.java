@@ -17,11 +17,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * A player's statue on a pedestal, on 1.21.1 (which has no mannequin): a player figure that exists only to be drawn,
- * wearing the skin of the player its look names ({@code "profile"}), looked up as it's first shown (the default skin
- * until then).
- */
 public final class StatueFigure extends RemotePlayer implements PosedFigure {
     private @Nullable GameProfile skinOf;
     boolean fallFlying;

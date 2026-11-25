@@ -37,11 +37,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-/**
- * A trophy pedestal item's icon, floating over the pedestal's block model as it does on the placed block: the
- * {@code trophypedestals:trophy_icon} special item model, which the pedestal items use (with their block model) when
- * they carry a record.
- */
 public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIconRenderer.Shown> {
     public static final ResourceLocation TYPE = TrophyPedestalsMod.id("trophy_icon");
     private static final float ICON_Y = 1.35F, ICON_SCALE = 0.95F;
@@ -60,7 +55,6 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
     };
     private static final Set<EntityType<?>> UNDRAWABLE = ConcurrentHashMap.newKeySet();
 
-    /** Lets go of the mobs kept for drawing, which would otherwise keep the world they were made in loaded after leaving it. */
     public static void forgetMobs() {
         MOBS.clear();
     }
@@ -112,6 +106,7 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
         if (spin) {
             long now = Util.getMillis();
             poseStack.translate(0.0F, (float) Math.sin(now / BOB_MILLIS) * BOB, 0.0F);
+            // One full turn every SPIN_MILLIS milliseconds.
             poseStack.mulPose(Axis.YP.rotationDegrees(now % SPIN_MILLIS * 360.0F / SPIN_MILLIS));
         } else {
             poseStack.mulPose(Axis.YP.rotationDegrees(-45.0F));
@@ -145,7 +140,7 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
             shown.ageInTicks = spin ? now / 50.0F : 0.0F;
             PedestalRenderer.idle(shown, shown.ageInTicks);
             float scale = spin ? PedestalRenderer.fitScale(mob) : PedestalRenderer.slotScale(mob);
-            float turn = PedestalRenderer.modelTurn(shown), raise = PedestalRenderer.lift(mob) - PedestalRenderer.sink(shown);
+            float turn = PedestalRenderer.modelTurn(shown), raise = PedestalRenderer.raise(mob, shown);
             poseStack.pushPose();
             poseStack.translate(0.5F, PedestalRenderer.mobFloor(), 0.5F);
             if (spin) {

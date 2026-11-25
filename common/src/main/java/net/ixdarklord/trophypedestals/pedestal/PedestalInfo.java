@@ -9,10 +9,6 @@ import net.minecraft.network.chat.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * What a looked-at pedestal tells Jade and The One Probe: its trophy (its name, rank, who earned it, a mob trophy's
- * kills), its leaderboard's leader, a mannequin, an item on display, and its glass case.
- */
 public final class PedestalInfo {
     private PedestalInfo() {}
 

@@ -9,7 +9,6 @@ import net.minecraft.world.item.TooltipFlag;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** A lens: used on a display pedestal, it sets the look of the showcase. */
 public class LensItem extends Item {
     private final Lens lens;
 

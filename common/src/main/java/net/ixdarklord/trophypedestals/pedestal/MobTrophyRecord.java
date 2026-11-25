@@ -26,7 +26,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Optional;
 
-/** What a mob trophy records: the mob slain, who slew it and when, and how grand the trophy looks. */
 public record MobTrophyRecord(ResourceLocation entity, String slayer, long slainAt, ResourceLocation rarity, CompoundTag look, Optional<Component> title,
                               int kills, boolean gilded) {
     public static final Codec<MobTrophyRecord> CODEC = RecordCodecBuilder.create(instance -> instance.group(

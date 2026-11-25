@@ -14,7 +14,6 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapedRecipePattern;
 
-/** A pedestal's shaped recipe: the lens crafted into it comes with it, fitted when it's placed. */
 public class PedestalRecipe extends ShapedRecipe {
     public static final MapCodec<PedestalRecipe> MAP_CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
                     Codec.STRING.optionalFieldOf("group", "").forGetter(PedestalRecipe::getGroup),

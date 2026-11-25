@@ -6,7 +6,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import org.jetbrains.annotations.Nullable;
 
-/** A living mob as it's to be drawn (see {@link EntityRenderState}): its pose and walk cycle. */
 public class LivingEntityRenderState extends EntityRenderState {
     public @Nullable Pose pose;
     public @Nullable Direction bedOrientation;

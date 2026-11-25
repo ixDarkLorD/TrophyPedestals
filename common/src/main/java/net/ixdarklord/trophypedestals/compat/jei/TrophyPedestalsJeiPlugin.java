@@ -19,12 +19,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
-/**
- * Lists every mob trophy in the mob trophies creative tab as its own entry (a pedestal item's trophy tells its stacks
- * apart by its mob, so one of each kind of mob shows, whoever slew it), and shows what isn't crafted on pages of its
- * own: the trophy each mob drops ({@link MobTrophyCategory}) and the trims of cabinets and shelves
- * ({@link TrimCategory}).
- */
 @JeiPlugin
 public final class TrophyPedestalsJeiPlugin implements IModPlugin {
     @Override

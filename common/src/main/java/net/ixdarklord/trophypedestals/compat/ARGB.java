@@ -2,10 +2,6 @@ package net.ixdarklord.trophypedestals.compat;
 
 import net.minecraft.util.Mth;
 
-/**
- * 1.21.1's stand-in for 26.1's {@code ARGB}: the packed-color helpers Trophy Pedestals uses, by the same names, so its
- * drawing code is the same on every version.
- */
 public final class ARGB {
     private ARGB() {}
 
