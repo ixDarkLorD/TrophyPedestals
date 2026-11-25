@@ -15,6 +15,11 @@ dependencies {
     if (project.findProperty("test_jade") == "true") localRuntime "maven.modrinth:jade:${jade_fabric_version}"
     // JEI in a dev run only when asked (-Ptest_jei=true).
     if (project.findProperty("test_jei") == "true") localRuntime "mezz.jei:jei-26.1.2-fabric:${jei_version}"
+    // Iris with Sodium, for shader packs, in a dev run only when asked (-Ptest_iris=true).
+    if (project.findProperty("test_iris") == "true") {
+        localRuntime "maven.modrinth:sodium:${sodium_fabric_version}"
+        localRuntime "maven.modrinth:iris:${iris_fabric_version}"
+    }
 }
 
 loom {
