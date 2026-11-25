@@ -20,7 +20,7 @@ final class EnderLensVisuals extends LensVisuals {
     protected void draw(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
         // on Fast graphics the sky is painted on; otherwise a shader opens the rift and lens on to it, as an end portal does
         boolean endShader = Minecraft.getInstance().options.graphicsPreset().get() != GraphicsPreset.FAST;
-        glow.flat(endShader ? PedestalLight.Sprite.END_RIFT_LENS : PedestalLight.Sprite.END_LENS_0.playing(state.time), up + 0.003F, END_LENS_HALF, 0.0F,
+        glow.flat(endShader ? PedestalLight.Sprite.END_RIFT_LENS : PedestalLight.Sprite.END_LENS_0.playing(state.time), up + 0.003F, LENS_BASE_HALF, 0.0F,
                 ARGB.color((int) (255 * state.rise), 0xFFFFFF));
         submitLensBase(state, glow, PedestalLight.Sprite.LENS_EYE_0, 0.0F, 0xF0FFFFFF);
         submitAura(state, glow, color, 55.0F);
