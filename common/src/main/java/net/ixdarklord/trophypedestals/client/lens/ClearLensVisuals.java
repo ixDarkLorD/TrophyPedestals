@@ -21,6 +21,6 @@ final class ClearLensVisuals extends LensVisuals {
     /** The Clear Lens: a crescent of light gliding round the curve of its glass. */
     private static void submitClearCrescent(State state, PedestalLight.Glow glow) {
         float pulse = 0.7F + 0.3F * Mth.sin(state.time / 17.0F);
-        glow.flat(PedestalLight.Sprite.LENS_CLEAR_ARC, PedestalRenderer.GLASS_TOP + LENS_BASE_LIFT, END_LENS_HALF, state.time * 0.018F, ARGB.color((int) (165 * pulse * state.rise), state.rarity.accent()));
+        glow.flat(PedestalLight.Sprite.LENS_CLEAR_ARC, PedestalRenderer.GLASS_TOP + LENS_BASE_LIFT, LENS_BASE_HALF, state.time * 0.018F, ARGB.color((int) (165 * pulse * state.rise), state.rarity.accent()));
     }
 }
