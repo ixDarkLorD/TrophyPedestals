@@ -3,10 +3,8 @@ package net.ixdarklord.trophypedestals.client.lens;
 import net.ixdarklord.trophypedestals.client.PedestalLight;
 import net.ixdarklord.trophypedestals.client.PedestalRenderer.State;
 import net.ixdarklord.trophypedestals.compat.ARGB;
-import net.ixdarklord.trophypedestals.pedestal.Lens;
 import net.minecraft.util.Mth;
 
-/** The Frost Lens: a cap of snow, icicles, ice crystals, falling fog and gusts of icy wind. */
 final class FrostLensVisuals extends LensVisuals {
     private static final int FROST_GUSTS = 3, GUST_STEPS = 14;
     private static final float ICE_CORNER = 0.23F, ICE_FOOT = 15.0F / 16.0F, ICE_HALF = 0.09F;
@@ -28,15 +26,14 @@ final class FrostLensVisuals extends LensVisuals {
         submitFrostGusts(state, glow, lift);
     }
 
-    /** Snow settled on the pedestal's top: on the cap's step, along its raised rim, and frost creeping in from the well's corners. */
     private static void submitSnowCap(State state, PedestalLight.Glow glow) {
         int color = ARGB.color((int) (255 * state.rise), 0xFFFFFF);
         glow.flat(PedestalLight.Sprite.FROST_WELL, 14.06F / 16.0F, 4.0F / 16.0F, 0.0F, color);
         glow.flat(PedestalLight.Sprite.FROST_LEDGE, 14.03F / 16.0F, 6.0F / 16.0F, 0.0F, color);
         glow.flat(PedestalLight.Sprite.FROST_RIM, 15.03F / 16.0F, 5.0F / 16.0F, 0.0F, color);
-        snowSides(glow, PedestalLight.Sprite.FROST_SIDE, 6.0F / 16.0F + 0.002F, 14.02F / 16.0F, 11.9F / 16.0F, color);  // the cap's sides
-        snowSides(glow, PedestalLight.Sprite.FROST_LIP, 5.0F / 16.0F + 0.002F, 15.03F / 16.0F, 14.0F / 16.0F, color);   // the rim's outside
-        snowSides(glow, PedestalLight.Sprite.FROST_LIP, 4.0F / 16.0F - 0.002F, 15.03F / 16.0F, 14.0F / 16.0F, color);   // the rim's inside
+        snowSides(glow, PedestalLight.Sprite.FROST_SIDE, 6.0F / 16.0F + 0.002F, 14.02F / 16.0F, 11.9F / 16.0F, color);
+        snowSides(glow, PedestalLight.Sprite.FROST_LIP, 5.0F / 16.0F + 0.002F, 15.03F / 16.0F, 14.0F / 16.0F, color);
+        snowSides(glow, PedestalLight.Sprite.FROST_LIP, 4.0F / 16.0F - 0.002F, 15.03F / 16.0F, 14.0F / 16.0F, color);
     }
 
     private static void snowSides(PedestalLight.Glow glow, PedestalLight.Sprite sprite, float half, float top, float bottom, int color) {
@@ -47,7 +44,6 @@ final class FrostLensVisuals extends LensVisuals {
         glow.sprite(sprite, lo, top, hi, lo, bottom, hi, lo, bottom, lo, lo, top, lo, color);
     }
 
-    /** Cold fog falling from under the cap in two layers out of step, standing off the column. */
     private static void submitColdFog(State state, PedestalLight.Glow glow) {
         coldSheet(state, glow, 0.5F, COLD_OUT * 0.45F, 58);
         coldSheet(state, glow, 0.0F, COLD_OUT, 118);
@@ -63,7 +59,6 @@ final class FrostLensVisuals extends LensVisuals {
         glow.sprite(sprite, lo, top, hi, lo, bottom, hi, lo, bottom, lo, lo, top, lo, color);
     }
 
-    /** Clusters of ice crystals grown on the four corners of the cap, each catching the light now and then. */
     private static void submitIceClusters(State state, PedestalLight.Glow glow) {
         float height = ICE_HALF * 2.0F;
         for (int corner = 0; corner < 4; corner++) {
@@ -77,7 +72,6 @@ final class FrostLensVisuals extends LensVisuals {
         }
     }
 
-    /** Gusts of icy wind curling around the item at different heights, each a thin ribbon tapering away behind its head. */
     private static void submitFrostGusts(State state, PedestalLight.Glow glow, float lift) {
         for (int gust = 0; gust < FROST_GUSTS; gust++) {
             float life = 0.5F + 0.5F * Mth.sin(state.time / 29.0F + gust * 2.1F);
@@ -87,6 +81,7 @@ final class FrostLensVisuals extends LensVisuals {
             float radius = (0.44F + 0.03F * Mth.sin(state.time / 17.0F + gust)) * state.size;
             for (int step = 0; step < GUST_STEPS; step++) {
                 float t0 = step / (float) GUST_STEPS, t1 = (step + 1) / (float) GUST_STEPS;
+                // Gust is a ring arc trailing behind its head, with a sine ripple in height.
                 float a0 = head - (1.0F - t0) * 1.3F, a1 = head - (1.0F - t1) * 1.3F;
                 float x0 = 0.5F + Mth.cos(a0) * radius, z0 = 0.5F + Mth.sin(a0) * radius, y0 = height + Mth.sin(a0 * 2.0F + gust) * 0.02F * state.size;
                 float x1 = 0.5F + Mth.cos(a1) * radius, z1 = 0.5F + Mth.sin(a1) * radius, y1 = height + Mth.sin(a1 * 2.0F + gust) * 0.02F * state.size;
@@ -97,7 +92,6 @@ final class FrostLensVisuals extends LensVisuals {
         }
     }
 
-    /** Icicles hanging from under the frosted pedestal's cap, set in from its edge. */
     private static void submitIcicles(State state, PedestalLight.Glow glow) {
         submitCapBand(state, glow, PedestalLight.Sprite.ICICLES, ICICLE_TOP, ICICLE_TOP - ICICLE_HEIGHT, ICICLE_INSET, ARGB.color((int) (235 * state.rise), 0xFFFFFF));
     }

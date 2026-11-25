@@ -14,10 +14,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 
-/**
- * Trophy Hunter at an enchanting table on an axe too: its category is the swords' one, and Fabric has no hook for the
- * table's check (Forge asks the enchantment, see TrophyHunterEnchantment).
- */
 @Mixin(EnchantmentHelper.class)
 public abstract class EnchantmentHelperMixin {
     @Inject(method = "getAvailableEnchantmentResults", at = @At("RETURN"))

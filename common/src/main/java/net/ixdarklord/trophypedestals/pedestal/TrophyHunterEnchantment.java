@@ -10,9 +10,6 @@ import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentCategory;
 
-/**
- * Trophy Hunter: with {@code mob_trophies.require_enchantment} on, mob trophies drop only from a weapon that has it.
- */
 public class TrophyHunterEnchantment extends Enchantment {
     public TrophyHunterEnchantment() {
         super(Rarity.RARE, EnchantmentCategory.WEAPON, new EquipmentSlot[]{EquipmentSlot.MAINHAND});

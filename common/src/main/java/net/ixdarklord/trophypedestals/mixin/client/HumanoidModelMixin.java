@@ -13,10 +13,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Turns a player-model mannequin's parts to its pose. A player model copies its sleeves, jacket and trousers from these
- * parts after this, armor copies them from the player model, and held items follow its arms.
- */
 @Mixin(HumanoidModel.class)
 public abstract class HumanoidModelMixin {
     @Shadow @Final public ModelPart head;
@@ -39,7 +35,6 @@ public abstract class HumanoidModelMixin {
         trophypedestals$turn(rightArm, pose, 3);
         trophypedestals$turn(leftLeg, pose, 4);
         trophypedestals$turn(rightLeg, pose, 5);
-        // (the hat was copied from the head before this)
         hat.copyFrom(head);
     }
 

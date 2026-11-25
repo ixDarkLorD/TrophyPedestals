@@ -16,11 +16,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * 1.20.1's stand-in for 1.20.2+'s GUI sprites: a sprite id ({@code trophypedestals:pedestal/panel}) is drawn from its
- * texture ({@code textures/gui/sprites/pedestal/panel.png}), nine-sliced as its {@code .mcmeta} says (its corners kept,
- * its edges and middle stretched), or stretched whole.
- */
 public final class GuiSprites {
     private static final Map<ResourceLocation, Sprite> SPRITES = new ConcurrentHashMap<>();
 

@@ -27,10 +27,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * What the shared game tests use and 1.20.1's GameTestHelper lacks, or gets wrong on Forge (as in Tierwise's 1.20.1
- * port).
- */
 final class GameTestCompat {
     private GameTestCompat() {}
 
@@ -72,7 +68,6 @@ final class GameTestCompat {
         }
     }
 
-    /** A crafting grid holding these items, for asking the recipes what they make (1.20.1 has no CraftingInput). */
     static CraftingContainer craftingGrid(int width, int height, List<ItemStack> items) {
         AbstractContainerMenu menu = new AbstractContainerMenu(null, -1) {
             @Override

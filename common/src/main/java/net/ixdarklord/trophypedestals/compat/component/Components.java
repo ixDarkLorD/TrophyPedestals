@@ -10,10 +10,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * 1.20.1's stand-in for 26.1's item component calls ({@code stack.get(type)}, {@code set}, {@code has},
- * {@code remove}), over an item's tag (see {@link DataComponentType}).
- */
 public final class Components {
     private static final Map<String, DataComponentType<?>> BY_ID = new ConcurrentHashMap<>();
 

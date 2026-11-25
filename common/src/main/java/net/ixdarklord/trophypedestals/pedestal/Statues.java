@@ -8,10 +8,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 
-/**
- * A player's statue on a pedestal: a mannequin (vanilla's player-shaped figure) wearing their skin, as the look of a
- * mob trophy ({@link MobLooks}).
- */
 public final class Statues {
     public static final EntityType<?> FIGURE = EntityType.PLAYER;
 

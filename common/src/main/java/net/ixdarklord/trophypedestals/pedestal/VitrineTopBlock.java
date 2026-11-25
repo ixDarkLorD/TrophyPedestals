@@ -18,11 +18,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/**
- * The upper part of a glass case: an invisible block in the space over a cased pedestal, its shape the part of the case
- * that reaches up into it (the case is drawn with the pedestal; its own model is clear, there only for the cracks drawn
- * over it as it's broken).
- */
 public class VitrineTopBlock extends Block {
     private static final VoxelShape SHAPE = box(2.0, 0.0, 2.0, 14.0, (14.0F / 16.0F + PedestalBlock.CASE_HEIGHT - 1.0F) * 16.0, 14.0);
 

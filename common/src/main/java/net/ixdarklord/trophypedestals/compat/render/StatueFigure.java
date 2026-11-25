@@ -17,11 +17,6 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * A player's statue on a pedestal, on 1.20.1 (which has no mannequin): a player figure that exists only to be drawn,
- * wearing the skin of the player its look names ({@code "profile"}), looked up as it's first shown (the default skin
- * until then).
- */
 public final class StatueFigure extends RemotePlayer {
     private @Nullable GameProfile skinOf;
     boolean fallFlying;
@@ -38,7 +33,6 @@ public final class StatueFigure extends RemotePlayer {
         return new StatueFigure(level);
     }
 
-    /** The mannequin pose its model takes (see HumanoidModelMixin), or null for its own stance. */
     public float @Nullable [] standPose() {
         return standPose;
     }

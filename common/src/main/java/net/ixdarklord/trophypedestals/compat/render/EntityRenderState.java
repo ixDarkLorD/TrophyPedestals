@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-/** 1.20.1's stand-in for 26.1's {@code EntityRenderState}: a mob as it's to be drawn. */
 public class EntityRenderState {
     public final Entity entity;
     public int lightCoords;

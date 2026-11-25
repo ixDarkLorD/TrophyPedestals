@@ -16,10 +16,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
-/**
- * A trophy shelf: a wooden board half a block deep hung on a wall on two brackets, with a short rim along its back,
- * trimmed in gold, holding two trophies side by side against the rim.
- */
 public class TrophyShelfBlock extends TrophyDisplayBlock {
     public static final BooleanProperty LEFT = BooleanProperty.create("left"), RIGHT = BooleanProperty.create("right");
     private static final Map<Direction, VoxelShape> SOLID = shapes(new double[][] {{0, 6, 6, 16, 10, 16}, {0, 9, 14, 16, 12, 16}, {1, 1, 9, 3, 7, 16}, {13, 1, 9, 15, 7, 16}});

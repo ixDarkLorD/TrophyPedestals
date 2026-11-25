@@ -13,10 +13,6 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-/**
- * 1.20.1's stand-in for 26.1's {@code ItemStackRenderState}: an item, the model it's drawn with and how it's held,
- * filled by {@link ItemModelResolver#updateForTopItem} and drawn by the item renderer.
- */
 public final class ItemStackRenderState {
     private static final int VERTEX_SIZE = 8;
     ItemStack stack = ItemStack.EMPTY;

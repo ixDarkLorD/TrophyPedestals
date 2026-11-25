@@ -13,10 +13,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * 1.20.1's stand-in for 26.1's {@code ResolvableProfile}: a player by name (to be looked up) or by their whole profile,
- * saved in the same shape ({@code name}, {@code id}, {@code properties}).
- */
 public record ResolvableProfile(Optional<String> name, Optional<UUID> id, List<Property> properties) {
     private static final Codec<Property> PROPERTY = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("name").forGetter(Property::getName),

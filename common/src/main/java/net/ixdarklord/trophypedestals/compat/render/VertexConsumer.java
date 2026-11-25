@@ -4,10 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-/**
- * 1.20.1's stand-in for 1.21's vertex calls ({@code addVertex(pose, x, y, z).setColor(...).setUv(...)...}) over
- * 1.20.1's buffers, which take a vertex's parts in its format's order and then {@code endVertex()}.
- */
 public final class VertexConsumer {
     private static final Vector4f POSITION = new Vector4f();
     private static final Vector3f NORMAL = new Vector3f();

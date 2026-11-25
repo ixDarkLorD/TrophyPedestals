@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-/** A pedestal's item. */
 public class PedestalItem extends BlockItem {
     public PedestalItem(Block block, Properties properties) {
         super(block, properties);
@@ -41,7 +40,6 @@ public class PedestalItem extends BlockItem {
         lensLine(stack, builder);
     }
 
-    /** The line naming the lens a pedestal comes with. */
     static void lensLine(ItemStack stack, Consumer<Component> builder) {
         ItemContainerContents fitted = Components.get(stack, Pedestals.LENS.get());
         ItemStack lens = fitted == null ? ItemStack.EMPTY : fitted.copyOne();

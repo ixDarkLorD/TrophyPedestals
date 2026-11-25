@@ -43,19 +43,15 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Where a pedestal's light goes: its glows, outlines, beam, halos, crown shards and flares. */
 public final class PedestalLight {
     private static final VfxMaterial FADE = new VfxMaterial(TrophyPedestalsMod.id("textures/misc/corner_fade.png"), VfxBlend.ADDITIVE, 0.0F);
     private static final int FADE_SIZE = 64;
     private static final VfxMaterial LENS = new VfxMaterial(VfxMaterial.GLOW, VfxBlend.ADDITIVE, 0.0F);
     private static final Pattern FRAME_NAME = Pattern.compile("(.+)_(\\d+)");
     private static final Logger LOGGER = LogUtils.getLogger();
-    /** How many frames each animation has: {@code name_0}, {@code name_1} and so on share the flipbook {@code flipbook/name.png}. */
     private static final Map<String, Integer> FLIPBOOKS = flipbooks();
-    /** Each sprite's flipbook, or null for one with a texture of its own. */
     private static final String[] BOOK_NAMES = Arrays.stream(Sprite.values()).map(PedestalLight::bookName).toArray(String[]::new);
     private static final Flipbook[] BOOKS = new Flipbook[BOOK_NAMES.length];
-    /** Where each sprite lies in its flipbook, as u0, v0, u1, v1; null for one with a texture of its own. */
     private static final float[][] FRAME_UVS = new float[BOOK_NAMES.length][];
     private static boolean booksRead, watchingReloads;
     private static final VfxMaterial[] SPRITES = Arrays.stream(Sprite.values())
@@ -67,11 +63,6 @@ public final class PedestalLight {
             })
             .toArray(VfxMaterial[]::new);
     private static final Vector3f CAMERA_RIGHT = new Vector3f(), CAMERA_UP = new Vector3f();
-    /**
-     * The trims and frost lying on a pedestal's own surfaces. They're drawn before everything floating in the air: the block
-     * already hides what's behind them, so this only keeps them from painting over a fish, a frond or a crystal in front.
-     * The Prism Lens's gems go after everything else, glows included, so that their trails of light stay behind them, and so does the Sanguine Lens's moon, over its eyes and ravens, with the eye that opens in it on top; its fog and the ravens on the near side go after all of that.
-     */
     private static final int[] DRAW_STEP = new int[Sprite.values().length];
 
     static {
@@ -105,7 +96,6 @@ public final class PedestalLight {
     private static float[] flares = new float[3 * 64];
     private static int flareCount;
     private static VfxMaterial flareMaterial;
-    // Which pedestal each shape belongs to, so that shapes can be drawn in order around the Ender rifts, which hide what's behind them.
     private static int[] quadOwners = new int[1024], lensOwners = new int[64], auraOwners = new int[32], spriteOwners = new int[64];
     private static double[] ownerCenters = new double[3 * 32];
     private static boolean[] ownerRifts = new boolean[32];
@@ -120,7 +110,6 @@ public final class PedestalLight {
     private static Map<String, Integer> flipbooks() {
         Map<String, Integer> counts = new HashMap<>();
         for (Sprite sprite : Sprite.values()) {
-            // the near ravens are the same frames again, drawn at another step
             if (sprite.name().startsWith("RAVEN_FRONT_")) continue;
             Matcher frame = FRAME_NAME.matcher(sprite.texture);
             if (frame.matches()) counts.merge(frame.group(1), 1, Integer::sum);
@@ -133,14 +122,6 @@ public final class PedestalLight {
         return frame.matches() && FLIPBOOKS.getOrDefault(frame.group(1), 0) > 1 ? frame.group(1) : null;
     }
 
-    /**
-     * A flipbook as its {@code .png.mcmeta} describes it, in vanilla's animation format but under a {@code flipbook} section:
-     * a mod such as GeckoLib turns any texture with an {@code animation} section into an animated texture of one frame,
-     * and the effects need the whole sheet. They aren't on an atlas, so the game won't play them itself, and many need
-     * their own timing: each raven beats its wings out of step with the others.
-     *
-     * @param ticks the frame shown on each tick of one loop
-     */
     private record Flipbook(int columns, int rows, int cells, int[] ticks) {
         private static final MetadataSectionSerializer<AnimationMetadataSection> SECTION = new MetadataSectionSerializer<>() {
             @Override
@@ -191,17 +172,15 @@ public final class PedestalLight {
             return new Flipbook(1, frames, frames, ticks);
         }
 
-        /** A frame's place: left to right, then top to bottom, as vanilla reads them. */
         float[] uvs(int frame, boolean smooth) {
             int index = frame % this.cells;
-            // pulled in a touch from the frame's edges, so that its neighbours don't bleed in
+            // Frame's UV rectangle within the flipbook grid, inset so neighbouring frames don't bleed in.
             float inset = smooth ? 0.01F : 0.001F;
             return new float[]{(index % this.columns + inset) / this.columns, (index / this.columns + inset) / this.rows,
                     (index % this.columns + 1 - inset) / this.columns, (index / this.columns + 1 - inset) / this.rows};
         }
     }
 
-    /** Reads the flipbooks the first time they're needed, and again after the resource packs change. */
     private static void readFlipbooks() {
         if (booksRead) return;
         booksRead = true;
@@ -221,12 +200,12 @@ public final class PedestalLight {
         }
     }
 
-    /** Draws a sprite's frame out of its flipbook, in the same corners as the drawer's own square shapes would take. */
     private static void drawFrame(VfxDraw draw, int kind, double x, double y, double z, int at, float[] uv, int color) {
         Vec3 a, b, c, d;
         if (kind == KIND_FLAT || kind == KIND_BILLBOARD) {
             float half = sprites[at + 2];
             if (half <= 0.0F) return;
+            // cos/sin of the sprite angle scale the half-size into the quad's two edge vectors.
             float cos = Mth.cos(sprites[at + 3]) * half, sin = Mth.sin(sprites[at + 3]) * half;
             if (kind == KIND_FLAT) {
                 a = new Vec3(x - cos - sin, y, z + sin - cos);
@@ -235,6 +214,7 @@ public final class PedestalLight {
                 d = new Vec3(x + cos - sin, y, z - sin - cos);
             } else {
                 Vector3f right = CAMERA_RIGHT, up = CAMERA_UP;
+                // Spins the camera right/up axes by the sprite angle to get the billboard's edge vectors.
                 double rx = right.x * cos + up.x * sin, ry = right.y * cos + up.y * sin, rz = right.z * cos + up.z * sin;
                 double ux = up.x * cos - right.x * sin, uy = up.y * cos - right.y * sin, uz = up.z * cos - right.z * sin;
                 a = new Vec3(x - rx + ux, y - ry + uy, z - rz + uz);
@@ -350,11 +330,6 @@ public final class PedestalLight {
         quadCount = lensCount = flareCount = spriteCount = auraCount = ownerCount = 0;
     }
 
-    /**
-     * World effects write no depth, so a rift only hides what's behind it if that is drawn first. Each pedestal gets a place
-     * in the order by how many rifts lie beyond it: the effects of farther pedestals, then a rift and its own effects, then
-     * whatever is nearer. With no rift in the frame everything stays in one layer, batched as usual.
-     */
     private static void orderAroundRifts(Vec3 camera) {
         riftCount = 0;
         if (ownerLayers.length < ownerCount) ownerLayers = new int[ownerCenters.length / 3];
@@ -378,8 +353,8 @@ public final class PedestalLight {
         return camera.distanceToSqr(x, y, z);
     }
 
-    /** How many of this frame's rifts are farther from the camera than {@code distance}. */
     private static int riftsBeyond(double distance) {
+        // Binary search over the sorted rift distances for how many lie beyond this one.
         int low = 0, high = riftCount;
         while (low < high) {
             int middle = (low + high) >>> 1;
@@ -389,12 +364,10 @@ public final class PedestalLight {
         return riftCount - low;
     }
 
-    /** Below the default layer, so the particles drawn there stay on top as they always have. */
     private static VfxLayer layerAt(int place) {
         return layerAt(place, 0);
     }
 
-    /** As above, with {@code step} -1 for what's drawn just before the rest of its place in the order, and 1 and 2 for just after. */
     private static VfxLayer layerAt(int place, int step) {
         int order = (riftCount == 0 ? 0 : place - (2 * riftCount + 1)) * 4 + step;
         return order == 0 ? VfxLayer.DEFAULT : VfxLayer.of(order);
@@ -435,7 +408,6 @@ public final class PedestalLight {
     private static final String END_SHADER = "vfx/end_rift";
     private static final String ITEM_SHEEN = "vfx/item_sheen";
 
-    /** The textures the lenses draw around a pedestal's item: glowing (added to what's behind) or painted over it. */
     public enum Sprite {
         RIPPLE("ripple", VfxBlend.ADDITIVE),
         RUNES("runes", VfxBlend.ADDITIVE),
@@ -891,28 +863,23 @@ public final class PedestalLight {
             this.shader = shader;
         }
 
-        /** Frame {@code frame} of an animation whose frames follow this one, in order. */
         public Sprite frame(int frame) {
             return values()[ordinal() + frame];
         }
 
-        /** The texture this sprite is drawn from. */
         public ResourceLocation sheet() {
             return SPRITES[ordinal()].texture();
         }
 
-        /** Where this frame lies in its flipbook, as u0, v0, u1, v1. */
         public float[] uv() {
             readFlipbooks();
             return FRAME_UVS[ordinal()];
         }
 
-        /** The frame of this animation showing at {@code ticks}, by the timing in its {@code .mcmeta}. Call it on the first frame. */
         public Sprite playing(float ticks) {
             return this.playing(ticks, 0.0F);
         }
 
-        /** As above, running {@code share} of a loop ahead, to keep copies of an animation out of step. */
         public Sprite playing(float ticks, float share) {
             readFlipbooks();
             Flipbook book = BOOKS[ordinal()];
@@ -927,15 +894,12 @@ public final class PedestalLight {
 
         void lens(float y, float radius, int color, int segments);
 
-        /** A flat textured square lying over the pedestal's middle, turned by {@code roll} radians. */
         default void flat(Sprite texture, float y, float radius, float roll, int color) {
         }
 
-        /** A textured square facing the camera, turned by {@code roll} radians. */
         default void billboard(Sprite texture, float x, float y, float z, float half, float roll, int color) {
         }
 
-        /** A textured quad through four corners: top-left, bottom-left, bottom-right, top-right. */
         default void sprite(Sprite texture, float ax, float ay, float az, float bx, float by, float bz, float cx, float cy, float cz,
                             float dx, float dy, float dz, int color) {
         }
@@ -943,7 +907,6 @@ public final class PedestalLight {
         default void aura(float y, float half, int color) {
         }
 
-        /** Says this pedestal draws a rift, which hides the effects of pedestals behind it. */
         default void occludes() {
         }
     }
@@ -1160,6 +1123,7 @@ public final class PedestalLight {
         }
 
         private static int cuts(float x, float y, float z, float size) {
+            // Subdivision count: edge length divided by the target piece size, clamped.
             return Mth.clamp(Mth.ceil(Mth.sqrt(x * x + y * y + z * z) / size), 1, MAX_CUTS);
         }
 
@@ -1167,6 +1131,7 @@ public final class PedestalLight {
                            float cx, float cy, float cz, float dx, float dy, float dz, int a, int b, int c, int d) {
             float[] p = PIECE;
             int[] k = PIECE_COLORS;
+            // Bilinear blend of the four corners (position and colour) at this piece's (s, t) corners.
             for (int n = 0; n < 4; n++) {
                 float s = n == 1 || n == 2 ? s1 : s0, t = n >= 2 ? t1 : t0;
                 p[n * 3] = Mth.lerp(t, Mth.lerp(s, ax, bx), Mth.lerp(s, dx, cx));
@@ -1195,6 +1160,7 @@ public final class PedestalLight {
                     .setLight(LightTexture.FULL_BRIGHT).setNormal(pose, 0.0F, 1.0F, 0.0F);
         }
 
+        // Scales the colour so its strongest channel reaches full brightness, keeping the hue.
         private static int bright(int color) {
             int peak = Math.max(ARGB.red(color), Math.max(ARGB.green(color), ARGB.blue(color)));
             return peak == 0 ? 0xFF000000 : ARGB.opaque(ARGB.scaleRGB(color, 255.0F / peak));

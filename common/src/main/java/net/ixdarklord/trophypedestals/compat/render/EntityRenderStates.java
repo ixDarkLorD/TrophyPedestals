@@ -18,10 +18,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * 1.20.1's stand-in for 26.1's extracting and drawing of a mob through render states (see {@link EntityRenderState}): a
- * mob made only to be drawn, its state taken, and the state put back on the mob as it's drawn.
- */
 public final class EntityRenderStates {
     private EntityRenderStates() {}
 

@@ -8,11 +8,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/**
- * The lens a pedestal's item comes with, kept where its block entity saves it, so the game hands it to the placed block:
- * {@code BlockEntityTag.Lens}, or {@code BlockEntityTag.NoLens} for a pedestal with its lens taken out. An item with
- * neither has no say, and is fitted with the Clear Lens when placed.
- */
 public final class LensComponent extends DataComponentType<ItemContainerContents> {
     private static final String HOLDER = "BlockEntityTag", LENS = "Lens", NO_LENS = "NoLens";
 

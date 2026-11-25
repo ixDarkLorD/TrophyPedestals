@@ -19,11 +19,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
-/**
- * A ranked trophy's rank, as a badge after its name on the tooltip's first line, in the rank's color and bevelled like
- * the mod's panels: a dark outer rim with its corners cut, a lit top and left edge, a shaded bottom and right edge, a
- * plate darkening downwards, and on it a small faceted gem and the rank's name in capitals.
- */
 public final class TrophyTooltipLine implements ClientTooltipComponent {
     private static final int HEIGHT = 11, GAP = 4, GEM_X = 3, GEM_SIZE = 5, LABEL_X = GEM_X + GEM_SIZE + 2, PADDING = 3;
     private static final int TEXT_Y = 2;

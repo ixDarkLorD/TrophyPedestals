@@ -12,7 +12,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
-/** 1.20.1's stand-ins for the vanilla components Trophy Pedestals uses, over what 1.20.1 items keep instead. */
 public final class DataComponents {
     private static final String ITEM_NAME_KEY = "trophypedestals:item_name";
 

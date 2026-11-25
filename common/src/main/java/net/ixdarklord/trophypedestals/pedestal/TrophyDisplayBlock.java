@@ -46,12 +46,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * A block that holds two trophies side by side, each shown as a small pedestal with its rank's light (the trophy
- * cabinet's halves and the trophy shelf): a trophy goes onto the spot it's used on and comes back off it into an empty
- * hand, and sneaking with an empty hand on one opens its adjust screen (the settings of its spot that don't change its
- * size or place).
- */
 public abstract class TrophyDisplayBlock extends BaseEntityBlock {
     public static final EnumProperty<Direction> FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty GOLD_TRIM = BooleanProperty.create("gold_trim");

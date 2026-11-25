@@ -7,10 +7,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * 1.20.1's stand-in for CoolCatLib's {@code SpecialModelRendererRegistry} (26.x only): the special item model types an
- * item definition can name, read by {@link ItemDefinitions}.
- */
 public final class SpecialModelRendererRegistry {
     private static final Map<ResourceLocation, MapCodec<? extends SpecialModelRenderer.Unbaked<?>>> TYPES = new ConcurrentHashMap<>();
 
