@@ -56,10 +56,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-/**
- * Mob trophies: a mob a player kills now and then drops a trophy pedestal showing it, if the server's config allows
- * ({@code mob_trophies.enabled}) and at its chance ({@code mob_trophies.chance}).
- */
 public final class MobTrophies {
     public static final TagKey<EntityType<?>> LEGENDARY = TagKey.create(Registries.ENTITY_TYPE, TrophyPedestalsMod.id("legendary_mob_trophies"));
     public static final TagKey<EntityType<?>> EPIC = TagKey.create(Registries.ENTITY_TYPE, TrophyPedestalsMod.id("epic_mob_trophies"));
@@ -187,11 +183,9 @@ public final class MobTrophies {
         return tagged(type) != null ? TrophyPedestalsConfig.BOSS_TROPHY_CHANCE.get() : TrophyPedestalsConfig.MOB_TROPHY_CHANCE.get();
     }
 
-    /** A mob's chance of dropping its trophy as players should read it: none while trophies are off or it has none. */
     public static String chanceText(EntityType<?> type) {
         double chance = TrophyPedestalsConfig.MOB_TROPHIES.get() && hasTrophy(type) ? chance(type) : 0.0;
         if (chance <= 0.0) return "0%";
-        // from its decimal text, so that 0.015 reads 1.5 and not 1.4999...; a tiny chance keeps its digits instead of reading 0
         return new BigDecimal(Double.toString(chance)).movePointRight(2).round(new MathContext(4)).stripTrailingZeros().toPlainString() + "%";
     }
 

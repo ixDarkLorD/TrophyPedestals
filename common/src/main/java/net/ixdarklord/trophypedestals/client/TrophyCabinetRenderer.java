@@ -36,12 +36,6 @@ import org.joml.Vector3f;
 
 import java.util.Arrays;
 
-/**
- * Draws the trophies on a trophy cabinet half or a trophy shelf, each as it's drawn on its own pedestal, shrunk to
- * stand on the shelf: the pedestal (its item's block model), and over it what {@link PedestalRenderer} draws for a
- * placed one, its mob or icon, its rank's light, flourishes and crown, and its text frame while it's looked at, all
- * shrunk with it.
- */
 public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCabinetBlockEntity, TrophyCabinetRenderer.State> {
     private static final float SCALE = 0.34F, SHELF_TOP = 2.0F / 16.0F, DEPTH = 11.5F / 16.0F;
     private static final float WALL_SHELF_TOP = 9.0F / 16.0F, WALL_SHELF_DEPTH = 15.0F / 16.0F - SCALE / 2.0F - 0.01F;
@@ -103,6 +97,7 @@ public final class TrophyCabinetRenderer implements BlockEntityRenderer<TrophyCa
             state.plain[i] = !trophy.isEmpty() && !Pedestals.isTrophy(trophy);
             if (state.plain[i]) {
                 state.shown[i] = true;
+                // Rotate the slot offset about the block centre by the cabinet's facing.
                 spot.set(ACROSS[i] - 0.5F, 0.0F, depth - 0.5F).rotateY(state.turn * Mth.DEG_TO_RAD);
                 state.x[i] = spot.x + 0.5F;
                 state.z[i] = spot.z + 0.5F;

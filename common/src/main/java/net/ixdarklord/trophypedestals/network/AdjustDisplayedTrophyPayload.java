@@ -10,10 +10,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 
-/**
- * Sent when a player closes the adjust screen of a trophy on a trophy display: the settings for its spot that can be
- * changed there (none that change its size or place, which stay as a new pedestal has them).
- */
 public record AdjustDisplayedTrophyPayload(BlockPos pos, int slot, PedestalBlockEntity.TextMode textMode, boolean spins, float yaw,
                                            float pitch, float roll, PedestalBlockEntity.TextMode effects, PedestalBlockEntity.RedstoneMode redstone, boolean sounds, boolean animates,
                                            boolean statue, PedestalBlockEntity.StatuePose statuePose, String animation, boolean crown,
