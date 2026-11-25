@@ -13,7 +13,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Turns a player-model mannequin's parts to its pose, for its body and the armor drawn over it alike. */
 @Mixin(HumanoidModel.class)
 public abstract class HumanoidModelMixin {
     @Shadow @Final public ModelPart head;

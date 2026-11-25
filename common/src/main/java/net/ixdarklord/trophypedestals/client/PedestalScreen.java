@@ -50,10 +50,6 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/**
- * A pedestal's adjustment screen, opened by sneaking and using it with an empty hand: a slate and gold panel with the
- * pedestal and its owner at the top.
- */
 public final class PedestalScreen extends Screen {
     private static final Identifier PANEL = TrophyPedestalsMod.id("pedestal/panel");
     private static final Identifier SEGMENT = TrophyPedestalsMod.id("pedestal/segment");
@@ -245,7 +241,6 @@ public final class PedestalScreen extends Screen {
             tabs.add(Tab.MODEL);
         }
         tabs.add(Tab.BEHAVIOR);
-        // Effects and Behavior are never turned off, so the row is never left empty
         if (TrophyPedestalsClientConfig.HIDE_DISABLED_TABS.get()) tabs.removeIf(each -> !enabled(each));
         return tabs;
     }
@@ -484,7 +479,6 @@ public final class PedestalScreen extends Screen {
         if (posesModel()) initStandPose(x, column);
     }
 
-    /** Whether the Model tab also poses the model, under the choice of it: either model can be, unless it's under glass. */
     private boolean posesModel() {
         return !cased;
     }
@@ -670,7 +664,6 @@ public final class PedestalScreen extends Screen {
         }
     }
 
-    /** The Effects tab: everything it shows around what it shows, from its showcase light to its flourishes and crown. */
     private void initEffects(int x, int column) {
         onOff(x, column, top + section(0, false) + 12, () -> light, on -> light = on);
         PedestalBlockEntity.TextMode[] modes = PedestalBlockEntity.TextMode.values();
@@ -713,7 +706,6 @@ public final class PedestalScreen extends Screen {
             needed += wide[i];
             if (wide[i] > room / count) even = false;
         }
-        // too wide for the row: every button gives up its share, so the row always ends at the frame
         boolean tight = needed > room;
         if (tight) {
             for (int i = 0; i < count; i++) wide[i] = wide[i] * room / needed;
@@ -1080,6 +1072,7 @@ public final class PedestalScreen extends Screen {
 
     private static float sizeAt(double value) {
         double min = PedestalBlockEntity.MIN_SCALE, max = PedestalBlockEntity.MAX_SCALE;
+        // Log-scale slider: 0..1 maps exponentially from min to max, then snaps to coarser steps.
         float raw = (float) (min * Math.pow(max / min, value));
         float step = raw < 2.0F ? 0.05F : raw < 5.0F ? 0.1F : raw < 10.0F ? 0.25F : 0.5F;
         return Mth.clamp(Math.round(raw / step) * step, PedestalBlockEntity.MIN_SCALE, PedestalBlockEntity.MAX_SCALE);
@@ -1087,6 +1080,7 @@ public final class PedestalScreen extends Screen {
 
     private static double valueOf(float scale) {
         double min = PedestalBlockEntity.MIN_SCALE, max = PedestalBlockEntity.MAX_SCALE;
+        // Inverse of sizeAt: where a scale sits on the logarithmic slider.
         return Math.log(scale / min) / Math.log(max / min);
     }
 

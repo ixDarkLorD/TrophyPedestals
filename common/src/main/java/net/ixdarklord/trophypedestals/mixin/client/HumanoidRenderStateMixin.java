@@ -6,7 +6,6 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-/** Lets a humanoid's render state carry a mannequin's pose to its models. */
 @Mixin(HumanoidRenderState.class)
 public class HumanoidRenderStateMixin implements PosedFigure {
     @Unique

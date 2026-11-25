@@ -6,7 +6,6 @@ import dev.uncandango.kubegroovy.script.BindingRegistry;
 import dev.uncandango.kubegroovy.script.ScriptType;
 import net.ixdarklord.trophypedestals.neoforge.compat.kubejs.TrophyPedestalsBinding;
 
-/** KubeGroovy support: server scripts get {@code $TrophyPedestals} and {@code $TrophyPedestalsEvents}, as on KubeJS. */
 public final class TrophyPedestalsKubeGroovyPlugin implements KubeGroovyPlugin {
     @Override
     public void init() {

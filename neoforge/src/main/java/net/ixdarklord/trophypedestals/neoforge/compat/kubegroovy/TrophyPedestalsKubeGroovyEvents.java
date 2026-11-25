@@ -9,7 +9,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
-/** Trophy Pedestals' events for KubeGroovy server scripts, as {@code $TrophyPedestalsEvents}. */
 public final class TrophyPedestalsKubeGroovyEvents {
     public static final EventGroup GROUP = EventGroup.of("TrophyPedestalsEvents");
     public static final EventHandler MOB_TROPHY_DROP = GROUP.server("mobTrophyDrop", () -> MobTrophyDropKubeEvent.class).hasResult();

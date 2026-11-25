@@ -9,12 +9,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * Trophy Pedestals' events for KubeJS server scripts, from {@link TrophyEvents}:
- * <pre>{@code TrophyPedestalsEvents.mobTrophyDrop(event => { if (event.mob.type == 'minecraft:pig') event.cancel() })
- * TrophyPedestalsEvents.collected(event => { if (event.first) event.player.tell(`New trophy: ${event.mobType}`) })
- * }</pre>
- */
 public final class TrophyPedestalsKubeEvents {
     public static final EventGroup GROUP = EventGroup.of("TrophyPedestalsEvents");
     public static final EventHandler MOB_TROPHY_DROP = GROUP.server("mobTrophyDrop", () -> MobTrophyDropKubeEvent.class).hasResult();
