@@ -14,6 +14,17 @@ dependencies {
     // REI and Jade in a dev run only when asked (-Ptest_rei=true, -Ptest_jade=true).
     if (project.findProperty("test_rei") == "true") modLocalRuntime libs.rei.fabric
     if (project.findProperty("test_jade") == "true") modLocalRuntime("maven.modrinth:jade:${jade_version}+fabric") { transitive = false }
+    // Iris with Sodium, for shader packs, in a dev run only when asked (-Ptest_iris=true).
+    if (project.findProperty("test_iris") == "true") {
+        modLocalRuntime "maven.modrinth:sodium:${sodium_fabric_version}"
+        // Sodium carries this Fabric API module inside its jar, which a dev run doesn't load.
+        modLocalRuntime "net.fabricmc.fabric-api:fabric-rendering-data-attachment-v1:0.3.37+92a0d36777"
+        modLocalRuntime "maven.modrinth:iris:${iris_fabric_version}"
+        // and the libraries Iris carries inside its jar
+        localRuntime "org.anarres:jcpp:1.4.14"
+        localRuntime "io.github.douira:glsl-transformer:2.0.0-pre13"
+        localRuntime "org.antlr:antlr4-runtime:4.11.1"
+    }
 }
 
 loom {
