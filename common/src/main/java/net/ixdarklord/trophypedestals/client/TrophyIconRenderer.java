@@ -146,7 +146,7 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
             shown.ageInTicks = spin ? now / 50.0F : 0.0F;
             PedestalRenderer.idle(shown, shown.ageInTicks);
             float scale = spin ? PedestalRenderer.fitScale(mob) : PedestalRenderer.slotScale(mob);
-            float turn = PedestalRenderer.modelTurn(shown), raise = PedestalRenderer.lift(mob) - PedestalRenderer.sink(shown);
+            float turn = PedestalRenderer.modelTurn(shown), raise = PedestalRenderer.raise(mob, shown);
             poseStack.pushPose();
             poseStack.translate(0.5F, PedestalRenderer.mobFloor(), 0.5F);
             if (spin) {
