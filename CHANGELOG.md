@@ -1,6 +1,11 @@
 # Changelog
 This file is for listing all the changes to this project
 
+## v0.4.1 (unreleased)
+### 🐛 Fixes
+- Lens effects no longer show broken textures when GeckoLib is installed.
+- Lens effects no longer slide off their pedestals with a shader pack and view bobbing on (with CoolCatLib 9.0.1).
+
 ## v0.4.0 "Through the Lens" Release | Nov 24, 2026
 ### ✨ New Features
 - **Lenses:** nine lenses that give display and mannequin pedestals their own light and visual effects: Clear, Blood Moon, Prism, Coral Reef, Curator's, Inferno, Blizzard, Void Rift and Cipher. Use a lens on a pedestal's top to fit or swap it. To take it out, remove the displayed item, then use an empty hand on the top.
