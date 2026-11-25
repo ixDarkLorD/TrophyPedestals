@@ -1,6 +1,10 @@
 # Changelog
 This file is for listing all the changes to this project
 
+## v0.4.1 (unreleased)
+### ✨ New Features
+- **Coloured lighting:** lit pedestals now cast their lens's or rank's colour onto the floor and walls around them, and the Prism casts a rainbow. It works with shader packs, and `colored_lighting` in the client config turns it off.
+
 ## v0.4.0 "Through the Lens" Release | Nov 24, 2026
 ### ✨ New Features
 - **Lenses:** nine lenses that give display and mannequin pedestals their own light and visual effects: Clear, Blood Moon, Prism, Coral Reef, Curator's, Inferno, Blizzard, Void Rift and Cipher. Use a lens on a pedestal's top to fit or swap it. To take it out, remove the displayed item, then use an empty hand on the top.

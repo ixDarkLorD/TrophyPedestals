@@ -8,9 +8,11 @@ import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 
 /** The Prism Lens: a fan of rainbow rays, a turning halo of stained glass and little prisms circling the item. */
-final class PrismLensVisuals extends LensVisuals {
+public final class PrismLensVisuals extends LensVisuals {
     private static final float PRISM_HALO_TURN = 0.006F, HALO_FLIGHT = 0.34F, HALO_TRAIL = 0.17F;
-    private static final int HALO_STREAKS = 5, HALO_SHARDS = 12;
+    private static final int HALO_STREAKS = 5;
+    /** How many panes of glass the halo has. */
+    public static final int HALO_SHARDS = 12;
     private static final int[] HALO_COLORS = {0xF0424A, 0xFA9230, 0xFCE24C, 0x56D264, 0x4692F4, 0x9C5AE8};
     private static final int PRISM_CRYSTALS = 5, PRISM_TRAIL = 14;
 
@@ -18,17 +20,27 @@ final class PrismLensVisuals extends LensVisuals {
     protected void draw(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
         submitLensBase(state, glow, PedestalLight.Sprite.LENS_PRISM_0, state.time * 0.006F, 0xE6FFFFFF);
         submitAura(state, glow, color, 80.0F);
-        submitPrismFan(state, glow, lift);
+        // from the lens's glass itself, so the rays come out of it rather than above it
+        submitPrismFan(state, glow, up);
         submitPrismHalo(state, glow, lift, middle);
         submitPrismCrystals(state, glow, middle);
     }
 
+    @Override
+    protected void light(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
+        // the light the lens has reached on its way round the rainbow, and the halo's heart glowing in it
+        int hue = ARGB.opaque(LensLooks.prism(state.time, 0.0F));
+        lensLight(state, glow, up, hue, 0.34F);
+        glow.light(0.5F + state.backX * haloBack(state.size), haloY(lift, middle, state.size), 0.5F + state.backZ * haloBack(state.size), hue,
+                0.25F * state.rise, 2.8F * state.size);
+    }
+
     /** The Prism Lens: a halo of stained glass shards in the colours of the spectrum behind the item, turning slowly with light passing round it pane by pane and a bloom and flare at its heart. */
     private static void submitPrismHalo(State state, PedestalLight.Glow glow, float lift, float middle) {
-        float half = 0.44F * state.size, center = Math.max(middle, lift + half * 0.97F);
-        float x = 0.5F + state.backX * CIRCLE_BACK * state.size, z = 0.5F + state.backZ * CIRCLE_BACK * state.size;
+        float half = haloHalf(state.size), center = haloY(lift, middle, state.size);
+        float x = 0.5F + state.backX * haloBack(state.size), z = 0.5F + state.backZ * haloBack(state.size);
         // turning slowly in the plane facing the camera
-        float roll = state.time * PRISM_HALO_TURN;
+        float roll = haloRoll(state.time);
         haloQuad(state, glow, PedestalLight.Sprite.PRISM_HALO_0.playing(state.time), x, center, z, half, roll,
                 ARGB.color((int) (245 * state.rise), 0xFFFFFF));
         // a soft bloom and a level flare at its heart, in the colour the light has reached, behind the item
@@ -45,29 +57,93 @@ final class PrismLensVisuals extends LensVisuals {
      * behind it. The shard flashes with a quick glint as it passes, and the streak fades away beyond the halo.
      */
     private static void submitHaloStreak(State state, PedestalLight.Glow glow, float x, float y, float z, float half, float roll, int streak) {
-        float period = 58.0F + streak * 13.0F, round = state.time / period + streak * 0.37F;
-        int count = Mth.floor(round), seed = count * 73856093 ^ streak * 19349663;
-        seed ^= seed >>> 13;
-        seed *= 0x5BD1E995;
-        seed ^= seed >>> 15;
-        float p = (round - count - (seed >>> 8 & 255) / 255.0F * 0.55F) / 0.45F;
+        float p = streakFlight(state.time, streak);
         if (p < 0.0F || p > 1.0F) return;
-        int shard = Math.floorMod(seed, HALO_SHARDS), tint = HALO_COLORS[shard % HALO_COLORS.length];
-        float angle = roll - (shard + 0.5F) * Mth.TWO_PI / HALO_SHARDS, cos = Mth.cos(angle), sin = Mth.sin(angle);
-        float far = half * 1.14F, passes = HALO_FLIGHT * 0.58F / 1.14F, head = far * Math.min(1.0F, p / HALO_FLIGHT), tail = far * Mth.clamp((p - HALO_TRAIL) / HALO_FLIGHT, 0.0F, 1.0F);
+        int shard = streakShard(state.time, streak), tint = haloColor(shard);
+        float angle = shardAngle(roll, shard), cos = Mth.cos(angle), sin = Mth.sin(angle);
+        float far = half * 1.14F, passes = STREAK_PASSES, head = far * Math.min(1.0F, p / HALO_FLIGHT), tail = far * Mth.clamp((p - HALO_TRAIL) / HALO_FLIGHT, 0.0F, 1.0F);
         float fade = 1.0F - easeInOut(Mth.clamp((p - passes) / (HALO_FLIGHT + HALO_TRAIL - passes), 0.0F, 1.0F));
         if (fade > 0.0F && head > tail) {
             haloLine(state, glow, x, y, z, cos, sin, tail, head, 0.015F * state.size, ARGB.color((int) (215 * fade * state.rise), tint));
             haloLine(state, glow, x, y, z, cos, sin, tail + (head - tail) * 0.4F, head, 0.006F * state.size, ARGB.color((int) (255 * fade * state.rise), 0xFFFFFF));
         }
         if (p < passes) return;
-        float after = Math.min(1.0F, (p - passes) / 0.3F), flash = (1.0F - after) * (1.0F - after);
+        float flash = streakGlint(p);
         int base = shard % 2;
         haloQuad(state, glow, PedestalLight.Sprite.PRISM_HALO_FLASH_0.frame(base), x, y, z, half, roll - (shard - base) * Mth.TWO_PI / HALO_SHARDS,
                 ARGB.color((int) (255 * flash * state.rise), 0xFFFFFF));
         float at = half * 0.72F;
         glow.billboard(PedestalLight.Sprite.STAR_GLINT, x + state.faceX * cos * at, y + sin * at, z + state.faceZ * cos * at,
                 0.1F * state.size * flash, state.time * 0.04F, ARGB.color((int) (255 * flash * state.rise), 0xFFFFFF));
+    }
+
+    /** When a streak reaches its shard, the part of its flight it has flown by then. */
+    private static final float STREAK_PASSES = HALO_FLIGHT * 0.58F / 1.14F;
+
+    /** Half the halo's width, for a lens of this size. */
+    public static float haloHalf(float size) {
+        return 0.44F * size;
+    }
+
+    /** The height of the halo's heart above the pedestal's block: by the item, and never down in the lens. */
+    public static float haloY(float lift, float middle, float size) {
+        return Math.max(middle, lift + haloHalf(size) * 0.97F);
+    }
+
+    /** How far the halo stands behind the item, away from the camera. */
+    public static float haloBack(float size) {
+        return CIRCLE_BACK * size;
+    }
+
+    /** How far round the halo has turned. */
+    public static float haloRoll(float time) {
+        return time * PRISM_HALO_TURN;
+    }
+
+    /** The angle, in the halo's plane, of the middle of a pane, the halo turned by {@code roll}. */
+    public static float shardAngle(float roll, int shard) {
+        return roll - (shard + 0.5F) * Mth.TWO_PI / HALO_SHARDS;
+    }
+
+    /** The colour of a pane of the halo's glass. */
+    public static int haloColor(int shard) {
+        return HALO_COLORS[shard % HALO_COLORS.length];
+    }
+
+    /** How brightly a pane glints now, from 0 to 1: as a streak of light passes through it. */
+    public static float shardGlint(float time, int shard) {
+        float glint = 0.0F;
+        for (int streak = 0; streak < HALO_STREAKS; streak++) {
+            float p = streakFlight(time, streak);
+            if (p >= STREAK_PASSES && p <= 1.0F && streakShard(time, streak) == shard) glint = Math.max(glint, streakGlint(p));
+        }
+        return glint;
+    }
+
+    /** How far a streak is through its flight, from 0 to 1, or outside that while it isn't flying. */
+    private static float streakFlight(float time, int streak) {
+        float round = time / (58.0F + streak * 13.0F) + streak * 0.37F;
+        int count = Mth.floor(round), seed = streakSeed(round, streak);
+        return (round - count - (seed >>> 8 & 255) / 255.0F * 0.55F) / 0.45F;
+    }
+
+    /** The pane a streak flies through this round. */
+    private static int streakShard(float time, int streak) {
+        return Math.floorMod(streakSeed(time / (58.0F + streak * 13.0F) + streak * 0.37F, streak), HALO_SHARDS);
+    }
+
+    private static int streakSeed(float round, int streak) {
+        int seed = Mth.floor(round) * 73856093 ^ streak * 19349663;
+        seed ^= seed >>> 13;
+        seed *= 0x5BD1E995;
+        seed ^= seed >>> 15;
+        return seed;
+    }
+
+    /** The glint of a pane a streak has just passed, fading fast. */
+    private static float streakGlint(float flight) {
+        float after = Math.min(1.0F, (flight - STREAK_PASSES) / 0.3F);
+        return (1.0F - after) * (1.0F - after);
     }
 
     /** A thin line of light across the halo's plane, from {@code from} to {@code to} out along a direction, fading away behind it. */
@@ -98,15 +174,33 @@ final class PrismLensVisuals extends LensVisuals {
         }
     }
 
+    /** The fan's rays: how many, and how far each leans out for how far it rises. */
+    public static final int FAN_RAYS = 7;
+    public static final float FAN_REACH = 0.5F, FAN_RISE = 0.8F;
+
+    /** Which way round a ray of the fan points now. */
+    public static float fanAngle(float time, int ray) {
+        return time * 0.012F + ray * Mth.TWO_PI / FAN_RAYS;
+    }
+
+    /** How bright a ray of the fan is now, from 0.2 to 1. */
+    public static float fanPulse(float time, int ray) {
+        return 0.6F + 0.4F * Mth.sin(time * 0.05F + ray * 1.7F);
+    }
+
+    /** A ray of the fan's colour now. */
+    public static int fanColor(float time, int ray) {
+        return LensLooks.prism(time, ray / (float) FAN_RAYS);
+    }
+
     /** The prism splits the light: a slowly turning fan of rainbow rays rising from the lens. */
     private static void submitPrismFan(State state, PedestalLight.Glow glow, float floor) {
-        int rays = 7;
-        for (int ray = 0; ray < rays; ray++) {
-            float angle = state.time * 0.012F + ray * Mth.TWO_PI / rays;
-            float reach = 0.5F * state.size, rise = 0.8F * state.size;
+        for (int ray = 0; ray < FAN_RAYS; ray++) {
+            float angle = fanAngle(state.time, ray);
+            float reach = FAN_REACH * state.size, rise = FAN_RISE * state.size;
             float tx = 0.5F + Mth.cos(angle) * reach, tz = 0.5F + Mth.sin(angle) * reach, ty = floor + rise;
-            float pulse = 0.6F + 0.4F * Mth.sin(state.time * 0.05F + ray * 1.7F);
-            int hue = LensLooks.prism(state.time, ray / (float) rays);
+            float pulse = fanPulse(state.time, ray);
+            int hue = fanColor(state.time, ray);
             int foot = ARGB.color((int) (130 * pulse * state.rise), hue), end = ARGB.color(0, hue);
             float foot0 = 0.01F, top = 0.05F * state.size;
             float fx = state.faceX, fz = state.faceZ;

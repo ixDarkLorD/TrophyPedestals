@@ -29,6 +29,14 @@ final class EmberLensVisuals extends LensVisuals {
                 ARGB.color((int) ((185 + 70 * flicker) * state.rise), 0xFFFFFF));
     }
 
+    @Override
+    protected void light(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
+        // the flames' firelight, flickering as they do, and the burning band round the cap below them
+        float flicker = LensLooks.flicker(state.time, state.blockPos);
+        glow.light(0.5F, up + 0.3F, 0.5F, 0xFF9A3C, (0.75F + 0.5F * flicker) * state.rise, 4.2F);
+        glow.light(0.5F, FIRE_BOTTOM, 0.5F, 0xFF7A20, (0.45F + 0.3F * flicker) * state.rise, 2.8F);
+    }
+
     /** A mirage over the fire: a plume of shimmering hot air, in three layers out of step, behind, through and before the item. */
     private static void submitHeatHaze(State state, PedestalLight.Glow glow, float floor, float flicker) {
         float breath = 1.0F + 0.035F * Mth.sin(state.time / 13.0F);

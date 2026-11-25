@@ -428,6 +428,7 @@ It only takes away: a pedestal whose owner turned its flourishes or sounds off s
 |---|---|---|
 | `flourishes` | `true` | whether ranked trophies show their beams, halos, flares, crowns and particles (their showcase light and outlines stay) |
 | `lens_effects` | `true` | whether lenses on display pedestals show their effects (ripples, runes, particles, scanlines, the item's motion); off, a lens only colours the light |
+| `colored_lighting` | `true` | whether lit pedestals cast their lens's or rank's colour onto the blocks around them, the Prism its rainbow; works with shader packs |
 | `ambient_sounds` | `true` | whether ranked trophies play their ambient sounds and chimes |
 | `moving_mobs` | `true` | whether mobs and statues on trophies move and play their animations |
 | `display_distance` | `64` | how far away, in blocks (16 to 256), what pedestals show is drawn |

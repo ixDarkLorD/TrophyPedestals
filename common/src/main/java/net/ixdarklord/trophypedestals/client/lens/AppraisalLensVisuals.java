@@ -30,6 +30,13 @@ public final class AppraisalLensVisuals extends LensVisuals {
         submitAppraisal(state, glow, lift, middle, color);
     }
 
+    @Override
+    protected void light(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
+        // the lens's glow, and the appraised item's own, in its rarity's colour
+        lensLight(state, glow, up, color, 0.6F);
+        glow.light(0.5F, middle, 0.5F, color, 0.45F * state.rise, 3.5F * state.size);
+    }
+
     /**
      * The Appraisal Lens puts on a show that grows with the item's rarity, under a draped trim richer with each rank, with a
      * sheen sweeping across the item and cut-gem facets glittering in the lens at all of them: common has hovering pebbles; uncommon adds rising experience orbs;

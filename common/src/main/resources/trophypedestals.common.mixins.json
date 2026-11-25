@@ -5,7 +5,8 @@
   "package": "net.ixdarklord.trophypedestals.mixin",
   "client": [
     "client.HumanoidModelMixin",
-    "client.HumanoidRenderStateMixin"
+    "client.HumanoidRenderStateMixin",
+    "client.LevelRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

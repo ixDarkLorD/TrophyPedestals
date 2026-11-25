@@ -28,6 +28,13 @@ final class FrostLensVisuals extends LensVisuals {
         submitFrostGusts(state, glow, lift);
     }
 
+    @Override
+    protected void light(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
+        // a cold light off the ice, breathing with the mist
+        float breath = 0.5F + 0.5F * Mth.sin(state.time / 30.0F);
+        lensLight(state, glow, up, color, 0.6F + 0.2F * breath);
+    }
+
     /** Snow settled on the pedestal's top: on the cap's step, along its raised rim, and frost creeping in from the well's corners. */
     private static void submitSnowCap(State state, PedestalLight.Glow glow) {
         int color = ARGB.color((int) (255 * state.rise), 0xFFFFFF);

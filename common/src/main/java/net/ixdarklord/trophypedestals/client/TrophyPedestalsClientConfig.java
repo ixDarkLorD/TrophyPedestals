@@ -19,6 +19,9 @@ public final class TrophyPedestalsClientConfig {
     public static final ConfigValue<Boolean> LENS_EFFECTS = BUILDER.bool("lens_effects", true)
             .comment("Whether the lenses fitted to display pedestals show their effects: ripples, runes, embers, snowflakes, scanlines and the item's motion. Off, a lens only colours the light.")
             .build();
+    public static final ConfigValue<Boolean> COLORED_LIGHTING = BUILDER.bool("colored_lighting", true)
+            .comment("Whether lit pedestals cast their lens's or rank's colour onto the blocks around them, the Prism its rainbow. Works with shader packs. Off, only their own light shows.")
+            .build();
     public static final ConfigValue<Boolean> AMBIENT_SOUNDS = BUILDER.bool("ambient_sounds", true)
             .comment("Whether ranked trophies play their ambient sounds and chimes now and then.")
             .build();

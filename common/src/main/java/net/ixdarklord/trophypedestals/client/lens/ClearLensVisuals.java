@@ -18,6 +18,12 @@ final class ClearLensVisuals extends LensVisuals {
         submitClearCrescent(state, glow);
     }
 
+    @Override
+    protected void light(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
+        float shimmer = 0.75F + 0.25F * Mth.sin(state.time / 11.0F);
+        lensLight(state, glow, up, state.rarity.accent(), 0.7F * shimmer);
+    }
+
     /** The Clear Lens: a crescent of light gliding round the curve of its glass. */
     private static void submitClearCrescent(State state, PedestalLight.Glow glow) {
         float pulse = 0.7F + 0.3F * Mth.sin(state.time / 17.0F);
