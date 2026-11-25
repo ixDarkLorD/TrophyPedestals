@@ -1,5 +1,6 @@
 package net.ixdarklord.trophypedestals.client;
 
+import com.google.gson.JsonObject;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.logging.LogUtils;
@@ -19,6 +20,7 @@ import net.minecraft.client.resources.metadata.animation.AnimationMetadataSectio
 import net.minecraft.client.resources.metadata.animation.FrameSize;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -132,12 +134,26 @@ public final class PedestalLight {
     }
 
     /**
-     * A flipbook as its {@code .png.mcmeta} describes it, in vanilla's animation format. The effects aren't on an atlas, so the
-     * game won't play them itself, and many need their own timing: each raven beats its wings out of step with the others.
+     * A flipbook as its {@code .png.mcmeta} describes it, in vanilla's animation format but under a {@code flipbook} section:
+     * a mod such as GeckoLib turns any texture with an {@code animation} section into an animated texture of one frame,
+     * and the effects need the whole sheet. They aren't on an atlas, so the game won't play them itself, and many need
+     * their own timing: each raven beats its wings out of step with the others.
      *
      * @param ticks the frame shown on each tick of one loop
      */
     private record Flipbook(int columns, int rows, int cells, int[] ticks) {
+        private static final MetadataSectionSerializer<AnimationMetadataSection> SECTION = new MetadataSectionSerializer<>() {
+            @Override
+            public String getMetadataSectionName() {
+                return "flipbook";
+            }
+
+            @Override
+            public AnimationMetadataSection fromJson(JsonObject json) {
+                return AnimationMetadataSection.SERIALIZER.fromJson(json);
+            }
+        };
+
         static Flipbook read(ResourceManager manager, String name, int frames) {
             ResourceLocation id = TrophyPedestalsMod.id("textures/vfx/flipbook/" + name + ".png");
             try {
@@ -148,7 +164,7 @@ public final class PedestalLight {
                     width = header.getInt(16);
                     height = header.getInt(20);
                 }
-                AnimationMetadataSection animation = resource.metadata().getSection(AnimationMetadataSection.SERIALIZER).orElse(null);
+                AnimationMetadataSection animation = resource.metadata().getSection(SECTION).orElse(null);
                 if (animation == null) return strip(frames);
                 FrameSize size = animation.calculateFrameSize(width, height);
                 int columns = Math.max(1, width / size.width()), rows = Math.max(1, height / size.height()), shown = Math.min(frames, columns * rows);
