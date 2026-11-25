@@ -29,7 +29,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Locale;
 import java.util.UUID;
 
-/** A trophy cabinet half: its two trophies (empty where there's none), on the viewer's left and right. */
 public class TrophyCabinetBlockEntity extends BlockEntity {
     public static final int SLOTS = 2;
     private static final String[] KEYS = {"Left", "Right"};

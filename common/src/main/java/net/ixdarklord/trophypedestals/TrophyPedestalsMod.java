@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 
-/** Common mod constructor (CoolCatLib). */
 public final class TrophyPedestalsMod implements ModConstructor {
     public static final String MOD_ID = "trophypedestals";
     public static final String MOD_NAME = "Trophy Pedestals";

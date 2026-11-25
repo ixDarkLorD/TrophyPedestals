@@ -9,10 +9,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 
-/**
- * From a cabinet's settings screen: who else may use it, and when its set name shows, by their names (see
- * {@link OpenCabinetPayload}).
- */
 public record AdjustCabinetPayload(BlockPos pos, String access, String setName) implements CustomPacketPayload {
     public static final Type<AdjustCabinetPayload> TYPE = new Type<>(TrophyPedestalsMod.id("adjust_cabinet"));
     private static final double REACH = 8.0;

@@ -33,10 +33,6 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.WeakHashMap;
 
-/**
- * The mob trophies each player has collected, for the Mob Trophies Ledger: every mob they've had a trophy of (one
- * dropped for them, or a first kill), and the ones they've had a gilded trophy of.
- */
 public final class TrophyLedger {
     public static final Attachment<List<Identifier>> COLLECTED = Feats.ATTACHMENTS.builder("ledger", Identifier.CODEC.listOf(), List.<Identifier>of())
             .copyOnDeath()

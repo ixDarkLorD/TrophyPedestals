@@ -29,10 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * The animations a mob (or a player's statue) on a pedestal can play on loop, found from the mob itself rather than a
- * fixed list.
- */
 public final class MobAnimations {
     private static final float WALK_SPEED = 0.5F, RUN_SPEED = 1.0F;
     private static final int SWING = 10, SWING_PERIOD = 20;

@@ -75,6 +75,7 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -97,12 +98,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-/**
- * A trophy pedestal in the world: its icon turning and bobbing above the cap, lit full bright so it glows like a
- * hologram, with everything else coming from its rank ({@link PedestalRarity}): outlines of light rising out of the
- * glowing well in its cap and fading away by the icon's middle, as a cartoon hologram's scan lines do; a turning flare
- * behind the icon (two, at the higher ranks); a beam of light; and the particles ({@link PedestalParticles}).
- */
 public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlockEntity, PedestalRenderer.State> {
     private static final float PANEL_BOTTOM = 1.95F, PANEL_OVER_MOB = 0.15F, PANEL_SCALE = 0.02F;
     private static final int LINE_HEIGHT = 10, PANEL_PAD = 8, PANEL_BORDER = 8;
@@ -118,9 +113,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static final float HALO_WIDTH = 0.018F, HALO_TILT = 24.0F, HALO_SPIN = 1.2F, HALO_SWEEP = 0.09F;
     private static final int HALO_SEGMENTS = 28, HALO_ALPHA = 220;
     private static final float RISE_TICKS = 12.0F, RISE_DROP = 0.35F;
-    /** How much smaller a powered-off pedestal's showpiece rests, and the height it rests at. */
     private static final float REST_SCALE = 0.72F, REST_FLOOR = 0.9F;
-    /** A model thinner than this share of its longest side is a flat item, which lies down to rest; anything thicker sits upright. */
     private static final float REST_FLAT_DEPTH = 0.45F;
     public static final float CONE_FOOT = 0.21F, CONE_TOP = 0.36F, CONE_HEIGHT = 0.8F;
     private static final float TROPHY_CONE = 0.65F;
@@ -134,6 +127,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static final Identifier FLARE = TrophyPedestalsMod.id("textures/vfx/pedestal_flare.png");
     private static final float ICON_Y = 1.32F, ICON_SCALE = 1.2F, FLARE_GAP = 0.03F;
     private static final float MOB_FLOOR = 1.17F, MOB_REACH = 0.3F, MOB_HEIGHT = 0.85F;
+    private static final float LOW_MIDDLE = 0.25F;
     private static final float[] PODIUM_SIZE = {0.62F, 0.56F}, PODIUM_SIDE = {-0.3F, 0.3F}, PODIUM_DROP = {-0.04F, 0.0F};
     private static final float PODIUM_BACK = 0.06F;
     private static final float UNMEASURED_REACH = 0.25F;
@@ -187,7 +181,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         BlockEntityRendererRegistry.register(Pedestals.BLOCK_ENTITY, PedestalRenderer::new);
         BlockEntityRendererRegistry.register(Pedestals.CABINET_ENTITY, TrophyCabinetRenderer::new);
         TooltipComponentRegistry.register(TrophyTooltip.class, TrophyTooltipLine::new);
-        // the mobs drawn on trophy items each hold on to their world, so they go when it does
         ClientPlayerEvents.LEAVE.register(player -> TrophyIconRenderer.forgetMobs());
         ItemTooltipEvents.APPEND.register((stack, context, player, flag, lines) -> {
             PedestalRecord record = stack.get(Pedestals.RECORD.get());
@@ -203,10 +196,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         });
     }
 
-    /**
-     * Whether a pedestal's flourishes show for this player now: as its owner set them to show (always, or while looked
-     * at) and the player's own {@code flourishes} option allows. Its showcase light and outlines show either way.
-     */
     public static boolean flourishes(PedestalBlockEntity pedestal) {
         if (!TrophyPedestalsClientConfig.FLOURISHES.get()) return false;
         return switch (pedestal.effectsMode()) {
@@ -224,6 +213,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         if (camera == null || minecraft.player == null) return false;
         Vec3 eye = camera.getEyePosition();
         double reach = target == null || target.getType() == HitResult.Type.MISS ? minecraft.player.blockInteractionRange() : eye.distanceTo(target.getLocation());
+        // Shrink the item hitbox toward the centre by pedestal scale, then clip the view ray.
         double side = 0.5 - (0.5 - ITEM_SIDE) * scale, height = (ITEM_TOP - 1.0) * scale;
         AABB item = new AABB(pos.getX() + side, pos.getY() + 1.0, pos.getZ() + side, pos.getX() + 1.0 - side, pos.getY() + 1.0 + Math.max(0.0, lift) + height, pos.getZ() + 1.0 - side);
         return item.clip(eye, eye.add(camera.getViewVector(1.0F).scale(reach))).isPresent();
@@ -260,6 +250,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
                     living.setYBodyRot(0.0F);
                     living.setYHeadRot(0.0F);
                 }
+                statue.setOldPosAndRot();
                 pedestal.setRunnerUpStatue(place, name, statue);
             }
             EntityRenderState shown = Minecraft.getInstance().getEntityRenderDispatcher().extractEntity(statue, partialTicks);
@@ -288,18 +279,22 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
                 living.setYBodyRot(0.0F);
                 living.setYHeadRot(0.0F);
             }
+            mob.setOldPosAndRot();
             pedestal.setShownMob(mob);
         }
         if (mob instanceof ArmorStand stand && pedestal.mannequin()) pose(stand, pedestal.glass() ? PedestalBlockEntity.DEFAULT_STAND_POSE : pedestal.standPose());
-        float tall = Math.max(0.1F, mob.getBbHeight());
-        state.mobReach = Math.max(0.05F, reach(mob, tall));
-        state.mobLift = lift(mob);
-        state.mobScale = Math.min(1.0F, Math.min(MOB_REACH / state.mobReach, MOB_HEIGHT / tall)) * (pedestal.glass() ? 1.0F : pedestal.scale());
-        float drawnTall = state.mobLift + drawnHeight(mob, tall);
+        Fit fit = fit(mob);
+        state.mobReach = Math.max(0.05F, fit.reach());
+        state.mobLift = fit.lift();
+        // Scale down so the mob fits both the reach and height limits, then apply pedestal scale.
+        state.mobScale = Math.min(1.0F, Math.min(MOB_REACH * reachRoom(mob) / state.mobReach, MOB_HEIGHT / fit.tall())) * (pedestal.glass() ? 1.0F : pedestal.scale());
+        float drawnTall = state.mobLift + fit.height();
         if (!pedestal.glass()) {
             float[] fitted = fitToCone(state, true, state.mobScale, state.mobReach, drawnTall / 2.0F, MOB_FLOOR);
             state.mobScale = fitted[0];
-            if (pedestal.scale() > 1.0F) state.lift += fitted[1] - MOB_FLOOR;
+            float coneRaise = pedestal.scale() > 1.0F ? fitted[1] - MOB_FLOOR : 0.0F;
+            float lowRaise = LOW_MIDDLE * state.size - fit.middle() * state.mobScale;
+            state.lift += Math.max(0.0F, Math.max(coneRaise, lowRaise));
         }
         EntityRenderState shown = Minecraft.getInstance().getEntityRenderDispatcher().extractEntity(mob, partialTicks);
         shown.lightCoords = FULL_BRIGHT;
@@ -312,18 +307,19 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         idle(shown, shown.ageInTicks);
         if (pedestal.showsStatue()) pose(shown, pedestal.statuePose());
         if (shown instanceof SquidRenderState squid) tumble(squid, pedestal.getBlockPos(), shown.ageInTicks);
+        state.mobSink = fit.rendered() ? 0.0F : sink(shown);
         if (moving) MobAnimations.play(mob, shown, pedestal.animation(), time);
         if (pedestal.glass()) {
             boolean tipped = pedestal.pitch() != 0.0F || pedestal.roll() != 0.0F || shown instanceof SquidRenderState;
-            float[] posed = pedestal.mannequin() ? null : posedSize(mob, shown, pedestal.yaw() + modelTurn(shown));
+            float[] posed = pedestal.mannequin() || fit.rendered() ? null : posedSize(mob, shown, pedestal.yaw() + modelTurn(shown));
             float reach = state.mobReach, high = drawnTall;
             if (posed != null) {
                 reach = tipped ? Math.max(reach, posed[0]) : posed[1];
                 high = Math.max(high, state.mobLift + posed[2]);
             }
-            float[] most = pedestal.fitGlass(reach, Math.max(0.1F, high - sink(shown)));
-            float fit = fitInCase(1.0F, most[0], most[1], GLASS_FLOOR, tipped);
-            state.mobScale = fit * Math.min(1.0F, pedestal.scale());
+            float[] most = pedestal.fitGlass(reach, Math.max(0.1F, high - state.mobSink));
+            float inCase = fitInCase(1.0F, most[0], most[1], GLASS_FLOOR, tipped);
+            state.mobScale = inCase * Math.min(1.0F, pedestal.scale());
             state.lift = caseMiddle(most[1] * state.mobScale) - MOB_FLOOR;
         }
         return shown;
@@ -342,11 +338,13 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         try {
             EntityModel model = renderer.getModel();
             model.setupAnim(living);
+            // Cache the yaw rotation so corners can be measured in the mob's facing frame.
             posedCos = Mth.cos(yaw * Mth.DEG_TO_RAD);
             posedSin = Mth.sin(yaw * Mth.DEG_TO_RAD);
             float[] bounds = {0.0F, -Float.MAX_VALUE, Float.MAX_VALUE, 0.0F};
             model.root().visit(POSED_POSE, (pose, path, index, cube) -> {
                 for (int i = 0; i < 8; i++) {
+                    // Take the cube's 8 corners in blocks and push them through the bone pose.
                     POSED_CORNER.set((i & 1) == 0 ? cube.minX : cube.maxX, (i & 2) == 0 ? cube.minY : cube.maxY, (i & 4) == 0 ? cube.minZ : cube.maxZ)
                             .div(16.0F).mulPosition(pose.pose());
                     include(bounds, POSED_CORNER);
@@ -377,6 +375,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static final float ARMOR_ALLOWANCE = 1.0F / 16.0F;
 
     private static void include(float[] bounds, Vector3f corner) {
+        // Track the widest radius, and the widest extent along the yawed axes.
         bounds[0] = Math.max(bounds[0], (float) Math.hypot(corner.x, corner.z));
         float x = corner.x, z = corner.z, c = posedCos, s = posedSin;
         bounds[3] = Math.max(bounds[3], Math.max(Math.abs(x * c - z * s), Math.abs(x * s + z * c)));
@@ -386,6 +385,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     private static void tumble(SquidRenderState squid, BlockPos pos, float age) {
         long seed = pos.asLong() * 0x9E3779B97F4A7C15L;
+        // Hash the position into a stable random tip angle and spin.
         float tip = ((seed >>> 40 & 0xFFFF) / 65535.0F * 2.0F - 1.0F) * SQUID_TIP;
         float turn = (seed >>> 20 & 0xFFFF) / 65535.0F * 360.0F;
         squid.xBodyRot = tip + Mth.sin(age / 25.0F) * SQUID_SWAY;
@@ -417,14 +417,16 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     }
 
     static float fitScale(Entity mob) {
-        float tall = Math.max(0.1F, mob.getBbHeight());
-        return Math.min(1.0F, Math.min(MOB_REACH / Math.max(0.05F, reach(mob, tall)), MOB_HEIGHT / tall));
+        Fit fit = fit(mob);
+        // Scale is limited by whichever is tighter: horizontal reach or height.
+        return Math.min(1.0F, Math.min(MOB_REACH * reachRoom(mob) / Math.max(0.05F, fit.reach()), MOB_HEIGHT / fit.tall()));
     }
 
     static float slotScale(Entity mob) {
-        float tall = Math.max(0.1F, mob.getBbHeight());
-        float height = Math.max(drawnHeight(mob, tall), tall);
-        float depth = Math.max(reach(mob, tall), mob.getBbWidth() * 0.5F);
+        Fit fit = fit(mob);
+        float height = Math.max(fit.height(), fit.tall());
+        float depth = fit.rendered() ? fit.reach() : Math.max(fit.reach(), mob.getBbWidth() * 0.5F);
+        // Keep height plus half the depth within the slot room.
         return Math.min(fitScale(mob), SLOT_ROOM / (height + depth * 0.5F));
     }
 
@@ -440,6 +442,12 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     private static final float DRAGON_FLAPS_PER_TICK = 0.05F;
 
+    private static float reachRoom(Entity mob) {
+        return mob instanceof EnderDragon ? DRAGON_ROOM : 1.0F;
+    }
+
+    private static final float DRAGON_ROOM = 1.4F;
+
     static float modelTurn(EntityRenderState shown) {
         return shown instanceof EnderDragonRenderState ? 180.0F : 0.0F;
     }
@@ -454,13 +462,56 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     private static final float WITHER_SINK = 0.5F;
 
-    static float lift(Entity mob) {
+    static float raise(Entity mob, EntityRenderState shown) {
+        Fit fit = fit(mob);
+        return fit.rendered() ? fit.lift() : fit.lift() - sink(shown);
+    }
+
+    record Fit(float reach, float lift, float height, float tall, float middle, boolean rendered) {}
+
+    static Fit fit(Entity mob) {
+        float tall = Math.max(0.1F, mob.getBbHeight());
         float[] model = MODEL_SIZES.computeIfAbsent(mob.getType(), type -> measure(mob));
-        if (model == null || model[2] <= 0.0F) return 0.0F;
-        return model[2] * drawScale(mob, model);
+        float reach, lift, height;
+        if (model == null) {
+            reach = Math.max(0.1F, mob.getBbWidth()) * UNMEASURED_REACH;
+            lift = 0.0F;
+            height = tall;
+        } else {
+            float scale = drawScale(mob, model);
+            reach = model[0] * scale;
+            lift = model[2] > 0.0F ? model[2] * scale : 0.0F;
+            height = model[1] * scale * (mob instanceof Avatar ? AVATAR_SCALE : 1.0F);
+        }
+        float[] drawn = renderedSize(mob);
+        if (drawn != null) {
+            float drawnTall = drawn[2] - drawn[1];
+            boolean overflows = drawn[0] > reach * OVERFLOW || drawnTall > Math.max(tall, lift + height) * OVERFLOW;
+            if (model == null || overflows) return new Fit(drawn[0], -drawn[1], drawn[2], drawnTall, drawnTall / 2.0F, true);
+        }
+        return new Fit(reach, lift, height, tall, lift + tall / 2.0F, false);
+    }
+
+    private static final float OVERFLOW = 2.25F;
+    private static final float[] UNRENDERED = new float[0];
+    private static final Map<EntityType<?>, float[]> RENDERED_SIZES = new ConcurrentHashMap<>();
+
+    private static float @Nullable [] renderedSize(Entity mob) {
+        float[] drawn = RENDERED_SIZES.get(mob.getType());
+        if (drawn == null) {
+            float[] measured = RenderedBounds.measure(mob);
+            drawn = measured == null || mob.getBbHeight() <= 0.0F ? UNRENDERED
+                    : new float[] {measured[0], measured[1], measured[2], mob.getBbHeight()};
+            RENDERED_SIZES.put(mob.getType(), drawn);
+        }
+        if (drawn == UNRENDERED) return null;
+        // Rescale the cached drawn size to this mob's real hitbox height.
+        float scale = mob.getBbHeight() > 0.0F ? mob.getBbHeight() / drawn[3] : 1.0F;
+        return new float[] {drawn[0] * scale, drawn[1] * scale, drawn[2] * scale};
     }
 
     private static float drawScale(Entity mob, float[] model) {
+        // Ratio of hitbox size to model size, used to see if the model draws at its own size.
         float tall = Math.max(0.1F, mob.getBbHeight()) / model[1];
         float wide = Math.max(0.1F, mob.getBbWidth()) / model[3];
         boolean ownHeight = tall > OWN_SIZE_LOW && tall < OWN_SIZE_HIGH, ownWidth = wide > OWN_SIZE_LOW && wide < OWN_SIZE_HIGH;
@@ -471,19 +522,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     static float mobFloor() {
         return MOB_FLOOR;
-    }
-
-    private static float drawnHeight(Entity mob, float tall) {
-        float[] model = MODEL_SIZES.computeIfAbsent(mob.getType(), type -> measure(mob));
-        if (model == null) return tall;
-        float height = model[1] * drawScale(mob, model);
-        return mob instanceof Avatar ? height * AVATAR_SCALE : height;
-    }
-
-    private static float reach(Entity mob, float tall) {
-        float[] model = MODEL_SIZES.computeIfAbsent(mob.getType(), type -> measure(mob));
-        if (model == null) return Math.max(0.1F, mob.getBbWidth()) * UNMEASURED_REACH;
-        return model[0] * drawScale(mob, model);
     }
 
     private static float @Nullable [] measure(Entity mob) {
@@ -576,20 +614,13 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         public boolean shown, trophy, detailed, effects, showcaseLight;
         public @Nullable Lens lens;
         public boolean lensEffects;
-        /** A display pedestal with no lens fitted: its bezel stands empty. */
         public boolean bareWell;
-        /** How far the empty socket's glow has eased in, 0 to 1: it glows while the When Powered option has the pedestal showing. */
         public float socketGlow, socketTime;
-        /** How far its When Powered option has it on, 0 to 1, easing as that changes. */
         public float powerFade = 1.0F;
-        /** The lens whose glass sits in the bezel; null for the plain dark glass of a trophy, leaderboard or mannequin. */
         public @Nullable Lens glassLens;
         public int lensTint = 0xFFFFFFFF;
-        /** How far the lens's effects have faded in, 0 to 1: they ease in and out rather than pop, as when looked at. */
         public float lensFade;
-        /** How far the pedestal's display has risen, kept as it is while the lens's effects fade. */
         public float shownRise;
-        /** The rarity of the item shown, as the Appraisal Lens reads it: 0 common to 3 epic. */
         public int itemRarity;
         public float backX, backZ;
         public float rise = 1.0F;
@@ -611,7 +642,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         public float glassTop;
         public int glassTint = 0xFFFFFFFF;
         public float mobScale, mobReach;
-        public float mobLift;
+        public float mobLift, mobSink;
         public float size = 1.0F, iconScale = ICON_SCALE, iconY = ICON_Y, panelBottom;
         public float textScale = 1.0F;
         public float lift;
@@ -627,11 +658,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         public double distanceSq;
     }
 
-    /**
-     * What a lens needs to know of the display it's showing, kept so that its effects can fade out as they were once the
-     * display has been taken: the same rarity, and around an item of the same size and height. Replaced as soon as something
-     * else is shown, and dropped once the fade has finished.
-     */
     private static final class LastDisplay {
         private PedestalRarity light = DISPLAY;
         private int itemRarity;
@@ -649,7 +675,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         }
     }
 
-    /** What the renderer keeps for one pedestal between frames, held by the pedestal itself so that it goes when the pedestal does. */
     private static final class Memory {
         private float @Nullable [] lensFade, socketFade;
         private @Nullable LastDisplay last;
@@ -657,7 +682,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         private float @Nullable [] figurePose;
     }
 
-    /** The pose a player-model mannequin holds, or null to leave it its own stance: when it's in the default pose, or under glass. */
     private static float @Nullable [] figurePose(PedestalBlockEntity pedestal) {
         if (!pedestal.mannequin() || !pedestal.playerModel() || pedestal.glass()) return null;
         List<Float> pose = pedestal.standPose();
@@ -678,7 +702,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         return memory;
     }
 
-    /** The display a pedestal's effects are still fading out from, or null if it's showing one or has finished fading. */
     private static @Nullable LastDisplay heldDisplay(PedestalBlockEntity pedestal, float rise) {
         if (pedestal.hasShowpiece()) return null;
         Memory memory = memory(pedestal);
@@ -749,6 +772,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         boolean on = pedestal.on();
         state.rise = on ? 1.0F : 0.0F;
         if (pedestal.getLevel() != null) {
+            // Rise progress from 0 to 1, eased with smoothstep.
             float since = Mth.clamp((pedestal.getLevel().getGameTime() - pedestal.displayChangedAt() + partialTicks) / RISE_TICKS, 0.0F, 1.0F);
             float eased = since * since * (3.0F - 2.0F * since);
             state.rise = on ? eased : 1.0F - eased;
@@ -790,14 +814,15 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             state.itemRarity = LensLooks.tier(LensLooks.appraised(pedestal));
             items.updateForTopItem(state.icon, ItemStack.EMPTY, ItemDisplayContext.GROUND, pedestal.getLevel(), null, 0);
             Entity mob = pedestal.shownMob();
-            state.middle = MOB_FLOOR + (state.mobLift + Math.max(0.1F, mob.getBbHeight()) / 2.0F) * state.mobScale - ICON_Y;
+            Fit fit = fit(mob);
+            state.middle = MOB_FLOOR + fit.middle() * state.mobScale - ICON_Y;
             state.iconY = ICON_Y + state.lift;
             reach = state.mobReach * state.mobScale + FLARE_GAP;
             state.lieScale = 1.0F;
             state.lieY = 0.0F;
             state.lieZ = 0.0F;
             if (pedestal.showsStatue() && pedestal.statuePose().lying()) {
-                float length = drawnHeight(mob, Math.max(0.1F, mob.getBbHeight()));
+                float length = fit.height();
                 state.lieScale = Math.min(1.0F, 2.0F * MOB_REACH / (length * state.mobScale / pedestal.scale()));
                 switch (pedestal.statuePose()) {
                     case GLIDING -> {
@@ -811,7 +836,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
                     }
                 }
             }
-            top = MOB_FLOOR + state.lift + (state.mobLift + drawnHeight(mob, Math.max(0.1F, mob.getBbHeight())) * statueTop(pedestal)) * state.mobScale;
+            top = MOB_FLOOR + state.lift + (state.mobLift + fit.height() * statueTop(pedestal)) * state.mobScale;
         } else {
             ItemStack shown = record != null ? (!pedestal.iconOverride().isEmpty() ? pedestal.iconOverride() : TrophyKinds.icon(record, true))
                     : mobTrophy != null ? spawnEgg(mobTrophy) : pedestal.display();
@@ -826,6 +851,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             state.restBottom = (float) box.minY;
             state.restsFlat = box.maxZ - box.minZ < REST_FLAT_DEPTH * Math.max(box.maxX - box.minX, box.maxY - box.minY);
             float bottom = pedestal.glass() ? GLASS_FLOOR : Math.max(ICON_Y + (float) box.minY * ICON_SCALE, ICON_FLOOR);
+            // Farthest horizontal corner distance of the item box, per unit of scale.
             float reachPerScale = (float) Math.hypot(Math.max(-box.minX, box.maxX), Math.max(-box.minZ, box.maxZ));
             if (pedestal.glass()) {
                 state.iconScale = fitInCase(ICON_SCALE, reachPerScale, (float) (box.maxY - box.minY), bottom, pedestal.pitch() != 0.0F || pedestal.roll() != 0.0F);
@@ -862,7 +888,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             if (state.lens == Lens.TIDE) state.bob = Mth.sin(time / 16.0F) * TIDE_BOB * state.size;
             if (state.lens == Lens.ENDER) {
                 state.bob = ENDER_FLOAT * state.size + Mth.sin(time / 20.0F) * 0.04F * state.size;
-                // a mannequin floats but stays upright, so that its pose still reads
                 if (!pedestal.mannequin()) {
                     state.pitch += Mth.sin(time / 23.0F) * ENDER_TUMBLE;
                     state.roll += Mth.cos(time / 31.0F) * ENDER_TUMBLE * 0.8F;
@@ -871,8 +896,8 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         }
         state.rests = pedestal.hasShowpiece();
         if (state.rests) {
-            // off, it settles on to the pedestal, a flat item lying on the lens and a block sitting on it: a little smaller, tipped no longer and quite still
             state.restScale = Math.min(state.iconScale, ICON_SCALE) * REST_SCALE;
+            // Rest height: flat items lie on the floor, others sit by their lowest point.
             state.restY = state.restsFlat ? REST_FLOOR + Math.max(0.02F, state.restDepth * state.restScale) - state.middle / state.iconScale * state.restScale
                     : REST_FLOOR + 0.01F - state.restBottom * state.restScale;
             state.restMobScale = state.mobScale / Math.max(1.0F, state.size) * REST_SCALE;
@@ -906,6 +931,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         if (state.detailed && state.rarity.flareSize() > 0.0F) {
             double toX = pos.getX() + 0.5 - cameraPosition.x, toY = pos.getY() + state.iconY + state.middle + state.bob - cameraPosition.y;
             double toZ = pos.getZ() + 0.5 - cameraPosition.z;
+            // Direction to the camera scaled to the reach, so the flare sits on the item's near edge.
             double far = Math.max(Math.sqrt(toX * toX + toY * toY + toZ * toZ), 0.5);
             state.flareX = (float) (toX * reach / far);
             state.flareY = (float) (toY * reach / far);
@@ -914,6 +940,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         }
         if (state.rarity.beamHeight() > 0.0F || state.rarity.crown() > 0 || state.lensEffects) {
             double toX = pos.getX() + 0.5 - cameraPosition.x, toZ = pos.getZ() + 0.5 - cameraPosition.z;
+            // Horizontal unit vector to the camera; faceX/faceZ is its perpendicular.
             double across = Math.max(Math.sqrt(toX * toX + toZ * toZ), 1.0E-4);
             state.faceX = (float) (-toZ / across);
             state.backX = (float) (toX / across);
@@ -963,7 +990,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     @Override
     public void submit(State state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
         if (state.custom) {
-            // the other pedestals turn through their block state; this one's body is drawn here
             poseStack.pushPose();
             poseStack.translate(0.5F, 0.0F, 0.5F);
             poseStack.rotate(Axis.YP.rotationDegrees(state.bodyTurn));
@@ -998,7 +1024,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             tilt(state, poseStack, (ICON_Y + state.middle - MOB_FLOOR) * state.rise);
             poseStack.rotate(Axis.YP.rotationDegrees(modelTurn(state.mob)));
             poseStack.scale(mobScale, mobScale, mobScale);
-            poseStack.translate(0.0F, state.mobLift - sink(state.mob), 0.0F);
+            poseStack.translate(0.0F, state.mobLift - state.mobSink, 0.0F);
             poseStack.translate(0.0F, state.lieY, state.lieZ);
             if (!DrawnMobs.submit(state.mob, camera, poseStack, collector) && state.mob.entityType != null) UNDRAWABLE.add(state.mob.entityType);
             poseStack.popPose();
@@ -1113,6 +1139,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         collector.submitCustomGeometry(poseStack, RenderTypes.text(state.topper), (pose, consumer) -> {
             for (int i = 0; i < 4; i++) {
                 float x0 = xs[i], z0 = zs[i], x1 = xs[(i + 1) % 4], z1 = zs[(i + 1) % 4];
+                // Edge direction, with the inward normal flipped to point toward the crown centre.
                 float dx = (x1 - x0) / side, dz = (z1 - z0) / side;
                 float inX = -dz * voxel, inZ = dx * voxel;
                 if ((x0 + x1) * inX + (z0 + z1) * inZ > 0.0F) {
@@ -1207,11 +1234,13 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             float far = away.length();
             if (far > 1.0E-3F) poseStack.translate(away.x / far * back, away.y / far * back, away.z / far * back);
         }
+        // Billboard the panel to the camera, flipping Y so text reads upright.
         poseStack.rotate(camera.orientation);
         float panelScale = PANEL_SCALE * state.textScale;
         poseStack.scale(panelScale, -panelScale, panelScale);
         float x0 = -halfWidth, x1 = halfWidth, y0 = -height, y1 = 0.0F;
         int tint = state.frameTint;
+        // Nearer panels get a bigger sort order so they draw on top.
         int order = PANEL_ORDER + 2 * (int) Math.max(0.0, PANEL_ORDER_RANGE - Math.sqrt(state.distanceSq) - back);
         collector.order(order).submitCustomGeometry(poseStack, RenderTypes.text(state.frame), (pose, consumer) -> {
             float[] xs = {x0, x0 + PANEL_BORDER, x1 - PANEL_BORDER, x1};
@@ -1259,6 +1288,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         PedestalRarity rarity = state.rarity;
         float lo = 0.5F - RING_HALF, hi = 0.5F + RING_HALF;
         float rise = state.rise;
+        // Sine pulse from 0 to 1, offset per block so neighbours do not pulse in sync.
         float breath = 0.5F + 0.5F * Mth.sin((state.time + (state.blockPos.hashCode() & 0xFF)) * Mth.TWO_PI / BREATH_TICKS);
         float fade = Mth.clamp(rise / LENS_FADE, 0.0F, 1.0F);
         fade = fade * fade * (3.0F - 2.0F * fade);
@@ -1302,16 +1332,13 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static final float RUNE_SPIN = 0.02F;
     private static final float HOLOGRAM_SCALE = 1.25F;
     private static final float TIDE_BOB = 0.07F, ENDER_FLOAT = 0.14F, ENDER_TUMBLE = 16.0F;
-    /** What the lens fitted to a display pedestal draws around its item. */
     private static final float LENS_FADE_TICKS = 8.0F, SOCKET_FADE_TICKS = 4.0F;
     private static final Identifier PLAIN_GLASS = TrophyPedestalsMod.id("textures/block/pedestal/lens.png");
     private static final Identifier BEZEL = TrophyPedestalsMod.id("textures/block/pedestal/bezel.png");
     private static final float SOCKET_GLOW_Y = 14.08F / 16.0F;
     private static final float BEZEL_FLOOR = 14.0F / 16.0F, BEZEL_TOP = 14.5F / 16.0F;
-    /** The bezel's pixels, a run a row: its row, first column and last. */
     private static final int[][] BEZEL_RUNS = {{2, 6, 9}, {3, 4, 5}, {3, 10, 11}, {4, 3, 4}, {4, 11, 12}, {5, 3, 3}, {5, 12, 12}, {6, 2, 2}, {6, 13, 13}, {7, 2, 2}, {7, 13, 13}, {8, 2, 2}, {8, 13, 13}, {9, 2, 2}, {9, 13, 13}, {10, 3, 3}, {10, 12, 12}, {11, 3, 4}, {11, 11, 12}, {12, 4, 5}, {12, 10, 11}, {13, 6, 9}};
 
-    /** Eases a pedestal's lens effects toward shown or hidden, over {@link #LENS_FADE_TICKS}, from where they were last frame. */
     private static float lensFade(PedestalBlockEntity pedestal, boolean shown, float time) {
         Memory memory = memory(pedestal);
         if (memory.lensFade == null) memory.lensFade = new float[] {shown ? 1.0F : 0.0F, time};
@@ -1328,11 +1355,11 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         float step = Mth.clamp(time - fade[1], 0.0F, ticks) / ticks;
         fade[1] = time;
         fade[0] = Mth.clamp(fade[0] + (shown ? step : -step), 0.0F, 1.0F);
+        // Smootherstep easing.
         return fade[0] * fade[0] * fade[0] * (fade[0] * (fade[0] * 6.0F - 15.0F) + 10.0F);
     }
 
     private static void submitLens(State state, PedestalLight.Glow glow, float up) {
-        // Everything a lens draws fades by how far its display has risen; fading its effects too is fading that.
         float rise = state.rise;
         state.shownRise = rise;
         state.rise = rise * state.lensFade;
@@ -1352,6 +1379,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             float spin = state.time * HALO_SPIN * Mth.DEG_TO_RAD + halo * Mth.HALF_PI;
             float sweep = state.time * HALO_SWEEP * (odd ? -1.0F : 1.0F);
             int color = odd ? rarity.accent() : rarity.color();
+            // Spin each ring point around Y, with the tilt squashing its height.
             float tiltCos = Mth.cos(tilt), tiltSin = Mth.sin(tilt), spinCos = Mth.cos(spin), spinSin = Mth.sin(spin);
             for (int i = 0; i < HALO_SEGMENTS; i++) {
                 float a0 = i * Mth.TWO_PI / HALO_SEGMENTS, a1 = (i + 1) * Mth.TWO_PI / HALO_SEGMENTS;
@@ -1378,6 +1406,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         float sweep = state.time * CROWN_GLOW;
         for (int i = 0; i < shards; i++) {
             float angle = i * Mth.TWO_PI / shards + state.time * CROWN_SPIN;
+            // Place shards evenly on a circle, bobbing in height out of phase.
             float x = 0.5F + Mth.cos(angle) * CROWN_RADIUS * state.size, z = 0.5F + Mth.sin(angle) * CROWN_RADIUS * state.size;
             float y = middle + Mth.sin(state.time * 0.08F + i * Mth.TWO_PI * 2.0F / shards) * 0.05F * state.size;
             float near = (Mth.cos(i * Mth.TWO_PI / shards - sweep) + 1.0F) / 2.0F;
@@ -1396,6 +1425,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     }
 
     private static int haloAlpha(float angle, float sweep) {
+        // Brightest where the segment meets the sweep angle, cubed for a sharp falloff.
         float near = (Mth.cos(angle - sweep) + 1.0F) / 2.0F;
         return (int) (HALO_ALPHA * (0.25F + 0.75F * near * near * near));
     }
@@ -1403,6 +1433,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static float[] fitToCone(State state, boolean trophy, float wanted, float reach, float half, float bottom) {
         float floor = GLASS_TOP + 0.002F;
         float height = CONE_HEIGHT * (trophy ? TROPHY_CONE : 1.0F) * state.size;
+        // Cone half-width growth per unit of height.
         float slope = (CONE_TOP * state.size - CONE_FOOT) / height;
         float scale = wanted;
         if (!trophy) {
@@ -1410,6 +1441,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             scale = Math.min(scale, (height + CONE_FOOT / slope) / (reach / slope + half));
             scale = Math.max(scale, 0.05F * wanted);
         }
+        // Lowest height at which the item's reach still fits inside the cone.
         float raised = floor + (reach * scale - CONE_FOOT) / slope - half * scale;
         return new float[] {scale, Math.max(bottom, raised)};
     }
@@ -1417,6 +1449,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static float fitInCase(float wanted, float reach, float tall, float bottom, boolean tipped) {
         float room = CAP_TOP + PedestalBlock.CASE_HEIGHT - GLASS_GAP - bottom;
         if (tipped) {
+            // Radius of the sphere around a tipped item, so any rotation still fits.
             float ball = (float) Math.hypot(Math.max(0.0F, reach), Math.max(0.0F, tall) / 2.0F);
             if (ball <= 0.0F) return wanted;
             return Math.max(0.01F, Math.min(wanted, Math.min((GLASS_CASE_HALF - GLASS_CASE_MARGIN) / ball, room / (tall / 2.0F + ball))));
@@ -1473,7 +1506,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         });
     }
 
-    /** The lens fitted in a pedestal's item, in its bezel, as it looks on an unlit pedestal. */
     public static void submitItemLens(PoseStack poseStack, SubmitNodeCollector collector, Lens lens, int tint, int light) {
         int shown = ARGB.opaque(ARGB.scaleRGB(tint, LENS_UNLIT));
         collector.submitCustomGeometry(poseStack, RenderTypes.entitySolid(lens.glass()), (pose, consumer) -> glass(consumer, pose, shown, FULL_BRIGHT));
@@ -1492,6 +1524,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             int argb = ringColor(rarity, i, rise, 1.0F);
             if (argb == 0) continue;
             float y = Mth.lerp(rise, from, to);
+            // Fraction up the cone, used to find the cone's half-width at this ring.
             float along = Mth.clamp((y - floor) / (top - floor), 0.0F, 1.0F);
             float half = Mth.lerp(along, CONE_FOOT, CONE_TOP) - ITEM_RING_INSET;
             ringBox(glow, 0.5F - half, 0.5F + half, 0.5F - half, 0.5F + half, y, y + RING_LINE, argb);
@@ -1592,6 +1625,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static void sceneFlare(VertexConsumer consumer, PoseStack.Pose pose, Quaternionf facing, float x, float y, float z, float half, float roll,
                                    int argb) {
         if (ARGB.alpha(argb) == 0) return;
+        // Rotate the quad's corners by the roll angle.
         float cos = Mth.cos(roll) * half, sin = Mth.sin(roll) * half;
         float[][] corners = {{-cos - sin, -sin + cos}, {-cos + sin, -sin - cos}, {cos + sin, sin - cos}, {cos - sin, sin + cos}};
         float[][] uv = {{0, 0}, {0, 1}, {1, 1}, {1, 0}};
@@ -1603,10 +1637,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         }
     }
 
-    /**
-     * The glass in the pedestal's bezel: none on a display pedestal with no lens, the fitted lens's own look (dimmed until
-     * its showcase light is on), or the plain dark glass of a trophy, leaderboard or mannequin.
-     */
     private static void submitLensGlass(State state, PoseStack poseStack, SubmitNodeCollector collector) {
         if (state.bareWell) {
             submitSocketGlow(state);
@@ -1624,7 +1654,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         collector.submitCustomGeometry(poseStack, RenderTypes.entitySolid(BEZEL), (pose, consumer) -> bezel(consumer, pose, state.lightCoords));
     }
 
-    /** The gold bezel a lens sits in, one box a run of its pixels: the left half of its texture is its top, the right its sides. */
     private static void bezel(VertexConsumer consumer, PoseStack.Pose pose, int light) {
         for (int[] run : BEZEL_RUNS) {
             float x0 = (4.0F + run[1] * 0.5F) / 16.0F, x1 = (4.0F + (run[2] + 1) * 0.5F) / 16.0F;
@@ -1656,21 +1685,17 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         }
     }
 
-    /** Whether a lens's glass is nearly white already, so light added over it would wash its detail out. */
     private static boolean paleGlass(@Nullable Lens lens) {
         return lens == Lens.CLEAR || lens == Lens.FROST;
     }
 
-    /** A fitted lens's glass breathing while it's lit, 0 to 1, each pedestal in its own time. */
     private static float lensBreath(State state) {
         return 0.5F + 0.5F * Mth.sin((state.time + (state.blockPos.hashCode() & 0xFF)) * Mth.TWO_PI / LENS_BREATH_TICKS);
     }
 
-    /** The empty socket's soft glow while the When Powered option has the pedestal showing, breathing gently and easing in and out. */
     private static void submitSocketGlow(State state) {
         if (state.socketGlow <= 0.0F) return;
         float breath = 0.82F + 0.18F * Mth.sin(state.socketTime * Mth.TWO_PI / BREATH_TICKS);
-        // Added to what's under it, so it dims evenly all the way out; a cut-out entity layer would drop its faint pixels early.
         float strength = 1.0F + (breath - 1.0F) * state.socketGlow;
         int argb = ARGB.color(Math.round(255.0F * strength * state.socketGlow), 0xFFFFFF);
         PedestalLight.world(state.originX, state.originY, state.originZ, state.worldScale)
