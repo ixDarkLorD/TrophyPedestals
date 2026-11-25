@@ -18,8 +18,12 @@ public abstract class LensVisuals {
     protected static final float AURA_SIZE = 0.42F, AURA_PULSE = 0.07F, AURA_TICKS = 30.0F;
     protected static final float RIPPLE_LIFT = 0.06F;
     protected static final float LENS_DISC = 0.235F, CIRCLE_BACK = 0.22F;
-    protected static final float LENS_BASE_LIFT = 0.02F;
-    protected static final float END_LENS_HALF = 0.158F;
+    /**
+     * How far above the glass a lens's own layers lie (the Void Rift's eye, the Coral Reef's caustics), and how far across
+     * they reach from the middle: below the top of the gold bezel round the glass and a little wider than its opening, so
+     * the bezel hides their edges and they look set into the lens.
+     */
+    protected static final float LENS_BASE_LIFT = 0.004F, LENS_BASE_HALF = 0.17F;
     protected static final float CAP_TOP_EDGE = 14.0F / 16.0F, CAP_BOTTOM_EDGE = 10.0F / 16.0F;
     protected static final float CAP_SIDE_MIDDLE = 13.0F / 16.0F;
     protected static final float CAP_LOW = 2.0F / 16.0F, CAP_HIGH = 14.0F / 16.0F;
@@ -67,7 +71,7 @@ public abstract class LensVisuals {
 
     /** A lens's own looping effect in its round glass: Prism's kaleidoscope, Ender's eye or Appraisal's cut facets. */
     protected static void submitLensBase(State state, PedestalLight.Glow glow, PedestalLight.Sprite first, float roll, int color) {
-        glow.flat(first.playing(state.time), PedestalRenderer.GLASS_TOP + LENS_BASE_LIFT, END_LENS_HALF, roll, ARGB.color((int) (ARGB.alpha(color) * state.rise), color));
+        glow.flat(first.playing(state.time), PedestalRenderer.GLASS_TOP + LENS_BASE_LIFT, LENS_BASE_HALF, roll, ARGB.color((int) (ARGB.alpha(color) * state.rise), color));
     }
 
     /** A band of {@code texture} around all four sides of the pedestal's cap, just off its faces, from {@code top} down to {@code bottom}. */
