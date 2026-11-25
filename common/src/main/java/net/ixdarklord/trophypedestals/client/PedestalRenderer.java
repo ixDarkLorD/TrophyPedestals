@@ -77,6 +77,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -137,6 +138,8 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     private static final ResourceLocation FLARE = TrophyPedestalsMod.id("textures/vfx/pedestal_flare.png");
     private static final float ICON_Y = 1.32F, ICON_SCALE = 1.2F, FLARE_GAP = 0.03F;
     private static final float MOB_FLOOR = 1.17F, MOB_REACH = 0.3F, MOB_HEIGHT = 0.85F;
+    /** The lowest a shown mob's middle sits above the floor; a flatter one is raised to it. */
+    private static final float LOW_MIDDLE = 0.25F;
     private static final float[] PODIUM_SIZE = {0.62F, 0.56F}, PODIUM_SIDE = {-0.3F, 0.3F}, PODIUM_DROP = {-0.04F, 0.0F};
     private static final float PODIUM_BACK = 0.06F;
     private static final float UNMEASURED_REACH = 0.25F;
@@ -266,6 +269,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
                     living.setYBodyRot(0.0F);
                     living.setYHeadRot(0.0F);
                 }
+                statue.setOldPosAndRot();
                 pedestal.setRunnerUpStatue(place, name, statue);
             }
             EntityRenderState shown = EntityRenderStates.extract(statue, partialTicks);
@@ -294,18 +298,25 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
                 living.setYBodyRot(0.0F);
                 living.setYHeadRot(0.0F);
             }
+            // it never ticks, so where it was is set too: drawn, it would be lerped from the world's origin every frame,
+            // which renderers that move bones by where the mob is (CoolCatLib armatures' springs and head turning) show as twitching
+            mob.setOldPosAndRot();
             pedestal.setShownMob(mob);
         }
         if (mob instanceof ArmorStand stand && pedestal.mannequin()) pose(stand, pedestal.glass() ? PedestalBlockEntity.DEFAULT_STAND_POSE : pedestal.standPose());
-        float tall = Math.max(0.1F, mob.getBbHeight());
-        state.mobReach = Math.max(0.05F, reach(mob, tall));
-        state.mobLift = lift(mob);
-        state.mobScale = Math.min(1.0F, Math.min(MOB_REACH / state.mobReach, MOB_HEIGHT / tall)) * (pedestal.glass() ? 1.0F : pedestal.scale());
-        float drawnTall = state.mobLift + drawnHeight(mob, tall);
+        Fit fit = fit(mob);
+        state.mobReach = Math.max(0.05F, fit.reach());
+        state.mobLift = fit.lift();
+        state.mobScale = Math.min(1.0F, Math.min(MOB_REACH * reachRoom(mob) / state.mobReach, MOB_HEIGHT / fit.tall())) * (pedestal.glass() ? 1.0F : pedestal.scale());
+        float drawnTall = state.mobLift + fit.height();
         if (!pedestal.glass()) {
             float[] fitted = fitToCone(state, true, state.mobScale, state.mobReach, drawnTall / 2.0F, MOB_FLOOR);
             state.mobScale = fitted[0];
-            if (pedestal.scale() > 1.0F) state.lift += fitted[1] - MOB_FLOOR;
+            float coneRaise = pedestal.scale() > 1.0F ? fitted[1] - MOB_FLOOR : 0.0F;
+            // a mob much wider than tall (a dragon, a sniffer) comes out flat, so it is raised to hover where a taller one's
+            // middle would be; a raise into a bigger pedestal's cone already lifts it, so the higher of the two is taken
+            float lowRaise = LOW_MIDDLE * state.size - fit.middle() * state.mobScale;
+            state.lift += Math.max(0.0F, Math.max(coneRaise, lowRaise));
         }
         EntityRenderState shown = EntityRenderStates.extract(mob, partialTicks);
         shown.lightCoords = FULL_BRIGHT;
@@ -318,18 +329,20 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         idle(shown, shown.ageInTicks);
         if (pedestal.showsStatue()) pose(shown, pedestal.statuePose());
         if (shown instanceof SquidRenderState squid) tumble(squid, pedestal.getBlockPos(), shown.ageInTicks);
+        state.mobSink = fit.rendered() ? 0.0F : sink(shown);
         if (moving) MobAnimations.play(mob, shown, pedestal.animation(), time);
         if (pedestal.glass()) {
             boolean tipped = pedestal.pitch() != 0.0F || pedestal.roll() != 0.0F || shown instanceof SquidRenderState;
-            float[] posed = pedestal.mannequin() ? null : posedSize(mob, shown, pedestal.yaw() + modelTurn(shown));
+            // a mob sized by how it draws has no model parts to pose, or poses that don't show how far it draws
+            float[] posed = pedestal.mannequin() || fit.rendered() ? null : posedSize(mob, shown, pedestal.yaw() + modelTurn(shown));
             float reach = state.mobReach, high = drawnTall;
             if (posed != null) {
                 reach = tipped ? Math.max(reach, posed[0]) : posed[1];
                 high = Math.max(high, state.mobLift + posed[2]);
             }
-            float[] most = pedestal.fitGlass(reach, Math.max(0.1F, high - sink(shown)));
-            float fit = fitInCase(1.0F, most[0], most[1], GLASS_FLOOR, tipped);
-            state.mobScale = fit * Math.min(1.0F, pedestal.scale());
+            float[] most = pedestal.fitGlass(reach, Math.max(0.1F, high - state.mobSink));
+            float inCase = fitInCase(1.0F, most[0], most[1], GLASS_FLOOR, tipped);
+            state.mobScale = inCase * Math.min(1.0F, pedestal.scale());
             state.lift = caseMiddle(most[1] * state.mobScale) - MOB_FLOOR;
         }
         return shown;
@@ -417,14 +430,14 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     }
 
     static float fitScale(Entity mob) {
-        float tall = Math.max(0.1F, mob.getBbHeight());
-        return Math.min(1.0F, Math.min(MOB_REACH / Math.max(0.05F, reach(mob, tall)), MOB_HEIGHT / tall));
+        Fit fit = fit(mob);
+        return Math.min(1.0F, Math.min(MOB_REACH * reachRoom(mob) / Math.max(0.05F, fit.reach()), MOB_HEIGHT / fit.tall()));
     }
 
     static float slotScale(Entity mob) {
-        float tall = Math.max(0.1F, mob.getBbHeight());
-        float height = Math.max(drawnHeight(mob, tall), tall);
-        float depth = Math.max(reach(mob, tall), mob.getBbWidth() * 0.5F);
+        Fit fit = fit(mob);
+        float height = Math.max(fit.height(), fit.tall());
+        float depth = fit.rendered() ? fit.reach() : Math.max(fit.reach(), mob.getBbWidth() * 0.5F);
         return Math.min(fitScale(mob), SLOT_ROOM / (height + depth * 0.5F));
     }
 
@@ -440,6 +453,16 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     private static final float DRAGON_FLAPS_PER_TICK = 0.05F;
 
+    /**
+     * How much of {@link #MOB_REACH} a mob may reach past, as a share of it. The Ender Dragon is fitted by its wingtips, which
+     * leaves its body tiny, so it may spread them nearer the pedestal's edge.
+     */
+    private static float reachRoom(Entity mob) {
+        return mob instanceof EnderDragon ? DRAGON_ROOM : 1.0F;
+    }
+
+    private static final float DRAGON_ROOM = 1.4F;
+
     static float modelTurn(EntityRenderState shown) {
         return shown instanceof EnderDragonRenderState ? 180.0F : 0.0F;
     }
@@ -454,10 +477,69 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     private static final float WITHER_SINK = 0.5F;
 
-    static float lift(Entity mob) {
+    /** How far a mob is raised to stand on the floor as it's drawn now. A mob sized by how it draws already stands on its lowest point. */
+    static float raise(Entity mob, EntityRenderState shown) {
+        Fit fit = fit(mob);
+        return fit.rendered() ? fit.lift() : fit.lift() - sink(shown);
+    }
+
+    /**
+     * How big a mob is shown as, in blocks at its own size: how far it reaches from its upright axis, how far it is raised
+     * so that it stands on the floor, how tall it draws above that (with the lift, its top), the height it is fitted to
+     * and where its middle is above the floor.
+     * <p>
+     * A vanilla style model is measured part by part, and is shown just as it always was. A mob drawn some other way
+     * (GeckoLib, the Ender Dragon) or one that draws far past what those parts say is sized by what its renderer really
+     * draws ({@link RenderedBounds}); without that, it falls back to its hit box.
+     */
+    record Fit(float reach, float lift, float height, float tall, float middle, boolean rendered) {}
+
+    static Fit fit(Entity mob) {
+        float tall = Math.max(0.1F, mob.getBbHeight());
         float[] model = MODEL_SIZES.computeIfAbsent(mob.getType(), type -> measure(mob));
-        if (model == null || model[2] <= 0.0F) return 0.0F;
-        return model[2] * drawScale(mob, model);
+        float reach, lift, height;
+        if (model == null) {
+            reach = Math.max(0.1F, mob.getBbWidth()) * UNMEASURED_REACH;
+            lift = 0.0F;
+            height = tall;
+        } else {
+            float scale = drawScale(mob, model);
+            reach = model[0] * scale;
+            lift = model[2] > 0.0F ? model[2] * scale : 0.0F;
+            height = model[1] * scale * (mob instanceof Player ? AVATAR_SCALE : 1.0F);
+        }
+        float[] drawn = renderedSize(mob);
+        if (drawn != null) {
+            float drawnTall = drawn[2] - drawn[1];
+            boolean overflows = drawn[0] > reach * OVERFLOW || drawnTall > Math.max(tall, lift + height) * OVERFLOW;
+            // stood on the floor by its lowest point, so a model drawn sunk in or floating above its feet sits on the pedestal
+            if (model == null || overflows) return new Fit(drawn[0], -drawn[1], drawn[2], drawnTall, drawnTall / 2.0F, true);
+        }
+        return new Fit(reach, lift, height, tall, lift + tall / 2.0F, false);
+    }
+
+    /**
+     * How much bigger than its measured parts a mob must draw before it's sized by how it draws instead. Drawn, a mob is
+     * also posed (a zombie's arms held out, a rabbit mid hop), so vanilla mobs draw up to about twice their parts at rest;
+     * past this, the parts are missing something (a renderer that scales its model up, or draws more than its model).
+     */
+    private static final float OVERFLOW = 2.25F;
+    private static final float[] UNRENDERED = new float[0];
+    private static final Map<EntityType<?>, float[]> RENDERED_SIZES = new ConcurrentHashMap<>();
+
+    /** {@link RenderedBounds#measure}, once per kind of mob and then scaled by its hit box, as a slime's or a baby's model is. */
+    private static float @Nullable [] renderedSize(Entity mob) {
+        float[] drawn = RENDERED_SIZES.get(mob.getType());
+        if (drawn == null) {
+            // not computeIfAbsent: drawing the mob may draw a trophy it holds, which asks for its own mob's size
+            float[] measured = RenderedBounds.measure(mob);
+            drawn = measured == null || mob.getBbHeight() <= 0.0F ? UNRENDERED
+                    : new float[] {measured[0], measured[1], measured[2], mob.getBbHeight()};
+            RENDERED_SIZES.put(mob.getType(), drawn);
+        }
+        if (drawn == UNRENDERED) return null;
+        float scale = mob.getBbHeight() > 0.0F ? mob.getBbHeight() / drawn[3] : 1.0F;
+        return new float[] {drawn[0] * scale, drawn[1] * scale, drawn[2] * scale};
     }
 
     private static float drawScale(Entity mob, float[] model) {
@@ -471,19 +553,6 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     static float mobFloor() {
         return MOB_FLOOR;
-    }
-
-    private static float drawnHeight(Entity mob, float tall) {
-        float[] model = MODEL_SIZES.computeIfAbsent(mob.getType(), type -> measure(mob));
-        if (model == null) return tall;
-        float height = model[1] * drawScale(mob, model);
-        return mob instanceof Player ? height * AVATAR_SCALE : height;
-    }
-
-    private static float reach(Entity mob, float tall) {
-        float[] model = MODEL_SIZES.computeIfAbsent(mob.getType(), type -> measure(mob));
-        if (model == null) return Math.max(0.1F, mob.getBbWidth()) * UNMEASURED_REACH;
-        return model[0] * drawScale(mob, model);
     }
 
     private static float @Nullable [] measure(Entity mob) {
@@ -613,7 +682,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         public float glassTop;
         public int glassTint = 0xFFFFFFFF;
         public float mobScale, mobReach;
-        public float mobLift;
+        public float mobLift, mobSink;
         public float size = 1.0F, iconScale = ICON_SCALE, iconY = ICON_Y, panelBottom;
         public float textScale = 1.0F;
         public float lift;
@@ -803,14 +872,15 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             state.itemRarity = LensLooks.tier(LensLooks.appraised(pedestal));
             items.updateForTopItem(state.icon, ItemStack.EMPTY, ItemDisplayContext.GROUND, pedestal.getLevel(), null, 0);
             Entity mob = pedestal.shownMob();
-            state.middle = MOB_FLOOR + (state.mobLift + Math.max(0.1F, mob.getBbHeight()) / 2.0F) * state.mobScale - ICON_Y;
+            Fit fit = fit(mob);
+            state.middle = MOB_FLOOR + fit.middle() * state.mobScale - ICON_Y;
             state.iconY = ICON_Y + state.lift;
             reach = state.mobReach * state.mobScale + FLARE_GAP;
             state.lieScale = 1.0F;
             state.lieY = 0.0F;
             state.lieZ = 0.0F;
             if (pedestal.showsStatue() && pedestal.statuePose().lying()) {
-                float length = drawnHeight(mob, Math.max(0.1F, mob.getBbHeight()));
+                float length = fit.height();
                 state.lieScale = Math.min(1.0F, 2.0F * MOB_REACH / (length * state.mobScale / pedestal.scale()));
                 switch (pedestal.statuePose()) {
                     case GLIDING -> {
@@ -824,7 +894,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
                     }
                 }
             }
-            top = MOB_FLOOR + state.lift + (state.mobLift + drawnHeight(mob, Math.max(0.1F, mob.getBbHeight())) * statueTop(pedestal)) * state.mobScale;
+            top = MOB_FLOOR + state.lift + (state.mobLift + fit.height() * statueTop(pedestal)) * state.mobScale;
         } else {
             ItemStack shown = record != null ? (!pedestal.iconOverride().isEmpty() ? pedestal.iconOverride() : TrophyKinds.icon(record, true))
                     : mobTrophy != null ? spawnEgg(mobTrophy) : pedestal.display();
@@ -1010,7 +1080,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             tilt(state, poseStack, (ICON_Y + state.middle - MOB_FLOOR) * state.rise);
             poseStack.mulPose(Axis.YP.rotationDegrees(modelTurn(state.mob)));
             poseStack.scale(mobScale, mobScale, mobScale);
-            poseStack.translate(0.0F, state.mobLift - sink(state.mob), 0.0F);
+            poseStack.translate(0.0F, state.mobLift - state.mobSink, 0.0F);
             poseStack.translate(0.0F, state.lieY, state.lieZ);
             if (!DrawnMobs.submit(state.mob, camera, poseStack, collector) && state.mob.entityType != null) UNDRAWABLE.add(state.mob.entityType);
             poseStack.popPose();
