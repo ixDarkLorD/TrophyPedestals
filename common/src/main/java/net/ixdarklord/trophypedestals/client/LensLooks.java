@@ -26,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** How the lens fitted to a display pedestal looks: the light's colour, and the particles around the item. */
 public final class LensLooks {
     private static final Identifier MOTE = TrophyPedestalsMod.id("textures/vfx/halo.png");
     private static final Identifier BUBBLE = TrophyPedestalsMod.id("textures/vfx/bubble.png");
@@ -42,7 +41,6 @@ public final class LensLooks {
             .color(0xE6FFFF, 0x3FE8FF).build();
     private static final Map<Integer, PedestalRarity> LIGHTS = new ConcurrentHashMap<>();
     private static final String LIGHT_PREFIX = "lens_";
-    /** Colours can be any of millions, from dyes and other mods' rarities, so these caches start over rather than grow without end. */
     private static final int MAX_CACHED = 256;
     private static final int PRISM_STEPS = 90, EMBER_STEPS = 8;
     static final float PRISM_TICKS = 160.0F;
@@ -50,38 +48,30 @@ public final class LensLooks {
     private static final ParticleSpec SPARK = ParticleSpec.builder(VfxMaterial.additive(VfxMaterial.STREAK))
             .shape(ParticleSpec.Shape.SPARK).stretch(2.2F).lifetime(10, 20).size(Curve.of(0.014F, 0.011F, 0.0F))
             .opacity(Curve.FADE).color(0xFFFFE6, 0xFF7A1A).gravity(0.0035F).drag(0.97F).build();
-    /** Soft clouds of dark smoke, swelling and thinning as they climb off the fire. */
     private static final ParticleSpec EMBER_SMOKE = ParticleSpec.builder(VfxMaterial.alpha(VfxMaterial.SMOKE))
             .lifetime(60, 95).size(Curve.of(0.07F, 0.2F, 0.34F)).opacity(Curve.of(0.0F, 0.36F, 0.0F))
             .color(0x5E5650, 0x2A2826).spin(Curve.constant(0.018F)).randomRoll().gravity(-0.0004F).drag(0.965F).build();
-    /** Flakes of ash, still glowing as they lift off the fire, cooling to grey as they drift and settle. */
     private static final ParticleSpec ASH = ParticleSpec.builder(VfxMaterial.alpha(TrophyPedestalsMod.id("textures/vfx/ash.png")).withSmoothing(false))
             .lifetime(50, 85).size(Curve.of(0.012F, 0.026F, 0.018F)).opacity(Curve.of(0.0F, 0.95F, 0.0F))
             .color(0xFF9A50, 0x6E6A66).spin(Curve.constant(0.05F)).randomRoll().gravity(0.0007F).drag(0.97F).build();
     private static final ParticleSpec SNOW = ParticleSpec.builder(VfxMaterial.luminous(SNOWFLAKE).withSmoothing(false))
             .lifetime(70, 110).size(Curve.of(0.026F, 0.04F, 0.03F)).opacity(Curve.FADE.scaled(0.95F))
             .color(0xFFFFFF, 0xCDEEFF).spin(Curve.constant(0.035F)).randomRoll().gravity(0.0003F).drag(0.985F).build();
-    /** Cold air, as off dry ice or from an open freezer: it swells and thins as it sinks, gone before it reaches the ground. */
     private static final ParticleSpec FROST_MIST = ParticleSpec.builder(VfxMaterial.alpha(TrophyPedestalsMod.id("textures/vfx/cold_wisp.png")))
             .lifetime(40, 62).size(Curve.of(0.06F, 0.16F, 0.27F)).opacity(Curve.of(0.0F, 0.58F, 0.0F))
             .color(0xFFFFFF, 0xA8DCF8).spin(Curve.constant(0.022F)).randomRoll().gravity(0.001F).drag(0.965F).build();
-    /** Common: specks of dust turning slowly in the showcase light, as in a sunbeam. */
     private static final ParticleSpec DUST_MOTE = ParticleSpec.builder(VfxMaterial.luminous(MOTE).withSmoothing(false))
             .lifetime(40, 70).size(Curve.of(0.0F, 0.02F, 0.008F)).opacity(Curve.of(0.0F, 0.8F, 0.0F))
             .color(0xF4EEDF, 0xB8B0A0).gravity(-0.00005F).drag(0.98F).build();
     private static final int BLOOD_RISE_TICKS = 42;
     private static final float BLOOD_RISE_GRAVITY = -0.0004F, BLOOD_RISE_DRAG = 0.96F;
-    /** Drops of blood floating up out of the Sanguine Lens's pool, in two sizes, darkening and shrinking away as they turn to mist. One spec per step of display size. */
     private static final Map<Integer, ParticleSpec> BLOOD_DROPS = new ConcurrentHashMap<>();
-    /** Black feathers shed by the ravens, rocking as they fall. */
     private static final ParticleSpec RAVEN_FEATHER = ParticleSpec.builder(VfxMaterial.alpha(TrophyPedestalsMod.id("textures/vfx/raven_feather.png")).withSmoothing(false))
             .lifetime(45, 75).size(Curve.constant(0.05F)).opacity(Curve.of(0.0F, 1.0F, 0.0F))
             .color(0xFFFFFF, 0xC8C8D0).spin(Curve.constant(0.07F)).randomRoll().gravity(0.0006F).drag(0.96F).build();
-    /** Gold glitter drifting down over an epic item. */
     private static final ParticleSpec GOLD_FALL = ParticleSpec.builder(VfxMaterial.luminous(TrophyPedestalsMod.id("textures/vfx/twinkle.png")).withSmoothing(false))
             .lifetime(34, 56).size(Curve.of(0.0F, 0.05F, 0.012F)).opacity(Curve.constant(0.95F))
             .color(0xFFF4C0, 0xFFB83A).spin(Curve.constant(0.07F)).randomRoll().gravity(0.0005F).drag(0.97F).build();
-    /** Diamond dust: fine ice glittering as it falls through the cold air. */
     private static final ParticleSpec ICE_DUST = ParticleSpec.builder(VfxMaterial.luminous(TrophyPedestalsMod.id("textures/vfx/twinkle.png")).withSmoothing(false))
             .lifetime(22, 40).size(Curve.of(0.0F, 0.038F, 0.0F)).opacity(Curve.constant(0.95F))
             .color(0xFFFFFF, 0x9FE0FF).spin(Curve.constant(0.05F)).randomRoll().gravity(0.0007F).drag(0.96F).build();
@@ -103,18 +93,15 @@ public final class LensLooks {
         });
     }
 
-    /** The lens on a display or mannequin pedestal, or null: trophies and leaderboards keep their own looks. */
     public static @Nullable Lens lens(PedestalBlockEntity pedestal) {
         if (pedestal.isTrophy() || pedestal.leaderboard() != null) return null;
         return Lens.of(pedestal.lens());
     }
 
-    /** Whether this player sees the lenses' effects, not just their light's colour. */
     public static boolean effects() {
         return TrophyPedestalsClientConfig.LENS_EFFECTS.get();
     }
 
-    /** The light a lens gives at this moment, or null for the plain warm light. */
     public static @Nullable PedestalRarity light(Lens lens, PedestalBlockEntity pedestal, float time) {
         return switch (lens) {
             case CLEAR -> Lens.isDyed(pedestal.lens()) ? light(Lens.dyed(pedestal.lens())) : null;
@@ -128,13 +115,8 @@ public final class LensLooks {
         };
     }
 
-    /** The Appraisal Lens's light for a common, uncommon, rare and epic item. */
     static final int[] RARITY_LIGHT = {0xFFFFFF, 0xFFFF55, 0x55FFFF, 0xFF55FF};
 
-    /**
-     * The colour of an item's rarity. A rarity a mod added (NeoForge and Forge extend the enum, Fabric mods inject into it)
-     * can style its name with any colour, so it's read from the item's styled name, which works the same on every loader.
-     */
     static int rarityColor(ItemStack shown) {
         if (shown.isEmpty()) return RARITY_LIGHT[0];
         int ordinal = shown.getRarity().ordinal();
@@ -145,7 +127,6 @@ public final class LensLooks {
         return named != null ? named.getValue() & 0xFFFFFF : RARITY_LIGHT[3];
     }
 
-    /** What the Appraisal Lens ranks a pedestal by: the item it shows, or the rarest piece a mannequin wears or holds. */
     public static ItemStack appraised(PedestalBlockEntity pedestal) {
         if (!pedestal.mannequin()) return pedestal.display();
         ItemStack rarest = ItemStack.EMPTY;
@@ -156,20 +137,18 @@ public final class LensLooks {
         return rarest;
     }
 
-    /** An item's rarity as the Appraisal Lens reads it: 0 common, 1 uncommon, 2 rare, 3 epic (and any rarity a mod added). */
     public static int tier(ItemStack shown) {
         return shown.isEmpty() ? 0 : Math.min(shown.getRarity().ordinal(), 3);
     }
 
-    /** The prism's colour at this moment, shifted along the rainbow by {@code offset} (0 to 1). */
     public static int prism(float time, float offset) {
         int step = (int) ((((time / PRISM_TICKS + offset) % 1.0F) + 1.0F) % 1.0F * PRISM_STEPS);
         return Mth.hsvToRgb(step / (float) PRISM_STEPS, 0.6F, 1.0F) & 0xFFFFFF;
     }
 
-    /** A fire's flicker, 0 to 1. */
     public static float flicker(float time, BlockPos pos) {
         float t = time + (pos.hashCode() & 0xFF);
+        // Two mismatched sines summed for an irregular flicker.
         return Mth.clamp(0.55F + 0.25F * Mth.sin(t * 0.9F) + 0.2F * Mth.sin(t * 2.3F + 1.3F), 0.0F, 0.999F);
     }
 
@@ -190,7 +169,6 @@ public final class LensLooks {
         if (status == ParticleStatus.MINIMAL) return;
         float rate = status == ParticleStatus.ALL ? 1.0F : 0.5F;
         double size = pedestal.scale(), height = pedestal.height();
-        // what fills the air around a larger item comes more often, so that it doesn't thin out; what comes off the lens or cap stays as it is
         float around = rate * (float) Mth.clamp(size, 1.0, 4.0);
         double x = pos.getX() + 0.5, y = pos.getY() + 0.95 + height, z = pos.getZ() + 0.5;
         Minecraft minecraft = Minecraft.getInstance();
@@ -200,19 +178,16 @@ public final class LensLooks {
         double a = random.nextDouble() * Math.PI * 2.0, cos = Math.cos(a), sin = Math.sin(a);
         switch (lens) {
             case CLEAR -> {
-                // Glints twinkling in the light, as dust catching a sunbeam.
                 if (random.nextFloat() < 0.3F * around) {
                     double up = random.nextDouble(), r = random.nextDouble() * (0.18 + 0.14 * up) * size;
                     WorldParticles.spawn(sized(Lens.isDyed(pedestal.lens()) ? glint(Lens.dyed(pedestal.lens())) : GLINT, size), x + cos * r, y + (0.05 + up * 0.7) * size, z + sin * r, 0.0, 0.002 * size, 0.0);
                 }
             }
             case SANGUINE -> {
-                // Drops of blood floating up off the pool around the lens and turning to mist in the fog.
                 if (random.nextFloat() < 0.36F * rate) {
                     double r = 0.2 + random.nextDouble() * 0.04, px = x + cos * r, py = pos.getY() + LENS_TOP, pz = z + sin * r;
                     double out = (0.001 + random.nextDouble() * 0.002) * size, up = (0.018 + random.nextDouble() * 0.01) * size;
                     WorldParticles.spawn(bloodDrop(random.nextFloat() < 0.6F, size), px, py, pz, cos * out, up, sin * out);
-                    // now and then a finer one follows close behind
                     if (random.nextFloat() < 0.35F) WorldParticles.spawn(bloodDrop(true, size), px - sin * 0.02 * size, py - 0.03 * size, pz + cos * 0.02 * size, cos * out, up * 0.85, sin * out);
                 }
                 if (random.nextFloat() < 0.05F * around) {
@@ -240,7 +215,6 @@ public final class LensLooks {
                 }
             }
             case APPRAISAL -> {
-                // An epic item sparkles with glints in its colour and circling sparkles; the lower ranks show their light in the renderer.
                 int tier = tier(appraised(pedestal));
                 int color = rarityColor(appraised(pedestal));
                 if (tier == 3 && random.nextFloat() < 0.4F * around) {
@@ -257,7 +231,7 @@ public final class LensLooks {
                     WorldParticles.spawn(sized(sparkle(color), size), x + cos * r, y + (0.1 + random.nextDouble() * 0.4) * size, z + sin * r,
                             -sin * 0.006 * size, 0.008 * size, cos * 0.006 * size);
                 }
-                // Dust drifting through a common item's showcase light.
+                // Square root of a uniform value gives an even spread over a widening disc.
                 double up = random.nextDouble(), spot = Math.sqrt(random.nextDouble()) * (0.16 + 0.2 * up) * size;
                 double px = x + cos * spot, pz = z + sin * spot;
                 if (tier == 0 && random.nextFloat() < 0.4F * around) {
@@ -265,7 +239,6 @@ public final class LensLooks {
                 }
             }
             case EMBER -> {
-                // Sparks spitting up one by one from anywhere on the lens, leaning outward from where they start.
                 double lensTop = pos.getY() + LENS_TOP + 0.02;
                 for (int spark = 0; spark < 2; spark++) {
                     if (random.nextFloat() >= 0.4F * rate) continue;
@@ -297,7 +270,6 @@ public final class LensLooks {
                     WorldParticles.spawn(ICE_DUST, pos.getX() + 0.5 + Math.cos(dust) * reach, pos.getY() + 0.25 + random.nextDouble() * 0.68,
                             pos.getZ() + 0.5 + Math.sin(dust) * reach, Math.cos(dust) * 0.003 + draughtDust(time), -0.004, Math.sin(dust) * 0.003);
                 }
-                // Cold air welling up on the pedestal's top rim, rolling out over its edge and sinking, drifting together like a draught.
                 double draught = Math.sin(time * 0.031) * 0.004, across = Math.cos(time * 0.023) * 0.004;
                 for (int puff = 0; puff < 2; puff++) {
                     if (random.nextFloat() >= 0.17F * rate) continue;
@@ -310,7 +282,7 @@ public final class LensLooks {
                 }
             }
             case ENDER -> {
-                if (random.nextFloat() < 0.5F * around) {           // enchanting glyphs drawn in to the floating item
+                if (random.nextFloat() < 0.5F * around) {
                     double r = (0.9 + random.nextDouble() * 0.5) * size;
                     level.addParticle(ParticleTypes.ENCHANT, x, y + 0.6 * size, z, cos * r, (random.nextDouble() * 0.7 - 0.1) * size, sin * r);
                 }
@@ -336,7 +308,6 @@ public final class LensLooks {
 
     private static final Map<SizedSpec, ParticleSpec> SIZED = new ConcurrentHashMap<>();
 
-    /** A particle grown with the display, in quarter steps of its size: as large, and falling or rising as far. */
     private static ParticleSpec sized(ParticleSpec spec, double size) {
         int step = Math.max(1, (int) Math.round(size * 4.0));
         if (step == 4) return spec;

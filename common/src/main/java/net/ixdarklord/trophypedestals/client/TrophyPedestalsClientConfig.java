@@ -6,10 +6,6 @@ import net.ixdarklord.coolcatcore.api.config.ConfigScope;
 import net.ixdarklord.coolcatcore.api.config.ConfigValue;
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 
-/**
- * Each player's own settings ({@code config/trophypedestals-client}): how much of pedestals' show their game draws and
- * plays, for a calmer or lighter trophy room, whatever the server or each pedestal's owner has set.
- */
 public final class TrophyPedestalsClientConfig {
     private static final ConfigBuilder BUILDER = Config.builder(TrophyPedestalsMod.MOD_ID, ConfigScope.CLIENT);
 

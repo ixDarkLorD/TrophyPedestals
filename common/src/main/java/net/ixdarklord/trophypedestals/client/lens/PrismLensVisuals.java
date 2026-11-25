@@ -3,11 +3,9 @@ package net.ixdarklord.trophypedestals.client.lens;
 import net.ixdarklord.trophypedestals.client.LensLooks;
 import net.ixdarklord.trophypedestals.client.PedestalLight;
 import net.ixdarklord.trophypedestals.client.PedestalRenderer.State;
-import net.ixdarklord.trophypedestals.pedestal.Lens;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 
-/** The Prism Lens: a fan of rainbow rays, a turning halo of stained glass and little prisms circling the item. */
 final class PrismLensVisuals extends LensVisuals {
     private static final float PRISM_HALO_TURN = 0.006F, HALO_FLIGHT = 0.34F, HALO_TRAIL = 0.17F;
     private static final int HALO_STREAKS = 5, HALO_SHARDS = 12;
@@ -23,15 +21,12 @@ final class PrismLensVisuals extends LensVisuals {
         submitPrismCrystals(state, glow, middle);
     }
 
-    /** The Prism Lens: a halo of stained glass shards in the colours of the spectrum behind the item, turning slowly with light passing round it pane by pane and a bloom and flare at its heart. */
     private static void submitPrismHalo(State state, PedestalLight.Glow glow, float lift, float middle) {
         float half = 0.44F * state.size, center = Math.max(middle, lift + half * 0.97F);
         float x = 0.5F + state.backX * CIRCLE_BACK * state.size, z = 0.5F + state.backZ * CIRCLE_BACK * state.size;
-        // turning slowly in the plane facing the camera
         float roll = state.time * PRISM_HALO_TURN;
         haloQuad(state, glow, PedestalLight.Sprite.PRISM_HALO_0.playing(state.time), x, center, z, half, roll,
                 ARGB.color((int) (245 * state.rise), 0xFFFFFF));
-        // a soft bloom and a level flare at its heart, in the colour the light has reached, behind the item
         float breath = 0.82F + 0.18F * Mth.sin(state.time / 15.0F);
         int hue = ARGB.srgbLerp(0.25F, ARGB.opaque(LensLooks.prism(state.time, 0.0F)), 0xFFFFFFFF);
         glow.billboard(PedestalLight.Sprite.APPRAISAL_BLOOM, x, center, z, 0.25F * breath * state.size, 0.0F, ARGB.color((int) (135 * state.rise), hue));
@@ -40,13 +35,10 @@ final class PrismLensVisuals extends LensVisuals {
         for (int streak = 0; streak < HALO_STREAKS; streak++) submitHaloStreak(state, glow, x, center, z, half, roll, streak);
     }
 
-    /**
-     * A streak of light shot from the halo's heart through a random shard, at a random moment of each round, trailing
-     * behind it. The shard flashes with a quick glint as it passes, and the streak fades away beyond the halo.
-     */
     private static void submitHaloStreak(State state, PedestalLight.Glow glow, float x, float y, float z, float half, float roll, int streak) {
         float period = 58.0F + streak * 13.0F, round = state.time / period + streak * 0.37F;
         int count = Mth.floor(round), seed = count * 73856093 ^ streak * 19349663;
+        // Integer hash mixing the round and streak into a pseudo-random seed.
         seed ^= seed >>> 13;
         seed *= 0x5BD1E995;
         seed ^= seed >>> 15;
@@ -70,8 +62,8 @@ final class PrismLensVisuals extends LensVisuals {
                 0.1F * state.size * flash, state.time * 0.04F, ARGB.color((int) (255 * flash * state.rise), 0xFFFFFF));
     }
 
-    /** A thin line of light across the halo's plane, from {@code from} to {@code to} out along a direction, fading away behind it. */
     private static void haloLine(State state, PedestalLight.Glow glow, float x, float y, float z, float cos, float sin, float from, float to, float width, int color) {
+        // Streak runs along (cos, sin); the width offset is its perpendicular (-sin, cos).
         float fromSide = cos * from, fromUp = sin * from, side = cos * to, up = sin * to, offSide = -sin * width, offUp = cos * width;
         int clear = ARGB.color(0, color);
         glow.quad(x + state.faceX * fromSide, y + fromUp, z + state.faceZ * fromSide, x + state.faceX * fromSide, y + fromUp, z + state.faceZ * fromSide,
@@ -79,13 +71,13 @@ final class PrismLensVisuals extends LensVisuals {
                 x + state.faceX * (side - offSide), y + up - offUp, z + state.faceZ * (side - offSide), clear, clear, color, color);
     }
 
-    /** The Prism Lens: three little glass gems, a triangle, a cut diamond and a hexagon, circling the item, each drawing a ribbon of the spectrum behind it. */
     private static void submitPrismCrystals(State state, PedestalLight.Glow glow, float middle) {
         float radius = 0.44F * state.size, rise = 0.15F * state.size, width = 0.013F * state.size;
         for (int crystal = 0; crystal < PRISM_CRYSTALS; crystal++) {
             float head = state.time * 0.032F + crystal * Mth.TWO_PI / PRISM_CRYSTALS;
             for (int step = 0; step < PRISM_TRAIL; step++) {
                 float t0 = step / (float) PRISM_TRAIL, t1 = (step + 1) / (float) PRISM_TRAIL;
+                // Trail samples sit on the same ellipse, trailing back from the head angle.
                 float a0 = head - (1.0F - t0) * 1.05F, a1 = head - (1.0F - t1) * 1.05F;
                 int c0 = ARGB.color((int) (t0 * t0 * 200 * state.rise), LensLooks.prism(state.time, t0)), c1 = ARGB.color((int) (t1 * t1 * 200 * state.rise), LensLooks.prism(state.time, t1));
                 float w0 = width * t0, w1 = width * t1;
@@ -98,7 +90,6 @@ final class PrismLensVisuals extends LensVisuals {
         }
     }
 
-    /** The prism splits the light: a slowly turning fan of rainbow rays rising from the lens. */
     private static void submitPrismFan(State state, PedestalLight.Glow glow, float floor) {
         int rays = 7;
         for (int ray = 0; ray < rays; ray++) {

@@ -8,9 +8,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 
-/**
- * The Mob Trophies Ledger: used, it opens the book of every mob trophy, with those its reader has collected filled in.
- */
 public class TrophyLedgerItem extends Item {
     public TrophyLedgerItem(Properties properties) {
         super(properties);

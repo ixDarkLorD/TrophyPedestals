@@ -32,10 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * REI's "Mob Trophies" pages, as JEI's: each mob that can be a trophy (its spawn egg), the trophy a player who slays it
- * can drop, its rank and the chance.
- */
 public class TrophyPedestalsReiPlugin implements REIClientPlugin {
     public static final CategoryIdentifier<Drop> MOB_TROPHIES = CategoryIdentifier.of(TrophyPedestalsMod.id("mob_trophies"));
 

@@ -7,10 +7,6 @@ import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
-/**
- * To a client using a Leaderboard Crest on a pedestal: open the board picker for it, with every board, who leads each
- * now and with how much, and the board it shows now (empty for none).
- */
 public record OpenLeaderboardPayload(BlockPos pos, String current, List<Status> boards) implements CustomPacketPayload {
     public static final Type<OpenLeaderboardPayload> TYPE = new Type<>(TrophyPedestalsMod.id("open_leaderboard"));
 
