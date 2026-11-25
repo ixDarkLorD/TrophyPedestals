@@ -8,14 +8,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 
-/**
- * From a client's adjustment screen: when the pedestal at {@code pos} shows its text, how large its item or mob is, how
- * far it's moved up, whether it turns, how far its text is moved up, its yaw, pitch and roll, when its flourishes
- * show, how it answers redstone, whether it makes its sounds, whether a mob trophy's mob moves, and whether an
- * achievement trophy shows its unlocker's statue, the pose a statue takes, and the animation its mob or statue plays,
- * how large its text is, whether a legendary one wears its crown (and its crown's size and place), whether its showcase
- * light shows, and who else may adjust it.
- */
 public record AdjustPedestalPayload(BlockPos pos, PedestalBlockEntity.TextMode textMode, float scale, float height, boolean spins, float textHeight,
                                     float yaw, float pitch, float roll, PedestalBlockEntity.TextMode effects, PedestalBlockEntity.RedstoneMode redstone, boolean sounds,
                                     boolean animates, boolean statue, PedestalBlockEntity.StatuePose statuePose,

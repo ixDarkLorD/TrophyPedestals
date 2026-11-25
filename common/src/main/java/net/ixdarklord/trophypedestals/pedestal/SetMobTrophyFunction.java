@@ -25,10 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * The {@code trophypedestals:set_mob_trophy} loot function: makes a pedestal a mob trophy, so data packs can hand them
- * out as quest rewards, from loot tables, advancement rewards or {@code /loot}, or make a mob always drop one.
- */
 public class SetMobTrophyFunction extends LootItemConditionalFunction {
     public static final MapCodec<SetMobTrophyFunction> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> commonFields(instance).and(instance.group(
             Identifier.CODEC.optionalFieldOf("entity").forGetter(function -> function.entity),

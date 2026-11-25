@@ -19,11 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * The {@code trophypedestals:set_trophy} loot function: makes a pedestal a trophy recording an achievement (its
- * {@code "kind"}, a mod's {@code TrophyKind}, and its {@code "subject"}), so data packs can hand trophies out from loot
- * tables, advancement rewards or {@code /loot}.
- */
 public class SetTrophyFunction extends LootItemConditionalFunction {
     public static final MapCodec<SetTrophyFunction> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> commonFields(instance).and(instance.group(
             Identifier.CODEC.fieldOf("kind").forGetter(function -> function.kind),

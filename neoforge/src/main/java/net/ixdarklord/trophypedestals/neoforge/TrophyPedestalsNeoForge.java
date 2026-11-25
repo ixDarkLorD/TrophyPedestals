@@ -8,7 +8,6 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 
-/** NeoForge entrypoint: hands the common and client mod constructors to CoolCatLib. */
 @Mod(TrophyPedestalsMod.MOD_ID)
 public final class TrophyPedestalsNeoForge extends NeoForgeModEntrypoint {
     public TrophyPedestalsNeoForge(ModContainer container) {

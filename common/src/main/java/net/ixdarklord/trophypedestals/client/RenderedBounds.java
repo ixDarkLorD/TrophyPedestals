@@ -34,11 +34,6 @@ import org.joml.Vector3fc;
 
 import java.util.List;
 
-/**
- * How big a mob really draws: its renderer is run once into a collector that keeps no geometry, only the corners of
- * what it would have drawn. Unlike the mob's hit box, this sees wings, tails and the models other mods draw far past
- * theirs (a GeckoLib boss included, as it draws through {@link OrderedSubmitNodeCollector#submitCustomGeometry}).
- */
 final class RenderedBounds implements SubmitNodeCollector {
     private static final int FULL_BRIGHT = 0xF000F0;
     private static final CameraRenderState CAMERA = new CameraRenderState();
@@ -49,10 +44,6 @@ final class RenderedBounds implements SubmitNodeCollector {
 
     private RenderedBounds() {}
 
-    /**
-     * The mob as its renderer draws it standing at the origin facing south, in blocks: {reach, bottom, top}, where reach is
-     * the farthest it draws from its upright axis. Null when its renderer draws nothing or can't be run this way.
-     */
     static float @Nullable [] measure(Entity mob) {
         try {
             EntityRenderState shown = Minecraft.getInstance().getEntityRenderDispatcher().extractEntity(mob, 0.0F);
@@ -73,6 +64,7 @@ final class RenderedBounds implements SubmitNodeCollector {
     }
 
     private void include(Matrix4f pose, Vector3fc point) {
+        // Transform the point by the current pose into entity space.
         bounds.addVertex(corner.set(point).mulPosition(pose));
     }
 
@@ -120,7 +112,6 @@ final class RenderedBounds implements SubmitNodeCollector {
         renderer.render(poseStack.last(), bounds);
     }
 
-    // shadows, fire, leads, names, outlines, particles and gizmos are no part of the mob's own size
     @Override
     public void submitShadow(PoseStack poseStack, float radius, List<EntityRenderState.ShadowPiece> pieces) {}
 
@@ -152,7 +143,6 @@ final class RenderedBounds implements SubmitNodeCollector {
     @Override
     public void submitGizmoPrimitives(DrawableGizmoPrimitives.Group gizmos, CameraRenderState camera, boolean onTop) {}
 
-    /** A vertex consumer that keeps only how far the vertices it is given reach. */
     private static final class Bounds implements VertexConsumer {
         float reach, bottom = Float.MAX_VALUE, top = -Float.MAX_VALUE;
 
@@ -167,6 +157,7 @@ final class RenderedBounds implements SubmitNodeCollector {
         @Override
         public VertexConsumer addVertex(float x, float y, float z) {
             if (!Float.isFinite(x) || !Float.isFinite(y) || !Float.isFinite(z)) return this;
+            // Reach is the horizontal radius from the centre; height tracks min and max y.
             reach = Math.max(reach, (float) Math.hypot(x, z));
             bottom = Math.min(bottom, y);
             top = Math.max(top, y);

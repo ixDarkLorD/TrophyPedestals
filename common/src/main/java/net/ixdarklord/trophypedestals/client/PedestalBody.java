@@ -39,12 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * A custom pedestal's body, drawn with the textures of the block it's made of: the pedestal's own shape (the faces of
- * {@code models/block/pedestal_template_chiseled.json}, its gold carving included), its top, bottom and sides taken
- * from that block's model (and tinted as the block is, a leaf's green, say), its gold trim and the dark lens in its
- * well as on every pedestal.
- */
 public final class PedestalBody {
     private static final Identifier TEMPLATE = TrophyPedestalsMod.id("models/block/pedestal_template_fluted.json");
     private static final Identifier GOLD = TrophyPedestalsMod.id("block/pedestal/gold_trim");
@@ -202,6 +196,7 @@ public final class PedestalBody {
     private static void turn(Vector3f corner, JsonObject rotation) {
         float[] origin = triple(rotation.getAsJsonArray("origin"));
         float angle = rotation.get("angle").getAsFloat() * Mth.DEG_TO_RAD;
+        // Rotates the corner about the element's origin on its axis, like a block-model rotation.
         corner.sub(origin[0], origin[1], origin[2]);
         switch (rotation.get("axis").getAsString()) {
             case "x" -> corner.rotateX(angle);

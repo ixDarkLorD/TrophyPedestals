@@ -24,10 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * The board picker a Leaderboard Crest opens: every leaderboard (one for each of the game's statistics), who leads each
- * now and with how much, filtered by a search bar (by a board's title or its leader).
- */
 public final class LeaderboardScreen extends Screen {
     private static final Identifier PANEL = TrophyPedestalsMod.id("pedestal/panel");
     private static final int WIDTH = 260, MAX_HEIGHT = 236, MARGIN = 12, ROW = 20, LIST_TOP = 60, EDGE = 4;

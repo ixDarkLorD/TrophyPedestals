@@ -13,7 +13,6 @@ import net.minecraft.world.level.block.Block;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-/** A pedestal's item. */
 public class PedestalItem extends BlockItem {
     public PedestalItem(Block block, Properties properties) {
         super(block, properties);
@@ -30,7 +29,6 @@ public class PedestalItem extends BlockItem {
         lensLine(stack, builder);
     }
 
-    /** The line naming the lens a pedestal comes with. */
     static void lensLine(ItemStack stack, Consumer<Component> builder) {
         ItemContainerContents fitted = stack.get(Pedestals.LENS.get());
         ItemStack lens = fitted == null ? ItemStack.EMPTY : fitted.copyOne();
