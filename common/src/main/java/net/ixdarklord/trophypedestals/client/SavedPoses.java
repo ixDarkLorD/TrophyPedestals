@@ -16,10 +16,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * The mannequin poses a player saved from the adjust screen's Pose tab, kept on their own computer (in
- * {@code config/trophypedestals/poses.json}) so they can use them on any pedestal, in any world or server.
- */
 public final class SavedPoses {
     public static final int MAX_NAME = 24, MAX_POSES = 32;
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();

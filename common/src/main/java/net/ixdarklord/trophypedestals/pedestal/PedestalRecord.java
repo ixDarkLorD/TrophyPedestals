@@ -18,11 +18,6 @@ import java.time.format.FormatStyle;
 import java.util.Locale;
 import java.util.Optional;
 
-/**
- * What a trophy pedestal records: what was achieved (its {@code kind}, a
- * {@link net.ixdarklord.trophypedestals.api.TrophyKind} another mod registers, such as {@code tierwise:tier}, and its
- * {@code subject}, such as the tier's id), who achieved it (a player, a team, or the whole server), when, and its rank.
- */
 public record PedestalRecord(ResourceLocation kind, ResourceLocation subject, Unlocker unlocker, String name, long unlockedAt, ResourceLocation rarity,
                              Optional<Component> title, Optional<ResourceLocation> icon) {
     public enum Unlocker implements StringRepresentable {

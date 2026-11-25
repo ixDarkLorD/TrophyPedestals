@@ -13,11 +13,6 @@ import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * How big a mob really draws: its renderer is run once into buffers that keep no geometry, only how far what it would have
- * drawn reaches. Unlike the mob's hit box, this sees wings, tails and the models other mods draw far past theirs (a
- * GeckoLib boss included, as it draws into the buffers it's given).
- */
 final class RenderedBounds implements MultiBufferSource {
     private static final int FULL_BRIGHT = 0xF000F0;
     private static final CameraRenderState CAMERA = new CameraRenderState();
@@ -26,10 +21,6 @@ final class RenderedBounds implements MultiBufferSource {
 
     private RenderedBounds() {}
 
-    /**
-     * The mob as its renderer draws it standing at the origin facing south, in blocks: {reach, bottom, top}, where reach is
-     * the farthest it draws from its upright axis. Null when its renderer draws nothing or can't be run this way.
-     */
     static float @Nullable [] measure(Entity mob) {
         try {
             EntityRenderState shown = EntityRenderStates.extract(mob, 0.0F);
@@ -41,7 +32,6 @@ final class RenderedBounds implements MultiBufferSource {
             PedestalRenderer.idle(shown, 0.0F);
             RenderedBounds buffers = new RenderedBounds();
             SubmitNodeCollector collector = new SubmitNodeCollector(buffers);
-            // drawn with the hit boxes shown (F3 + B), their lines would be measured too
             EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
             boolean hitBoxes = dispatcher.shouldRenderHitBoxes();
             dispatcher.setRenderHitBoxes(false);
@@ -64,7 +54,6 @@ final class RenderedBounds implements MultiBufferSource {
         return bounds;
     }
 
-    /** A vertex consumer that keeps only how far the vertices it is given reach. */
     private static final class Bounds implements VertexConsumer {
         float reach, bottom = Float.MAX_VALUE, top = -Float.MAX_VALUE;
 
@@ -75,6 +64,7 @@ final class RenderedBounds implements MultiBufferSource {
         @Override
         public VertexConsumer addVertex(float x, float y, float z) {
             if (!Float.isFinite(x) || !Float.isFinite(y) || !Float.isFinite(z)) return this;
+            // Reach is the horizontal radius from the centre; height tracks min and max y.
             reach = Math.max(reach, (float) Math.hypot(x, z));
             bottom = Math.min(bottom, y);
             top = Math.max(top, y);

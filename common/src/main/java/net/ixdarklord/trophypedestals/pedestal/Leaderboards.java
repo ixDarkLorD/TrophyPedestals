@@ -36,11 +36,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-/**
- * Leaderboard pedestals: a display pedestal given a Leaderboard Crest shows whoever on the server leads one statistic
- * (most mob kills, longest played...), as their statue in their own skin, with the board's name, theirs and their
- * count.
- */
 public final class Leaderboards {
     public record Board(ResourceLocation id) implements StringRepresentable {
         public static final Board MOB_KILLS = new Board(Stats.MOB_KILLS);

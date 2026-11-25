@@ -12,10 +12,6 @@ import net.minecraft.world.item.component.ResolvableProfile;
 
 import java.util.Optional;
 
-/**
- * A player's statue on a pedestal: a mannequin (vanilla's player-shaped figure) wearing their skin, as the look of a
- * mob trophy ({@link MobLooks}).
- */
 public final class Statues {
     public static final EntityType<?> FIGURE = EntityType.PLAYER;
 

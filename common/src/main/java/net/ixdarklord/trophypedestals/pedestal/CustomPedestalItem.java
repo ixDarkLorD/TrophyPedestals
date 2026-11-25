@@ -8,10 +8,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * The custom pedestal's item, named after the block it's made of ("Amethyst Block Pedestal"), or just "Pedestal" with
- * no material.
- */
 public class CustomPedestalItem extends PedestalItem {
     public CustomPedestalItem(Block block, Properties properties) {
         super(block, properties);

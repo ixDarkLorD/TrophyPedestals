@@ -13,11 +13,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Turns a player-model mannequin's parts to its pose, for its body and the armor drawn over it alike. On 1.21.1 the pose
- * is on the figure itself. The player model copies its sleeves, jacket and trousers after this, and the armor layer
- * copies these parts, but the hat was copied before: it's copied again here.
- */
 @Mixin(HumanoidModel.class)
 public abstract class HumanoidModelMixin {
     @Shadow @Final public ModelPart head;

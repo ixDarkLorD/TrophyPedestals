@@ -14,7 +14,6 @@ import net.ixdarklord.trophypedestals.pedestal.Lens;
 import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.minecraft.world.item.component.DyedItemColor;
 
-/** Client mod constructor (CoolCatLib). */
 public final class TrophyPedestalsClient implements ClientModConstructor {
     @Override
     public void onConstructMod() {
@@ -26,7 +25,6 @@ public final class TrophyPedestalsClient implements ClientModConstructor {
         ItemDefinitions.init();
         PedestalLensItemRenderer.init();
         DisplayTrimItemRenderer.init();
-        // A dyed Clear Lens's glass (26.1's item definition says this with its dye tint).
         ItemColorRegistry.register((stack, layer) -> layer == 1 ? DyedItemColor.getOrDefault(stack, -1) : -1, Pedestals.LENSES.get(Lens.CLEAR));
     }
 }

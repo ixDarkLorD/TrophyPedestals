@@ -4,7 +4,6 @@ import net.ixdarklord.trophypedestals.client.PosedFigure;
 import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
-/** A humanoid as it's to be drawn (see {@link EntityRenderState}): crouching, swimming or gliding. */
 public class HumanoidRenderState extends ArmedEntityRenderState implements PosedFigure {
     public boolean isCrouching, isVisuallySwimming, isFallFlying;
     public float swimAmount;

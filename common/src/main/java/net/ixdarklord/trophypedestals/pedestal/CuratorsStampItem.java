@@ -26,16 +26,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 
-/**
- * Copies one pedestal's settings and lens on to others: sneak-use a pedestal to copy it, use another to paste, use the
- * air to choose whether it pastes both, the settings or the lens, and sneak-use the air to wipe it. The choice is locked
- * while the stamp holds a copy, so it can't be changed by mistake. Pasting follows the rules of the adjustment screen. A survival player pays for the lens with a matching one from their inventory, and gets
- * back the one it replaces.
- */
 public class CuratorsStampItem extends Item {
     private static final String COPIED = "PedestalStamp", MODE = "StampMode";
 
-    /** What the stamp pastes. */
     public enum Mode {
         BOTH, SETTINGS, LENS;
 
@@ -67,10 +60,8 @@ public class CuratorsStampItem extends Item {
         CompoundTag root = data == null ? new CompoundTag() : data.copyTag();
         root.putString(MODE, mode.name());
         stamp.set(DataComponents.CUSTOM_DATA, CustomData.of(root));
-        // (The badge its item model shows in inventory slots is picked from this mode: see compat/render/ItemDefinitions.)
     }
 
-    /** Stores a pedestal's settings, and its lens if it has one, on the stamp. */
     public static void copy(ItemStack stamp, PedestalBlockEntity pedestal) {
         CompoundTag tag = new CompoundTag();
         tag.putString("TextMode", pedestal.textMode().name());
@@ -114,7 +105,6 @@ public class CuratorsStampItem extends Item {
         return fallback;
     }
 
-    /** Applies what's on the stamp to a pedestal, for a player using it on one. */
     public InteractionResult paste(ItemStack stamp, Level level, Player player, PedestalBlockEntity pedestal) {
         if (!holdsCopy(stamp)) {
             if (player instanceof ServerPlayer server) server.displayClientMessage(Component.translatable("trophypedestals.stamp.empty"), true);
@@ -148,7 +138,6 @@ public class CuratorsStampItem extends Item {
         return InteractionResult.SUCCESS;
     }
 
-    /** Applies the settings the server lets players change, as the adjustment screen does. */
     private static void applySettings(CompoundTag tag, PedestalBlockEntity pedestal) {
         ValueInput saved = ValueInput.of(tag);
         boolean trophy = pedestal.isTrophy();
@@ -179,7 +168,6 @@ public class CuratorsStampItem extends Item {
         pedestal.setLight(saved.getBooleanOr("Light", pedestal.light()));
     }
 
-    /** Fits the lens, from the player's inventory unless they're in creative, and hands back the one it replaces. */
     private static boolean fitLens(Player player, PedestalBlockEntity pedestal, ItemStack lens) {
         if (player.hasInfiniteMaterials()) {
             pedestal.setLens(lens.copyWithCount(1));

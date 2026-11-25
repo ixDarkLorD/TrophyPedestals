@@ -54,19 +54,15 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
-/** A pedestal: a fluted column between gold bands, on a stepped plinth under a cap with a raised plate. */
 public class PedestalBlock extends BaseEntityBlock {
     public static final MapCodec<PedestalBlock> CODEC = simpleCodec(PedestalBlock::new);
     public static final int MAX_RANK = 5;
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
     public static final IntegerProperty RANK = IntegerProperty.create("rank", 0, MAX_RANK);
-    /** The way its front looks: toward whoever placed it, as a furnace's. Pedestals from before this was added face south. */
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty CASED = BooleanProperty.create("cased");
-    /** Whether its When Powered setting has it on: it gives a low light then, even with nothing on it. */
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
     public static final int POWERED_LIGHT = 3;
-    /** Whether it's a display pedestal with no lens fitted: with power, its open socket gives a little more light. */
     public static final BooleanProperty SOCKET = BooleanProperty.create("socket");
     public static final int SOCKET_LIGHT = 6;
     public static final float CASE_HEIGHT = 1.1F;
@@ -279,7 +275,6 @@ public class PedestalBlock extends BaseEntityBlock {
         });
     }
 
-    /** Lenses fit display and mannequin pedestals: not trophies or leaderboards. */
     private static boolean lensable(PedestalBlockEntity pedestal) {
         return !pedestal.isTrophy() && pedestal.leaderboard() == null;
     }
@@ -314,7 +309,6 @@ public class PedestalBlock extends BaseEntityBlock {
     }
 
     private static @Nullable EquipmentSlot mannequinSlot(ItemStack stack, PedestalBlockEntity pedestal) {
-        // a lens goes in the pedestal, not in the mannequin's hand
         if (!pedestal.mannequin() || stack.getItem() instanceof LensItem) return null;
         Equipable equippable = Equipable.get(stack);
         EquipmentSlot slot = equippable == null ? null : equippable.getEquipmentSlot();

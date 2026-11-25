@@ -38,10 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Trophies players earn: data packs' feats ({@link Feat}, read by {@link FeatLoader}) and, if the server turns them on
- * ({@code earned_trophies.advancements}, off by default), a trophy for each advancement of the kinds it names.
- */
 public final class Feats {
     public static final ResourceLocation FEAT = TrophyPedestalsMod.id("feat");
     public static final ResourceLocation ADVANCEMENT = TrophyPedestalsMod.id("advancement");

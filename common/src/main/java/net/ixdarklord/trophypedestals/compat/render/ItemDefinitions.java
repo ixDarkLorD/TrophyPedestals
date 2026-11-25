@@ -36,11 +36,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-/**
- * 26.1's item definitions (the mod's {@code assets/trophypedestals/items/*.json}, which 1.21.1 doesn't read), drawn on
- * 1.21.1: every pedestal, cabinet and shelf item has a code-drawn item model ({@code builtin/entity}), drawn here as
- * its definition says.
- */
 public final class ItemDefinitions {
     private static final String FOLDER = "items";
     private static volatile Map<ResourceLocation, Node> definitions = Map.of();
@@ -101,7 +96,6 @@ public final class ItemDefinitions {
                         node(json.getAsJsonObject("on_true"), models), node(json.getAsJsonObject("on_false"), models));
             }
             case "minecraft:select" -> {
-                // 26.1 picks the stamp's badge by a string in its custom model data; here that string is its mode
                 if (json.get("property").getAsString().endsWith("custom_model_data")) {
                     Map<String, Node> modes = new HashMap<>();
                     for (JsonElement element : json.getAsJsonArray("cases")) {
