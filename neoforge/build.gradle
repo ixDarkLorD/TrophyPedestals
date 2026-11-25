@@ -25,6 +25,15 @@ dependencies {
 
     // spark in a dev run only when asked (-Ptest_spark=true).
     if (project.findProperty("test_spark") == "true") modLocalRuntime "maven.modrinth:spark:${spark_version}"
+
+    // GeckoLib, and Iris with Sodium for shader packs, in a dev run only when asked (-Ptest_geckolib=true,
+    // -Ptest_iris=true): players run the lenses alongside both. Not remapped: their NeoForge jars are already
+    // in Mojang names, and some are built with a newer Loom than this one can read.
+    if (project.findProperty("test_geckolib") == "true") localRuntime "maven.modrinth:geckolib:${geckolib_version}"
+    if (project.findProperty("test_iris") == "true") {
+        localRuntime "maven.modrinth:sodium:${sodium_version}"
+        localRuntime "maven.modrinth:iris:${iris_version}"
+    }
 }
 
 loom {
