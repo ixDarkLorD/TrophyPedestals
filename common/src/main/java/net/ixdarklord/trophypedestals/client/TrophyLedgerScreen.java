@@ -42,10 +42,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * The Mob Trophies Ledger: every mob that can be a trophy, in the order of the mob trophies' creative tab, as a grid of
- * their icons (spawn eggs) on the pedestal screen's panel.
- */
 public final class TrophyLedgerScreen extends Screen {
     private static final ResourceLocation PANEL = TrophyPedestalsMod.id("pedestal/panel");
     private static final int WIDTH = 248, MAX_HEIGHT = 236, MARGIN = 12, CELL = 22, COLUMNS = 9, GRID_TOP = 60, EDGE = 4;

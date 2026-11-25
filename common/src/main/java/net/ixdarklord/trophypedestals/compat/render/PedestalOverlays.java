@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** A placed pedestal's see-through overlays: its column's flutes and its well's imprint. */
 public final class PedestalOverlays {
     private static final Map<String, ResourceLocation> TEXTURES = Map.of(
             "#column_flutes", ResourceLocation.tryParse("trophypedestals:block/pedestal/column_flutes"),

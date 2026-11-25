@@ -8,7 +8,6 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
-/** Forge entrypoint: hands the common and client mod constructors to CoolCatLib. */
 @Mod(TrophyPedestalsMod.MOD_ID)
 public final class TrophyPedestalsForge extends ForgeModEntrypoint {
     public TrophyPedestalsForge(FMLJavaModLoadingContext context) {

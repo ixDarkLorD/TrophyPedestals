@@ -8,10 +8,6 @@ import net.minecraft.network.chat.Component;
 
 import java.util.Optional;
 
-/**
- * 1.20.1's stand-in for 26.1's {@code ValueInput}: the same calls, reading a saved tag, so the code loading pedestals
- * is the same on every version.
- */
 public final class ValueInput {
     private final CompoundTag tag;
 

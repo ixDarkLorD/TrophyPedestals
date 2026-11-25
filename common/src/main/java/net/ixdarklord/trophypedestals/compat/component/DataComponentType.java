@@ -7,10 +7,6 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * 1.20.1's stand-in for 26.1's {@code DataComponentType} (1.20.1 items have no components, only a tag): where on an
- * item's tag a value is kept, and how.
- */
 public class DataComponentType<T> {
     private @Nullable String[] path;
     private final @Nullable Codec<T> codec;

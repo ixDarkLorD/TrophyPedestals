@@ -3,10 +3,6 @@ package net.ixdarklord.trophypedestals.compat.component;
 import java.util.Map;
 import java.util.function.Supplier;
 
-/**
- * 1.20.1's stand-in for registering 26.1's data components (there's no registry for them): each is placed on items'
- * tags as it's made.
- */
 public final class DataComponentRegister {
     private static final Map<String, String> BLOCK_ENTITY_KEYS = Map.of(
             "pedestal", "Record",

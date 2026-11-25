@@ -18,7 +18,6 @@ import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 
 import java.util.function.Function;
 
-/** Adds what a looked-at pedestal holds to The One Probe ({@link PedestalInfo}). */
 public final class TrophyProbeForge implements IProbeInfoProvider {
     private static final ResourceLocation ID = TrophyPedestalsMod.id("pedestal");
 

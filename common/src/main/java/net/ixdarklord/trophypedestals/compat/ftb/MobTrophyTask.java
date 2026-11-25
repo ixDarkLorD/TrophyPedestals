@@ -26,10 +26,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/**
- * An FTB Quests task done once the player has collected mob trophies, as their Mob Trophies Ledger records them: one of
- * a mob the pack maker names, or a number of different mobs' (any mob, with no mob named).
- */
 public final class MobTrophyTask extends AbstractBooleanTask {
     private static TaskType type;
 

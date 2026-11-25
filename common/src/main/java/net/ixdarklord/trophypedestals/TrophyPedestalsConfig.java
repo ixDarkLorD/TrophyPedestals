@@ -10,13 +10,6 @@ import net.minecraft.network.chat.Component;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * The server's settings ({@code config/trophypedestals-server}, per world), in two groups: {@code mob_trophies}
- * (whether and how often mobs drop trophies, and their rank, with the kill counts in {@code mob_trophies.kills}) and
- * {@code pedestals} (who may adjust them, taking items off, and which of the adjust screen's settings players can
- * change: a trophy's in {@code pedestals.trophy_settings}, a display pedestal's in
- * {@code pedestals.display_pedestal_settings}).
- */
 public final class TrophyPedestalsConfig {
     private static final ConfigBuilder BUILDER = Config.builder(TrophyPedestalsMod.MOD_ID, ConfigScope.SERVER);
 

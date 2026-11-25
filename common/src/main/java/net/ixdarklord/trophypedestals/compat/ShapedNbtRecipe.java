@@ -15,11 +15,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 
-/**
- * {@code trophypedestals:crafting_shaped}, on 1.20.1: a shaped crafting recipe whose result can carry data
- * ({@code "result": {"item": ..., "nbt": {...}}}), as 26.1's results carry components, which vanilla 1.20.1's shaped
- * recipes can't (Forge's can; Fabric's can't).
- */
 public final class ShapedNbtRecipe {
     private static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS = DeferredRegister.create(TrophyPedestalsMod.MOD_ID, Registries.RECIPE_SERIALIZER);
 
@@ -33,7 +28,6 @@ public final class ShapedNbtRecipe {
         SERIALIZERS.register();
     }
 
-    /** A shaped recipe read from its JSON, with the data its result carries. */
     public static ShapedRecipe read(ResourceLocation id, JsonObject json) {
         JsonObject plain = json.deepCopy();
         JsonObject result = plain.getAsJsonObject("result");

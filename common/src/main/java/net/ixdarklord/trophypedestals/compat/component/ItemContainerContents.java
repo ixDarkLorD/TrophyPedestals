@@ -4,7 +4,6 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
-/** 1.20.1's stand-in for 26.1's container component, as far as a pedestal's single lens needs it. */
 public final class ItemContainerContents {
     public static final ItemContainerContents EMPTY = new ItemContainerContents(ItemStack.EMPTY);
     private final ItemStack item;

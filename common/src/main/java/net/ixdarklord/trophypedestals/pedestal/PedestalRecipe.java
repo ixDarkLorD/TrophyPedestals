@@ -11,7 +11,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 
-/** A pedestal's shaped recipe: the lens crafted into it comes with it, fitted when it's placed. */
 public class PedestalRecipe extends ShapedRecipe {
     public static final RecipeSerializer<PedestalRecipe> SERIALIZER = new Serializer();
 

@@ -4,10 +4,6 @@ import com.mojang.serialization.Codec;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 
-/**
- * 1.20.1's stand-in for 26.1's {@code ValueOutput}: the same calls, writing into a saved tag, so the code saving
- * pedestals is the same on every version.
- */
 public final class ValueOutput {
     private final CompoundTag tag;
 

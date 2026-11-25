@@ -5,15 +5,12 @@ import net.ixdarklord.trophypedestals.client.PedestalLight;
 import net.ixdarklord.trophypedestals.client.PedestalRenderer;
 import net.ixdarklord.trophypedestals.client.PedestalRenderer.State;
 import net.ixdarklord.trophypedestals.compat.ARGB;
-import net.ixdarklord.trophypedestals.pedestal.Lens;
 import net.minecraft.util.Mth;
 
-/** The Ember Lens: licking flames, a burning cap and a plume of shimmering heat. */
 final class EmberLensVisuals extends LensVisuals {
     private static final float FLAME_RING = 0.21F;
     private static final float HEAT_HALF = 0.48F, HEAT_HEIGHT = 1.12F, HEAT_DEPTH = 0.16F;
     private static final float CAP_SIDE_BOTTOM = 12.0F / 16.0F, FIRE_BOTTOM = CAP_SIDE_MIDDLE, FIRE_HEIGHT = 0.375F;
-    /** The iron base under the ember lens's fire: four of its texture's pixels tall, as the fire's are 64 a block. */
     private static final float FIRE_BASE_HEIGHT = 4.0F / 64.0F;
 
     @Override
@@ -29,7 +26,6 @@ final class EmberLensVisuals extends LensVisuals {
                 ARGB.color((int) ((185 + 70 * flicker) * state.rise), 0xFFFFFF));
     }
 
-    /** A mirage over the fire: a plume of shimmering hot air, in three layers out of step, behind, through and before the item. */
     private static void submitHeatHaze(State state, PedestalLight.Glow glow, float floor, float flicker) {
         float breath = 1.0F + 0.035F * Mth.sin(state.time / 13.0F);
         heatLayer(state, glow, floor, 0.0F, HEAT_DEPTH, breath, (int) ((165 + 50 * flicker) * state.rise));
@@ -45,12 +41,12 @@ final class EmberLensVisuals extends LensVisuals {
                 ARGB.color(alpha, 0xFFFFFF));
     }
 
-    /** A ring of flames licking up around the ember lens, each flickering on its own. */
     private static void submitFlames(State state, PedestalLight.Glow glow, float floor) {
         int flames = 8;
         for (int flame = 0; flame < flames; flame++) {
             float angle = flame * Mth.TWO_PI / flames + state.time * 0.004F;
             float t = state.time + flame * 9.7F;
+            // Two out-of-phase sines make the flame height flicker unevenly.
             float lick = 0.6F + 0.25F * Mth.sin(t * 0.43F) + 0.15F * Mth.sin(t * 1.37F + flame);
             float height = 0.08F + 0.07F * lick, half = 0.03F + 0.006F * lick;
             float x = 0.5F + Mth.cos(angle) * FLAME_RING, z = 0.5F + Mth.sin(angle) * FLAME_RING;

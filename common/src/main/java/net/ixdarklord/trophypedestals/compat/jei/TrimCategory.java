@@ -27,10 +27,6 @@ import net.minecraft.world.item.Items;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Trims: a trophy cabinet or shelf given a gold trim with a gold ingot, or a trim of any block with that block (used on
- * the placed display; an axe takes it off).
- */
 public final class TrimCategory implements IRecipeCategory<TrimCategory.Trim> {
     public static final RecipeType<Trim> TYPE = new RecipeType<>(TrophyPedestalsMod.id("trim"), Trim.class);
     private static final int WIDTH = 120, HEIGHT = 34, SLOT = 18, TEXT_Y = 24, LABEL = 0xFF404040;

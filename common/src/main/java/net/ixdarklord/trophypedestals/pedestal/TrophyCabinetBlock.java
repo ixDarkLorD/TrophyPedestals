@@ -21,10 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * A trophy cabinet: a wooden shelf two blocks wide with a back, a top and a post at each end, framed in gold, holding
- * up to four trophies (two on each half).
- */
 public class TrophyCabinetBlock extends TrophyDisplayBlock {
     public static final EnumProperty<Part> PART = EnumProperty.create("part", Part.class);
     private static final double[][] SPOTS = {{8.2, 2, 14, 14}, {2, 2, 7.8, 14}};

@@ -45,10 +45,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-/**
- * The pedestals: one block and item for each stone and wood ({@link Material}), one block entity type for them all, and
- * the {@code trophypedestals:pedestal} data component a trophy's record travels in.
- */
 public final class Pedestals {
     public enum Material {
         STONE(MapColor.STONE, SoundType.STONE, false),
@@ -121,10 +117,8 @@ public final class Pedestals {
             () -> DataComponentType.<ResourceLocation>builder().persistent(ResourceLocation.CODEC).networkSynchronized(ByteBufCodecs.RESOURCE_LOCATION).build());
     public static final Supplier<DataComponentType<ResourceLocation>> TRIM_MATERIAL = COMPONENTS.register("trim_material",
             () -> DataComponentType.<ResourceLocation>builder().persistent(ResourceLocation.CODEC).networkSynchronized(ByteBufCodecs.RESOURCE_LOCATION).build());
-    /** The lens a crafted pedestal comes with, fitted when it's placed; empty when it has none. */
     public static final Supplier<DataComponentType<ItemContainerContents>> LENS = COMPONENTS.register("lens", LensComponent::new);
 
-    /** The lens a pedestal item comes with, held as its {@link #LENS} component. */
     public static ItemContainerContents lens(ItemStack lens) {
         return lens.isEmpty() ? ItemContainerContents.EMPTY : ItemContainerContents.fromItems(List.of(lens.copyWithCount(1)));
     }

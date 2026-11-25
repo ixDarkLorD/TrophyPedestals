@@ -15,10 +15,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * 1.20.1's stand-in for 26.1's {@code SubmitNodeCollector}: the same calls, drawing straight into the frame's buffers,
- * with what's submitted at a later order kept until {@link #flush}, as 26.1 draws it after the rest.
- */
 public final class SubmitNodeCollector implements OrderedSubmitNodeCollector {
     private final MultiBufferSource buffers;
     private final List<Later> later = new ArrayList<>();
@@ -39,10 +35,6 @@ public final class SubmitNodeCollector implements OrderedSubmitNodeCollector {
         flush(false);
     }
 
-    /**
-     * Draws what was kept for later. With {@code itemFirst}, what's been drawn into the item sheets so far (a held trophy's
-     * item) is finished first, so a light kept for later can't hide it, as it would if its own buffer were drawn first.
-     */
     public void flush(boolean itemFirst) {
         if (later.isEmpty()) return;
         if (itemFirst && buffers instanceof MultiBufferSource.BufferSource source) {

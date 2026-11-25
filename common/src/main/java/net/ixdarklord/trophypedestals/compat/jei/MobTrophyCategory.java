@@ -39,17 +39,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * The mob trophies: each mob, drawn standing still, and the trophy a player who slays it can find, with its rank and
- * the chance of it dropping ({@code mob_trophies.chance}).
- */
 public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategory.Drop> {
     public static final RecipeType<Drop> TYPE = new RecipeType<>(TrophyPedestalsMod.id("mob_trophy"), Drop.class);
     private static final int WIDTH = 120, HEIGHT = 48, SLOT = 18, LABEL = 0xFF404040;
     private static final int MOB_WIDTH = 34, MOB_FIT = 38, TEXT_X = MOB_WIDTH + 4, ROW_Y = 6, RANK_Y = 28, CHANCE_Y = 38;
-    /** The isometric view: seen from 30 degrees above, turned 45 degrees toward the trophy. */
     private static final float VIEW_PITCH = 30.0F * Mth.DEG_TO_RAD, VIEW_BODY = 225.0F, MOB_MARGIN = 0.9F;
-    /** The common rank's pale grey is lost on JEI's light background: it reads in a darker slate here. */
     private static final int COMMON_TEXT = 0xFF4E5560;
     private static final Map<EntityType<?>, Optional<LivingEntity>> MOBS = new HashMap<>();
 
@@ -124,7 +118,6 @@ public final class MobTrophyCategory implements IRecipeCategory<MobTrophyCategor
         graphics.drawString(font, chance, TEXT_X, CHANCE_Y, LABEL, false);
     }
 
-    /** The largest whole scale at which the mob, turned and tipped, fits its box. */
     private static int isometricScale(LivingEntity mob) {
         float across = mob.getBbWidth() * Mth.SQRT_OF_TWO;
         float wide = MOB_WIDTH / Math.max(across, 0.1F);

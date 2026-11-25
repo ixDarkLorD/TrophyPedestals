@@ -21,11 +21,6 @@ import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 
 import java.util.List;
 
-/**
- * 1.20.1's stand-ins for 1.20.5+'s loot codecs: loot functions here are read and written as JSON by a serializer, so a
- * function's codec (its own fields, and its {@code "conditions"}) is wrapped as one ({@link #serializer}), and its
- * conditions are read by the game's own JSON condition reader.
- */
 public final class LootCodecs {
     private static final Gson CONDITIONS = Deserializers.createConditionSerializer().create();
     private static final Codec<LootItemCondition> CONDITION = ExtraCodecs.JSON.comapFlatMap(json -> {

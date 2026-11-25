@@ -36,10 +36,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-/**
- * {@code /trophypedestals mob_trophy} and {@code /trophypedestals trophy}: hand out mob trophies and titled trophies,
- * for functions and operators (game master level).
- */
 public final class TrophyPedestalsCommands {
     private static final DynamicCommandExceptionType NOT_A_PEDESTAL = new DynamicCommandExceptionType(
             id -> Component.translatable("commands.trophypedestals.not_pedestal", String.valueOf(id)));
@@ -64,8 +60,6 @@ public final class TrophyPedestalsCommands {
         ModCommands.register(TrophyPedestalsMod.MOD_ID, TrophyPedestalsMod.MOD_ID, (root, context, selection) -> register(root));
     }
 
-    // The permission is on each part rather than the root, so the config command CoolCatLib adds beside them
-    // (/trophypedestals config) stays open to every player.
     private static void register(LiteralArgumentBuilder<CommandSourceStack> root) {
         root.then(Commands.literal("mob_trophy").requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("targets", EntityArgument.players())
                 .then(Commands.argument("entity", ResourceLocationArgument.id()).suggests(ENTITIES).executes(ctx -> mobTrophy(ctx, null, null))

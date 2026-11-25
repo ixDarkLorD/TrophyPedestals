@@ -17,10 +17,6 @@ import net.minecraft.world.entity.EntityType;
 import java.util.Locale;
 import java.util.Optional;
 
-/**
- * A trophy a data pack gives for a feat, read from {@code data/<namespace>/trophypedestals/feats/<path>.json}: what
- * earns it ({@code trigger}), and how it looks.
- */
 public record Feat(Trigger trigger, Optional<Component> title, Optional<ResourceLocation> icon, ResourceLocation rank, Optional<ResourceLocation> pedestal, boolean once) {
     public static final Codec<Feat> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Trigger.CODEC.fieldOf("trigger").forGetter(Feat::trigger),

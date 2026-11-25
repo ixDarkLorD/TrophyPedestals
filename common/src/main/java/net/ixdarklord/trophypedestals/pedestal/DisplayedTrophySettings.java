@@ -5,10 +5,6 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.Optional;
 
-/**
- * How a trophy on a trophy display (a cabinet or a shelf) is shown: the pedestal settings that can be changed there,
- * for the spot it's on.
- */
 public record DisplayedTrophySettings(PedestalBlockEntity.TextMode textMode, boolean spins, float yaw, float pitch, float roll,
                                       PedestalBlockEntity.TextMode effects,
                                       PedestalBlockEntity.RedstoneMode redstone, boolean sounds, boolean animates, boolean statue,

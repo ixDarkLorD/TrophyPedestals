@@ -38,11 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-/**
- * 26.1's item definitions (the mod's {@code assets/trophypedestals/items/*.json}, which 1.20.1 doesn't read), drawn on
- * 1.20.1: every pedestal, cabinet and shelf item has a code-drawn item model ({@code builtin/entity}), drawn here as
- * its definition says.
- */
 public final class ItemDefinitions {
     private static final String FOLDER = "items";
     private static volatile Map<ResourceLocation, Node> definitions = Map.of();
@@ -54,7 +49,6 @@ public final class ItemDefinitions {
         Stream.concat(Stream.concat(Pedestals.ITEMS_BY_STONE.values().stream(), Pedestals.DISPLAY_ITEMS.stream()), Stream.of(Pedestals.CUSTOM_ITEM))
                 .forEach(item -> ItemRendererRegistry.register(item, ItemDefinitions::render));
         ItemRendererRegistry.register(Pedestals.CURATORS_STAMP, ItemDefinitions::render);
-        // The Clear Lens's glass is its second layer, tinted by its dye (26.1's "tints" in its item definition).
         ItemColorRegistry.register((stack, layer) -> layer == 1 ? Lens.dyed(stack) : -1, Pedestals.LENSES.get(Lens.CLEAR));
     }
 
@@ -196,7 +190,6 @@ public final class ItemDefinitions {
         }
     }
 
-    /** 26.1's select on an item's custom model data: the string the Curator's Stamp keeps on its tag. */
     private record SelectData(Map<String, Node> cases, Node fallback) implements Node {
         @Override
         public void render(ItemStack stack, ItemDisplayContext context, PoseStack poseStack, MultiBufferSource buffers, int light, int overlay) {
