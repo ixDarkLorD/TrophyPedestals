@@ -3,6 +3,7 @@ package net.ixdarklord.trophypedestals;
 import net.ixdarklord.coolcatcore.api.core.ClientModConstructor;
 import net.ixdarklord.trophypedestals.client.CustomPedestalItemRenderer;
 import net.ixdarklord.trophypedestals.client.DisplayTrimItemRenderer;
+import net.ixdarklord.trophypedestals.client.LightingPrompt;
 import net.ixdarklord.trophypedestals.client.MobTrophiesTab;
 import net.ixdarklord.trophypedestals.client.PedestalLensItemRenderer;
 import net.ixdarklord.trophypedestals.client.PedestalRenderer;
@@ -21,5 +22,6 @@ public final class TrophyPedestalsClient implements ClientModConstructor {
         ItemDefinitions.init();
         PedestalLensItemRenderer.init();
         DisplayTrimItemRenderer.init();
+        LightingPrompt.init();
     }
 }
