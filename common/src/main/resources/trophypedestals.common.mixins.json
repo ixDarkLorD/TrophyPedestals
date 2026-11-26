@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_21",
   "package": "net.ixdarklord.trophypedestals.mixin",
   "client": [
+    "client.CreativeModeInventoryScreenMixin",
     "client.HumanoidModelMixin"
   ],
   "injectors": {
