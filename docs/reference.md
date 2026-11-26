@@ -331,8 +331,10 @@ names the mob:
 
 It's recorded as slain now, and items other than pedestals are left as they are. From a function or command block,
 `/trophypedestals mob_trophy <players> <entity> [pedestal] [rarity]` gives each player one, slain by them, ranked by the
-mob's toughness unless a rank is named. Mods use `TrophyPedestals.createMob` (from a living mob, look included, or a
-kind of mob and a look) and `mobRecord`; `rarity` reads either kind of trophy's rank.
+mob's toughness unless a rank is named. Mods use `TrophyPedestals.createMob` (from a living mob, look included, a kind
+of mob and a look, or just a kind of mob, of its usual rank) and `mobRecord`; `rarity` reads either kind of trophy's
+rank, `mobRarity(type)` gives a kind of mob's usual rank, and `canBeTrophy(type)` says whether it can be on a trophy at
+all. `addToCreativeTab(trophy)`, called at startup on both sides, adds a trophy to the mob trophies creative tab and JEI.
 
 ### Trophy kinds (for mods)
 
@@ -450,13 +452,29 @@ It only takes away: a pedestal whose owner turned its flourishes or sounds off s
 
 ## KubeJS (NeoForge and Forge, up to 26.1.2)
 
-Server scripts get a `TrophyPedestals` binding:
+Scripts get a `TrophyPedestals` binding:
 
 | Call | Does |
 |---|---|
 | `TrophyPedestals.isPedestal(level, pos)` | whether there's a pedestal there |
 | `TrophyPedestals.pedestalSettings(level, pos)`, `setPedestal(level, pos, {...})` | a pedestal's settings, by name: `textMode`, `scale`, `height`, `yaw`, `pitch`, `roll`, `spins`, `animates`, `effects`, `effectsMode` (`always`, `looking` or `hidden`), `sounds`, `textHeight`, `textScale`, `crown`, `light`, `redstone`, `statue`, `statuePose`, `animation` (and `locked`) |
 | `TrophyPedestals.forcePedestal(level, pos, {...}, message)`, `lockPedestal(level, pos[, message])`, `unlockPedestal(level, pos)` | set and lock its settings against every player, with a refusal message (or `null`, silently) |
+| `TrophyPedestals.mobTrophy(entity[, rarity[, pedestal[, slayer]]])` | a mob trophy item: `mobTrophy('minecraft:zombie')` gives one of its usual rarity on the default pedestal; name a rarity (`'epic'` or `'trophypedestals:epic'`), a pedestal (`'trophypedestals:deepslate_pedestal'`) and a slayer to choose them. Empty if the mob can't be a trophy |
+| `TrophyPedestals.addMobTrophy(trophy)` | adds a trophy to the mob trophies creative tab, after the mobs' own, and so to JEI; call it from a startup script, and each trophy is added once |
+
+The binding is there in startup, client and server scripts. A startup script can add trophies to the creative tab:
+
+```js
+// startup_scripts
+TrophyPedestals.addMobTrophy(TrophyPedestals.mobTrophy('minecraft:warden', 'legendary', 'trophypedestals:deepslate_pedestal'))
+```
+
+and a server script can hand them out:
+
+```js
+// server_scripts
+PlayerEvents.loggedIn(event => event.player.give(TrophyPedestals.mobTrophy('minecraft:zombie', 'epic')))
+```
 
 And `TrophyPedestalsEvents`, both on the server:
 
