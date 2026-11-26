@@ -334,6 +334,30 @@ It's recorded as slain now, and items other than pedestals are left as they are.
 mob's toughness unless a rank is named. Mods use `TrophyPedestals.createMob` (from a living mob, look included, or a
 kind of mob and a look) and `mobRecord`; `rarity` reads either kind of trophy's rank.
 
+### Mob display sizes (resource packs)
+
+Each mob is sized to fit its pedestal on its own. A resource pack can change how big a mob shows, on an open pedestal and
+on its trophy item, with a JSON file in `assets/<namespace>/trophypedestals/mob_displays/` (any name ending in
+`.json`). Each entry is keyed by the mob's id:
+
+- `scale`: a multiplier on the size it would have (`1.0` keeps it, `1.2` is a fifth bigger).
+- `size`: a fixed scale instead (`1.0` is the mob's real size); `scale` still multiplies it.
+- `offset`: how far to raise it on a pedestal, in blocks (negative lowers it).
+
+```json
+{
+  "minecraft:spider": {"scale": 1.2},
+  "minecraft:warden": {"size": 0.3, "offset": 0.05},
+  "examplemod:big_boss": {"scale": 0.8}
+}
+```
+
+Files are read from every enabled resource pack, and a pack higher in the list wins for a mob both set. Trophy
+Pedestals' own defaults are in `assets/trophypedestals/trophypedestals/mob_displays/defaults.json`, so a pack can
+override them too. Mobs that aren't installed are skipped. Changes load with the packs (F3+T). A pedestal's own Size
+and Height settings still apply on top, and a glass case still fits the mob inside it. Scripts and mods can set them
+too, over the packs' (see [KubeJS](#kubejs-neoforge-and-forge-up-to-2612)).
+
 ### Trophy kinds (for mods)
 
 A mod gives trophies for its own achievements by registering a kind, from its mod constructor, on both sides:
@@ -458,16 +482,25 @@ Server scripts get a `TrophyPedestals` binding:
 | `TrophyPedestals.pedestalSettings(level, pos)`, `setPedestal(level, pos, {...})` | a pedestal's settings, by name: `textMode`, `scale`, `height`, `yaw`, `pitch`, `roll`, `spins`, `animates`, `effects`, `effectsMode` (`always`, `looking` or `hidden`), `sounds`, `textHeight`, `textScale`, `crown`, `light`, `redstone`, `statue`, `statuePose`, `animation` (and `locked`) |
 | `TrophyPedestals.forcePedestal(level, pos, {...}, message)`, `lockPedestal(level, pos[, message])`, `unlockPedestal(level, pos)` | set and lock its settings against every player, with a refusal message (or `null`, silently) |
 
-And `TrophyPedestalsEvents`, both on the server:
+And `TrophyPedestalsEvents`, the first two on the server and `mobDisplaySizes` in client scripts:
 
 | Event | Fires | Has |
 |---|---|---|
 | `TrophyPedestalsEvents.mobTrophyDrop(event => ...)` | a mob trophy is about to drop for the player who killed the mob | `event.player`, `event.mob`, `event.trophy` (set it to drop another); `event.cancel()` drops nothing and records nothing in their ledger |
 | `TrophyPedestalsEvents.collected(event => ...)` | a mob trophy was recorded in a player's Mob Trophies Ledger | `event.player`, `event.mobType`, `event.gilded`, `event.first` (the first of that mob they've had) |
+| `TrophyPedestalsEvents.mobDisplaySizes(event => ...)` | the mob display sizes load on the client, at their first use and after every resource reload (F3+T) | `event.set(mob, {scale, size, offset})`, the same fields as a [resource pack's](#mob-display-sizes-resource-packs) file; a script's setting wins over the packs' |
 
 ```js
 TrophyPedestalsEvents.mobTrophyDrop(event => {
   if (event.mob.type == 'minecraft:pig') event.cancel()
+})
+```
+
+```js
+// client_scripts
+TrophyPedestalsEvents.mobDisplaySizes(event => {
+  event.set('minecraft:spider', {scale: 1.2})
+  event.set('examplemod:big_boss', {size: 0.05, offset: 0.1})
 })
 ```
 
@@ -477,7 +510,11 @@ TrophyPedestalsEvents.mobTrophyDrop(event => {
 $TrophyPedestalsEvents.mobTrophyDrop { event ->
     if (event.mob.type == 'minecraft:pig') event.cancel()
 }
+
+$TrophyPedestalsEvents.mobDisplaySizes { event ->
+    event.set('minecraft:spider', [scale: 1.2])
+}
 ```
 
-Mods on either loader get the same two events from `net.ixdarklord.trophypedestals.api.TrophyEvents` (`MOB_TROPHY_DROP`,
-`COLLECTED`).
+Mods on either loader get the same events from `net.ixdarklord.trophypedestals.api.TrophyEvents` (`MOB_TROPHY_DROP`,
+`COLLECTED` and, on the client, `MOB_DISPLAY_SIZES`).
