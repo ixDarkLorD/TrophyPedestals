@@ -2,6 +2,10 @@
 This file is for listing all the changes to this project
 
 ## v0.4.1 (unreleased)
+### ✨ New Features
+- **Mob display sizes:** resource packs can set how big each mob shows on a pedestal and on its trophy item, with a size multiplier, a fixed size and a height offset per mob. Mods can set them too, with `TrophyEvents.MOB_DISPLAY_SIZES`.
+- **Mob trophies search:** the mob trophies creative tab has a search bar. Type a mob's name to narrow the list, modded mobs included.
+
 ### 🐛 Fixes
 - Lens effects no longer show broken textures when GeckoLib is installed.
 - Lens effects no longer slide off their pedestals with a shader pack and view bobbing on (with CoolCatLib 9.0.1).
