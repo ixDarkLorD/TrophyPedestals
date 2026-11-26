@@ -2,7 +2,6 @@ package net.ixdarklord.trophypedestals.forge.compat.kubejs;
 
 import dev.latvian.mods.kubejs.KubeJSPlugin;
 import dev.latvian.mods.kubejs.script.BindingsEvent;
-import dev.latvian.mods.kubejs.script.ScriptType;
 
 public final class TrophyPedestalsKubeJSPlugin extends KubeJSPlugin {
     @Override
@@ -17,6 +16,7 @@ public final class TrophyPedestalsKubeJSPlugin extends KubeJSPlugin {
 
     @Override
     public void registerBindings(BindingsEvent event) {
-        if (event.getType() == ScriptType.SERVER) event.add("TrophyPedestals", TrophyPedestalsBinding.INSTANCE);
+        // every script type: startup scripts add trophies to the creative tab, server scripts change pedestals
+        event.add("TrophyPedestals", TrophyPedestalsBinding.INSTANCE);
     }
 }

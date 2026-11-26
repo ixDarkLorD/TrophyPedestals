@@ -2,10 +2,19 @@ package net.ixdarklord.trophypedestals.forge.compat.kubejs;
 
 import net.ixdarklord.trophypedestals.TrophyPedestalsMod;
 import net.ixdarklord.trophypedestals.api.PedestalBlocks;
+import net.ixdarklord.trophypedestals.api.PedestalRarities;
+import net.ixdarklord.trophypedestals.api.PedestalRarity;
 import net.ixdarklord.trophypedestals.api.PedestalSettings;
+import net.ixdarklord.trophypedestals.api.TrophyPedestals;
+import net.ixdarklord.trophypedestals.pedestal.PedestalBlock;
 import net.ixdarklord.trophypedestals.pedestal.PedestalBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
@@ -77,6 +86,58 @@ public final class TrophyPedestalsBinding {
         Optional<PedestalBlockEntity> pedestal = PedestalBlocks.pedestalAt(level, pos);
         pedestal.ifPresent(PedestalSettings::unlock);
         return pedestal.isPresent();
+    }
+
+    /**
+     * A mob trophy of this mob ({@code "minecraft:zombie"}), as its pedestal item, to give, drop or put in a loot table:
+     * of its usual rarity unless one is named ({@code "trophypedestals:epic"}, or just {@code "epic"}), on the default
+     * pedestal unless one is named ({@code "trophypedestals:deepslate_pedestal"}), and slain by nobody unless a name is
+     * given. Empty if the mob can't be a trophy, or the rarity or pedestal isn't known. Works in startup, client and
+     * server scripts.
+     */
+    public ItemStack mobTrophy(String entity) {
+        return mobTrophy(entity, null, null, null);
+    }
+
+    public ItemStack mobTrophy(String entity, @Nullable String rarity) {
+        return mobTrophy(entity, rarity, null, null);
+    }
+
+    public ItemStack mobTrophy(String entity, @Nullable String rarity, @Nullable String pedestal) {
+        return mobTrophy(entity, rarity, pedestal, null);
+    }
+
+    public ItemStack mobTrophy(String entity, @Nullable String rarity, @Nullable String pedestal, @Nullable String slayer) {
+        ResourceLocation entityId = ResourceLocation.tryParse(entity);
+        EntityType<?> type = entityId == null ? null : BuiltInRegistries.ENTITY_TYPE.getOptional(entityId).orElse(null);
+        if (type == null || !TrophyPedestals.canBeTrophy(type)) {
+            TrophyPedestalsMod.LOGGER.warn("A script asked for a mob trophy of '{}', which can't be one", entity);
+            return ItemStack.EMPTY;
+        }
+        ResourceLocation pedestalId = pedestal == null ? null : ResourceLocation.tryParse(pedestal);
+        PedestalBlock block = pedestal == null ? TrophyPedestals.defaultPedestal() : pedestalId == null ? null : TrophyPedestals.pedestal(pedestalId);
+        if (block == null) {
+            TrophyPedestalsMod.LOGGER.warn("A script asked for a mob trophy on '{}', which isn't a pedestal", pedestal);
+            return ItemStack.EMPTY;
+        }
+        ResourceLocation rarityId = rarity == null ? null : PedestalRarities.parse(rarity);
+        PedestalRarity rank = rarity == null ? TrophyPedestals.mobRarity(type) : rarityId == null ? null : PedestalRarities.find(rarityId);
+        if (rank == null) {
+            TrophyPedestalsMod.LOGGER.warn("A script asked for a mob trophy of rarity '{}', which isn't one", rarity);
+            return ItemStack.EMPTY;
+        }
+        return TrophyPedestals.createMob(block, type, new CompoundTag(), slayer == null ? "" : slayer, System.currentTimeMillis(), rank);
+    }
+
+    /**
+     * Adds a trophy (from {@link #mobTrophy}, or any trophy item) to the mob trophies creative tab, after the mobs' own,
+     * and so to JEI. Call it from a startup script, so both the game and the server have it; the same trophy is only
+     * added once.
+     *
+     * @return whether it was added
+     */
+    public boolean addMobTrophy(ItemStack trophy) {
+        return TrophyPedestals.addToCreativeTab(trophy);
     }
 
     private static PedestalSettings.Builder apply(PedestalSettings.Builder builder, Map<String, Object> settings) {
