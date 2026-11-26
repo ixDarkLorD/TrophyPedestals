@@ -25,6 +25,7 @@ import net.ixdarklord.trophypedestals.pedestal.CuratorsStampItem;
 import net.ixdarklord.trophypedestals.pedestal.DisplayedTrophySettings;
 import net.ixdarklord.trophypedestals.pedestal.Leaderboards;
 import net.ixdarklord.trophypedestals.pedestal.Lens;
+import net.ixdarklord.trophypedestals.pedestal.MobDisplayData;
 import net.ixdarklord.trophypedestals.pedestal.MobLooks;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophies;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophyRecord;
@@ -178,6 +179,28 @@ public final class TrophyPedestalsGameTests {
         PedestalRecord old = PedestalRecord.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
                 "{\"kind\": \"" + kind() + "\", \"subject\": \"" + SUBJECT + "\", \"unlocker\": \"player\", \"unlocked_at\": 0}")).getOrThrow();
         helper.assertTrue(old.rarity().equals(PedestalRarities.COMMON.id()), "a trophy from before ranks is common");
+        helper.succeed();
+    }
+
+    @GameTest
+    public static void mobDisplaySizesReadFromPackData(GameTestHelper helper) {
+        Map<EntityType<?>, MobDisplayData.Display> displays = new LinkedHashMap<>();
+        int read = MobDisplayData.parse(JsonParser.parseString("""
+                {
+                  "minecraft:spider": {"scale": 1.25, "offset": 0.1},
+                  "minecraft:zombie": {"size": 0.4},
+                  "minecraft:pig": {},
+                  "gone:mob": {"scale": 2.0},
+                  "not an id": {"scale": 2.0},
+                  "minecraft:cow": 3
+                }
+                """).getAsJsonObject(), displays);
+        helper.assertTrue(read == 3 && displays.size() == 3, "only known mobs with an object are read: " + displays.keySet());
+        helper.assertTrue(displays.get(EntityType.SPIDER).equals(new MobDisplayData.Display(1.25F, 0.0F, 0.1F)), "a multiplier and an offset: " + displays.get(EntityType.SPIDER));
+        helper.assertTrue(displays.get(EntityType.ZOMBIE).equals(new MobDisplayData.Display(1.0F, 0.4F, 0.0F)), "an absolute size: " + displays.get(EntityType.ZOMBIE));
+        helper.assertTrue(displays.get(EntityType.PIG).equals(new MobDisplayData.Display(1.0F, 0.0F, 0.0F)), "an empty entry changes nothing");
+        MobDisplayData.parse(JsonParser.parseString("{\"minecraft:spider\": {\"scale\": 0.5}}").getAsJsonObject(), displays);
+        helper.assertTrue(displays.get(EntityType.SPIDER).scale() == 0.5F, "a later file overrides an earlier one");
         helper.succeed();
     }
 
