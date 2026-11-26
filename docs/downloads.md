@@ -24,7 +24,7 @@ blocks aren't in the game yet), and statues are drawn as a player figure in the 
 
 ## What it needs
 
-- [CoolCatLib](https://ixdarklord.github.io/CoolCatLib/) 8.2.0 or newer, on the server and every client.
+- [CoolCatLib](https://ixdarklord.github.io/CoolCatLib/) 9.0.1 or newer, on the server and every client.
 - On Fabric, Fabric API.
 
 Everything else is optional, and turns on by itself when it's installed:
@@ -35,7 +35,7 @@ Everything else is optional, and turns on by itself when it's installed:
 | Jade | what a looked-at pedestal holds | every version |
 | The One Probe | the same | NeoForge and Forge; Fabric from 26.1 |
 | FTB Quests | a trophy reward | 1.20.1 to 26.1.2 |
-| KubeJS | a `TrophyPedestals` binding for server scripts | NeoForge and Forge, 1.20.1 to 26.1.2 |
+| KubeJS | a `TrophyPedestals` binding and events for startup, client and server scripts (KubeGroovy too, on 26.1.2) | NeoForge and Forge, 1.20.1 to 26.1.2 |
 
 ## For mod developers
 

@@ -78,6 +78,8 @@ It only takes away: a pedestal whose owner turned its flourishes or sounds off s
 |---|---|---|
 | `flourishes` | `true` | whether ranked trophies show their beams, halos, flares, crowns and particles (their showcase light and outlines stay) |
 | `lens_effects` | `true` | whether lenses on display pedestals show their effects (ripples, runes, particles, scanlines, the item's motion); off, a lens only colours the light |
+| `pedestal_lighting` | `false` | whether lit pedestals cast their lens's or rank's colour onto the blocks around them, the Prism its rainbow; works with shader packs. Experimental |
+| `lighting_prompt` | `true` | whether joining a world asks to turn on the coloured lighting, while it's off; its "Don't show this again" turns this off |
 | `ambient_sounds` | `true` | whether ranked trophies play their ambient sounds and chimes |
 | `moving_mobs` | `true` | whether mobs and statues on trophies move and play their animations |
 | `display_distance` | `64` | how far away, in blocks (16 to 256), what pedestals show is drawn |
@@ -100,24 +102,49 @@ It only takes away: a pedestal whose owner turned its flourishes or sounds off s
 
 ## KubeJS (NeoForge and Forge, up to 26.1.2)
 
-Server scripts get a `TrophyPedestals` binding:
+Scripts get a `TrophyPedestals` binding:
 
 | Call | Does |
 |---|---|
 | `TrophyPedestals.isPedestal(level, pos)` | whether there's a pedestal there |
 | `TrophyPedestals.pedestalSettings(level, pos)`, `setPedestal(level, pos, {...})` | a pedestal's settings, by name: `textMode`, `scale`, `height`, `yaw`, `pitch`, `roll`, `spins`, `animates`, `effects`, `effectsMode` (`always`, `looking` or `hidden`), `sounds`, `textHeight`, `textScale`, `crown`, `light`, `redstone`, `statue`, `statuePose`, `animation` (and `locked`) |
 | `TrophyPedestals.forcePedestal(level, pos, {...}, message)`, `lockPedestal(level, pos[, message])`, `unlockPedestal(level, pos)` | set and lock its settings against every player, with a refusal message (or `null`, silently) |
+| `TrophyPedestals.mobTrophy(entity[, rarity[, pedestal[, slayer]]])` | a mob trophy item: `mobTrophy('minecraft:zombie')` gives one of its usual rarity on the default pedestal; name a rarity (`'epic'` or `'trophypedestals:epic'`), a pedestal (`'trophypedestals:deepslate_pedestal'`) and a slayer to choose them. Empty if the mob can't be a trophy |
+| `TrophyPedestals.addMobTrophy(trophy)` | adds a trophy to the mob trophies creative tab, after the mobs' own, and so to JEI; call it from a startup script, and each trophy is added once |
 
-And `TrophyPedestalsEvents`, both on the server:
+The binding is there in startup, client and server scripts. A startup script can add trophies to the creative tab:
+
+```js
+// startup_scripts
+TrophyPedestals.addMobTrophy(TrophyPedestals.mobTrophy('minecraft:warden', 'legendary', 'trophypedestals:deepslate_pedestal'))
+```
+
+and a server script can hand them out:
+
+```js
+// server_scripts
+PlayerEvents.loggedIn(event => event.player.give(TrophyPedestals.mobTrophy('minecraft:zombie', 'epic')))
+```
+
+And `TrophyPedestalsEvents`, the first two on the server and `mobDisplaySizes` in client scripts:
 
 | Event | Fires | Has |
 |---|---|---|
 | `TrophyPedestalsEvents.mobTrophyDrop(event => ...)` | a mob trophy is about to drop for the player who killed the mob | `event.player`, `event.mob`, `event.trophy` (set it to drop another); `event.cancel()` drops nothing and records nothing in their ledger |
 | `TrophyPedestalsEvents.collected(event => ...)` | a mob trophy was recorded in a player's Mob Trophies Ledger | `event.player`, `event.mobType`, `event.gilded`, `event.first` (the first of that mob they've had) |
+| `TrophyPedestalsEvents.mobDisplaySizes(event => ...)` | the mob display sizes load on the client, at their first use and after every resource reload (F3+T) | `event.set(mob, {scale, size, offset})`, the same fields as a [resource pack's](making-trophies.md#mob-display-sizes-resource-packs) file; a script's setting wins over the packs' |
 
 ```js
 TrophyPedestalsEvents.mobTrophyDrop(event => {
   if (event.mob.type == 'minecraft:pig') event.cancel()
+})
+```
+
+```js
+// client_scripts
+TrophyPedestalsEvents.mobDisplaySizes(event => {
+  event.set('minecraft:spider', {scale: 1.2})
+  event.set('examplemod:big_boss', {size: 0.05, offset: 0.1})
 })
 ```
 
@@ -127,7 +154,11 @@ TrophyPedestalsEvents.mobTrophyDrop(event => {
 $TrophyPedestalsEvents.mobTrophyDrop { event ->
     if (event.mob.type == 'minecraft:pig') event.cancel()
 }
+
+$TrophyPedestalsEvents.mobDisplaySizes { event ->
+    event.set('minecraft:spider', [scale: 1.2])
+}
 ```
 
-Mods on either loader get the same two events from `net.ixdarklord.trophypedestals.api.TrophyEvents` (`MOB_TROPHY_DROP`,
-`COLLECTED`).
+Mods on either loader get the same events from `net.ixdarklord.trophypedestals.api.TrophyEvents` (`MOB_TROPHY_DROP`,
+`COLLECTED` and, on the client, `MOB_DISPLAY_SIZES`).

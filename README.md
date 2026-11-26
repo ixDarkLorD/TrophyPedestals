@@ -12,6 +12,6 @@ The site is built with [Zensical](https://zensical.org): `pip install zensical`,
 `zensical build` to build. Pushing to this branch builds it and publishes it through GitHub Pages.
 
 The reference and the changelog are generated from the mod's own docs, so they never drift from it: edit
-`docs/reference.md` or `CHANGELOG.md` on the `26.1.2` branch, then run `python tools/sync_docs.py <path to that
+`docs/reference.md` or `CHANGELOG.md` on the `26.1.2` branch, then run `python ../../../.dev/Tools/TrophyPedestals/Site/sync_docs.py <path to that
 checkout>` here (it defaults to `../TrophyPedestals-26.1.2`). The homepage (`overrides/home.html`), the overview,
 guide, downloads and license pages, and the look (`docs/assets/pedestals.css` and `pedestals.js`) are the site's own.

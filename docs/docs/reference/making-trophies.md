@@ -53,5 +53,31 @@ names the mob:
 
 It's recorded as slain now, and items other than pedestals are left as they are. From a function or command block,
 `/trophypedestals mob_trophy <players> <entity> [pedestal] [rarity]` gives each player one, slain by them, ranked by the
-mob's toughness unless a rank is named. Mods use `TrophyPedestals.createMob` (from a living mob, look included, or a
-kind of mob and a look) and `mobRecord`; `rarity` reads either kind of trophy's rank.
+mob's toughness unless a rank is named. Mods use `TrophyPedestals.createMob` (from a living mob, look included, a kind
+of mob and a look, or just a kind of mob, of its usual rank) and `mobRecord`; `rarity` reads either kind of trophy's
+rank, `mobRarity(type)` gives a kind of mob's usual rank, and `canBeTrophy(type)` says whether it can be on a trophy at
+all. `addToCreativeTab(trophy)`, called at startup on both sides, adds a trophy to the mob trophies creative tab and JEI.
+
+## Mob display sizes (resource packs)
+
+Each mob is sized to fit its pedestal on its own. A resource pack can change how big a mob shows, on an open pedestal and
+on its trophy item, with a JSON file in `assets/<namespace>/trophypedestals/mob_displays/` (any name ending in
+`.json`). Each entry is keyed by the mob's id:
+
+- `scale`: a multiplier on the size it would have (`1.0` keeps it, `1.2` is a fifth bigger).
+- `size`: a fixed scale instead (`1.0` is the mob's real size); `scale` still multiplies it.
+- `offset`: how far to raise it on a pedestal, in blocks (negative lowers it).
+
+```json
+{
+  "minecraft:spider": {"scale": 1.2},
+  "minecraft:warden": {"size": 0.3, "offset": 0.05},
+  "examplemod:big_boss": {"scale": 0.8}
+}
+```
+
+Files are read from every enabled resource pack, and a pack higher in the list wins for a mob both set. Trophy
+Pedestals' own defaults are in `assets/trophypedestals/trophypedestals/mob_displays/defaults.json`, so a pack can
+override them too. Mobs that aren't installed are skipped. Changes load with the packs (F3+T). A pedestal's own Size
+and Height settings still apply on top, and a glass case still fits the mob inside it. Scripts and mods can set them
+too, over the packs' (see [KubeJS](commands-config.md#kubejs-neoforge-and-forge-up-to-2612)).
