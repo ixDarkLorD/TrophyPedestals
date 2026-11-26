@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "compatibilityLevel": "JAVA_25",
+  "package": "net.ixdarklord.trophypedestals.fabric.mixin",
+  "client": [
+    "client.AbstractContainerScreenAccessor",
+    "client.CreativeModeInventoryScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

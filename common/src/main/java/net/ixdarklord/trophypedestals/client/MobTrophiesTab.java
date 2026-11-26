@@ -8,7 +8,11 @@ import net.ixdarklord.trophypedestals.pedestal.Pedestals;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.CreativeModeTab;
 
+import java.util.function.Consumer;
+
 public final class MobTrophiesTab {
+    private static Consumer<CreativeModeTab> rebuilt = tab -> {};
+
     private MobTrophiesTab() {}
 
     public static void init() {
@@ -18,9 +22,16 @@ public final class MobTrophiesTab {
         ClientPlayerEvents.LEAVE.register(player -> MobTrophies.forgetAllMobs());
     }
 
+    /** Runs after the tab's items are rebuilt; NeoForge refreshes the tab's search trees with it. */
+    public static void onRebuilt(Consumer<CreativeModeTab> listener) {
+        rebuilt = listener;
+    }
+
     private static void rebuild() {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) return;
-        Pedestals.MOB_TROPHIES_TAB.get().buildContents(new CreativeModeTab.ItemDisplayParameters(minecraft.level.enabledFeatures(), false, minecraft.level.registryAccess()));
+        CreativeModeTab tab = Pedestals.MOB_TROPHIES_TAB.get();
+        tab.buildContents(new CreativeModeTab.ItemDisplayParameters(minecraft.level.enabledFeatures(), false, minecraft.level.registryAccess()));
+        rebuilt.accept(tab);
     }
 }
