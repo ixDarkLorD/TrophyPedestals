@@ -69,7 +69,7 @@ public final class TrophyPedestals {
      * rest), slain by {@code slayer} now, ranked by how tough it is.
      */
     public static ItemStack createMob(LivingEntity mob, String slayer) {
-        return createMob(Pedestals.DEFAULT.get(), mob, slayer, System.currentTimeMillis(), MobTrophies.rarity(mob));
+        return createMob(defaultPedestal(), mob, slayer, System.currentTimeMillis(), MobTrophies.rarity(mob));
     }
 
     /** A mob trophy on this pedestal and of this rarity, showing this mob as it looks, slain by {@code slayer} at {@code slainAt}. */
@@ -83,6 +83,40 @@ public final class TrophyPedestals {
      */
     public static ItemStack createMob(PedestalBlock pedestal, EntityType<?> type, CompoundTag look, String slayer, long slainAt, PedestalRarity rarity) {
         return MobTrophies.trophy(pedestal, type, look, slayer, slainAt, rarity.id());
+    }
+
+    /**
+     * A mob trophy on the default pedestal showing this kind of mob as it spawns, slain by nobody, of its usual rank: the
+     * same as the mob trophies creative tab shows. Works for a mob that doesn't drop trophies too, as long as it
+     * {@link #canBeTrophy can be one}.
+     */
+    public static ItemStack createMob(EntityType<?> type) {
+        return createMob(defaultPedestal(), type, new CompoundTag(), "", System.currentTimeMillis(), mobRarity(type));
+    }
+
+    /** The rank a trophy of this kind of mob gets unless one is named, by how tough it is (common if it has none). */
+    public static PedestalRarity mobRarity(EntityType<?> type) {
+        PedestalRarity rarity = MobTrophies.rarity(type);
+        return rarity == null ? PedestalRarities.COMMON : rarity;
+    }
+
+    /**
+     * Whether this kind of mob can be shown on a trophy: a living mob, not a player or armor stand, nor one tagged
+     * {@code trophypedestals:no_mob_trophy}.
+     */
+    public static boolean canBeTrophy(EntityType<?> type) {
+        return MobTrophies.canBeTrophy(type);
+    }
+
+    /**
+     * Adds a trophy to the mob trophies creative tab, after the mobs' own, and so to JEI: a trophy of a mob that doesn't
+     * drop one, or a special one of a mob that does. Call it at startup, on both sides; the same trophy is only added
+     * once.
+     *
+     * @return whether it was added: false if it isn't a trophy, or is already there
+     */
+    public static boolean addToCreativeTab(ItemStack trophy) {
+        return MobTrophies.addCreativeTrophy(trophy);
     }
 
     /** What a mob trophy records (the mob, its look, who slew it and when, its rank), or null for anything else. */
