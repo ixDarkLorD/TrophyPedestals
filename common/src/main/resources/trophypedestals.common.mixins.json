@@ -6,7 +6,8 @@
   "client": [
     "client.CreativeModeInventoryScreenMixin",
     "client.HumanoidModelMixin",
-    "client.HumanoidRenderStateMixin"
+    "client.HumanoidRenderStateMixin",
+    "client.ClientLevelMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -20,6 +20,14 @@ final class HologramLensVisuals extends LensVisuals {
                 ARGB.color((int) (230 * flicker * state.rise), 0xFFFFFF));
     }
 
+    @Override
+    protected void light(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
+        // the projector's light, and the projection's, stuttering with it
+        float flicker = state.time % 53.0F < 2.0F ? 0.5F : 1.0F;
+        lensLight(state, glow, up, color, 0.65F * flicker);
+        glow.light(0.5F, middle, 0.5F, color, 0.35F * flicker * state.rise, 3.5F * state.size);
+    }
+
     private static void submitProjection(State state, PedestalLight.Glow glow, float floor, float flicker) {
         float middle = state.iconY + state.middle + state.bob;
         float lo = 0.5F - PedestalRenderer.FRAME_HALF + 0.02F, hi = 0.5F + PedestalRenderer.FRAME_HALF - 0.02F;

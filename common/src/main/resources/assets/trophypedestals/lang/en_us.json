@@ -185,6 +185,8 @@
   "config.trophypedestals.server.mob_trophies.enabled.tooltip": "Whether mobs a player kills can drop a trophy pedestal showing them.",
   "config.trophypedestals.client.flourishes": "Flourishes",
   "config.trophypedestals.client.flourishes.tooltip": "Whether ranked trophies show their beams, halos, flares, crowns and particles.",
+  "config.trophypedestals.client.colored_lighting": "Coloured lighting",
+  "config.trophypedestals.client.colored_lighting.tooltip": "Whether lit pedestals cast their lens's or rank's colour onto the blocks around them, the Prism its rainbow. Works with shader packs.",
   "config.trophypedestals.client.ambient_sounds": "Ambient sounds",
   "config.trophypedestals.client.ambient_sounds.tooltip": "Whether ranked trophies play their ambient sounds and chimes now and then.",
   "config.trophypedestals.client.moving_mobs": "Moving mobs",

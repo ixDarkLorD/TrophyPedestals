@@ -3,6 +3,7 @@ This file is for listing all the changes to this project
 
 ## v0.4.1 (unreleased)
 ### ✨ New Features
+- **Coloured lighting:** lit pedestals now cast their lens's or rank's colour onto the floor and walls around them, and the Prism casts a rainbow. It works with shader packs, and `colored_lighting` in the client config turns it off.
 - **Mob display sizes:** resource packs can set how big each mob shows on a pedestal and on its trophy item, with a size multiplier, a fixed size and a height offset per mob. Mods can set them too, with `TrophyEvents.MOB_DISPLAY_SIZES`.
 - **Mob trophies search:** the mob trophies creative tab has a search bar. Type a mob's name to narrow the list, modded mobs included.
 

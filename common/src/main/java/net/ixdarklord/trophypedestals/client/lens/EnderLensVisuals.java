@@ -34,6 +34,16 @@ final class EnderLensVisuals extends LensVisuals {
                 ARGB.color((int) ((150 + 105 * Mth.sin(wake * Mth.PI)) * state.rise), 0xFFFFFF));
     }
 
+    @Override
+    protected void light(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
+        // the rift's light, from where it hangs
+        float gx = 0.5F + state.backX * CIRCLE_BACK * state.size, gz = 0.5F + state.backZ * CIRCLE_BACK * state.size;
+        glow.light(gx, middle, gz, color, (0.75F + 0.15F * Mth.sin(state.time * 0.05F)) * state.rise, 4.5F * state.size);
+        // the glowing band round the cap, waking and fading with it
+        float wake = (state.time / END_FRAME_TICKS) % 1.0F;
+        glow.light(0.5F, (CAP_TOP_EDGE + CAP_BOTTOM_EDGE) / 2.0F, 0.5F, color, (0.3F + 0.3F * Mth.sin(wake * Mth.PI)) * state.rise, 2.5F);
+    }
+
     private static void submitRiftGlow(State state, PedestalLight.Glow glow, float riftX, float riftY, float riftZ) {
         float breath = 0.84F + 0.16F * Mth.sin(state.time / 19.0F);
         float x = riftX - state.backX * 0.03F * state.size, z = riftZ - state.backZ * 0.03F * state.size;
