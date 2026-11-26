@@ -209,8 +209,8 @@ public final class Pedestals {
             .title(Component.translatable("itemGroup.trophypedestals.pedestals"))
             .icon(() -> new ItemStack(DEFAULT.get()))
             .build());
-    public static final RegistryEntry<CreativeModeTab> MOB_TROPHIES_TAB = TABS.register("pedestals_mob_trophies", () -> CreativeTabs.builder(
-                    (parameters, items) -> MobTrophies.creativeTrophies(parameters.enabledFeatures(), items))
+    public static final RegistryEntry<CreativeModeTab> MOB_TROPHIES_TAB = TABS.register("pedestals_mob_trophies", () -> MobTrophySearch.withSearchBar(
+                    CreativeTabs.builder((parameters, items) -> MobTrophies.creativeTrophies(parameters.enabledFeatures(), items)))
             .title(Component.translatable("itemGroup.trophypedestals.pedestals_mob_trophies"))
             .icon(() -> MobTrophies.trophy(DEFAULT.get(), EntityType.ZOMBIE, "", 0L, PedestalRarities.NONE))
             .build());
