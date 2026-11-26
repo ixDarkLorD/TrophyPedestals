@@ -33,6 +33,14 @@ public final class SanguineLensVisuals extends LensVisuals {
         submitRavens(state, glow);
     }
 
+    @Override
+    protected void light(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
+        // the moon's red light, beating with its heart, and the pool's below it
+        float beat = heartbeat(state.time), moonY = middle + MOON_LIFT * state.size;
+        glow.light(0.5F, moonY, 0.5F, color, (0.55F + 0.6F * beat) * state.rise, 4.5F * state.size);
+        lensLight(state, glow, BLOOD_POOL_Y, color, 0.35F + 0.35F * beat);
+    }
+
     private static float heartbeat(float time) {
         float t = time / 34.0F % 1.0F;
         // Two sine bumps per cycle: a full beat, then a weaker second one.

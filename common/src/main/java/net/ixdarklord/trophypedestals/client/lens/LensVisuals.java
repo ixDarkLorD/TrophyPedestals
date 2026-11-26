@@ -12,7 +12,7 @@ import java.util.Map;
 
 public abstract class LensVisuals {
     protected static final float AURA_SIZE = 0.42F, AURA_PULSE = 0.07F, AURA_TICKS = 30.0F;
-    protected static final float RIPPLE_LIFT = 0.06F;
+    public static final float RIPPLE_LIFT = 0.06F;
     protected static final float LENS_DISC = 0.235F, CIRCLE_BACK = 0.22F;
     protected static final float LENS_BASE_LIFT = 0.004F, LENS_BASE_HALF = 0.17F;
     protected static final float CAP_TOP_EDGE = 14.0F / 16.0F, CAP_BOTTOM_EDGE = 10.0F / 16.0F;
@@ -38,10 +38,42 @@ public abstract class LensVisuals {
     public static void submit(State state, PedestalLight.Glow glow, float up) {
         float lift = up + RIPPLE_LIFT;
         float middle = state.iconY + state.middle + state.bob;
-        Registry.VISUALS.get(state.lens).draw(state, glow, up, lift, middle, state.rarity.color());
+        LensVisuals visuals = Registry.VISUALS.get(state.lens);
+        visuals.draw(state, glow, up, lift, middle, state.rarity.color());
+        visuals.light(state, glow, up, lift, middle, state.rarity.color());
+    }
+
+    /**
+     * Only the light the lens fitted to this pedestal gives off, none of its effects: for a pedestal too far off for them
+     * to be drawn, whose light still falls on the world around it as it would up close.
+     */
+    public static void submitLight(State state, PedestalLight.Glow glow, float up) {
+        float lift = up + RIPPLE_LIFT;
+        float middle = state.iconY + state.middle + state.bob;
+        Registry.VISUALS.get(state.lens).light(state, glow, up, lift, middle, state.rarity.color());
     }
 
     protected abstract void draw(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color);
+
+    /**
+     * The light the lens gives off onto the world around it (see {@link PedestalLight.Glow#light}), from what it draws:
+     * given after it's drawn, and alone for a pedestal too far off for its effects to be drawn, so it lights the same
+     * near or far. A lens gives off a glow of its colour from its glass unless it says otherwise.
+     */
+    protected void light(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
+        lensLight(state, glow, up, color, 0.6F);
+    }
+
+    /** How far a lens's own glow reaches onto the blocks around, in blocks. */
+    protected static final float LENS_LIGHT_REACH = 3.2F;
+
+    /**
+     * The light a lens's glass gives off onto the world around the pedestal (see {@link PedestalLight.Glow#light}): from
+     * just above the glass, of the lens's colour, as strong as {@code strength} while the display is up.
+     */
+    protected static void lensLight(State state, PedestalLight.Glow glow, float up, int color, float strength) {
+        glow.light(0.5F, up + 0.1F, 0.5F, color, strength * state.rise, LENS_LIGHT_REACH * Math.max(1.0F, state.size));
+    }
 
     protected static void upright(State state, PedestalLight.Glow glow, PedestalLight.Sprite sprite, float x, float bottom, float z, float half, float height, int color) {
         float fx = state.faceX * half, fz = state.faceZ * half, top = bottom + height;

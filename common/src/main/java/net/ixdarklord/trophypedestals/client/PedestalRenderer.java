@@ -16,6 +16,7 @@ import net.ixdarklord.trophypedestals.api.client.PedestalEffect;
 import net.ixdarklord.trophypedestals.api.client.PedestalEffects;
 import net.ixdarklord.trophypedestals.client.lens.AppraisalLensVisuals;
 import net.ixdarklord.trophypedestals.client.lens.LensVisuals;
+import net.ixdarklord.trophypedestals.client.lens.PrismLensVisuals;
 import net.ixdarklord.trophypedestals.client.lens.SanguineLensVisuals;
 import net.ixdarklord.trophypedestals.compat.ARGB;
 import net.ixdarklord.trophypedestals.compat.render.AvatarRenderState;
@@ -181,6 +182,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     public static void init() {
         PedestalLight.init(FLARE);
+        PedestalLighting.init();
         BlockEntityRendererRegistry.register(Pedestals.BLOCK_ENTITY, PedestalRenderer::new);
         BlockEntityRendererRegistry.register(Pedestals.CABINET_ENTITY, TrophyCabinetRenderer::new);
         Pedestals.BLOCKS_BY_STONE.values().forEach(block -> BlockRenderLayers.register(block, RenderType.cutout()));
@@ -972,6 +974,22 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         }
         state.distanceSq = cameraPosition.distanceToSqr(Vec3.atCenterOf(pos));
         state.detailed = state.distanceSq < sq(DETAIL_RANGE * farther);
+        // the colour it casts on the blocks around it: its lens's (a dyed Clear Lens's dye), or its rank's
+        if (state.showcaseLight && !state.glass && !state.scene && (state.lens != null || ranked)) {
+            // a light's colour mixed toward its lighter accent, so dark ones (the Blood Moon's red) still show on stone
+            int cast = state.lens == Lens.CLEAR && state.lensTint != 0xFFFFFFFF ? state.lensTint
+                    : ARGB.srgbLerp(0.45F, ARGB.opaque(state.rarity.color()), ARGB.opaque(state.rarity.accent()));
+            // where the Prism's halo is: behind the item and turned to face the camera, as it's drawn
+            double toX = pos.getX() + 0.5 - cameraPosition.x, toZ = pos.getZ() + 0.5 - cameraPosition.z;
+            double across = Math.max(Math.sqrt(toX * toX + toZ * toZ), 1.0E-4), back = PrismLensVisuals.haloBack(state.size);
+            float up = GLASS_TOP + 0.002F;
+            Vec3 halo = new Vec3(pos.getX() + 0.5 + toX / across * back,
+                    pos.getY() + PrismLensVisuals.haloY(up + LensVisuals.RIPPLE_LIFT, state.iconY + state.middle + state.bob, state.size),
+                    pos.getZ() + 0.5 + toZ / across * back);
+            PedestalLighting.add(pos, pos.getX() + 0.5, pos.getY() + 1.25 + state.lift, pos.getZ() + 0.5, pos.getY() + up, cast,
+                    state.rise * state.powerFade, state.lens, halo, (float) (-toZ / across), (float) (toX / across), state.size, state.time,
+                    cameraPosition);
+        }
         if (state.detailed && state.rarity.flareSize() > 0.0F) {
             double toX = pos.getX() + 0.5 - cameraPosition.x, toY = pos.getY() + state.iconY + state.middle + state.bob - cameraPosition.y;
             double toZ = pos.getZ() + 0.5 - cameraPosition.z;
@@ -1366,7 +1384,18 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         if (beam && !state.glass) submitBeam(state, light, up);
         if (state.effects && state.detailed && rarity.halos() > 0 && !state.glass) submitHalos(state, light);
         if (state.effects && state.detailed && rarity.crown() > 0) submitCrown(state, light);
-        if (state.detailed && state.lensEffects && state.lensFade > 0.0F) submitLens(state, light, up);
+        boolean lensDrawn = state.detailed && state.lensEffects && state.lensFade > 0.0F;
+        if (lensDrawn) submitLens(state, light, up);
+        // a lens drawn gives off its own light as it's drawn; one too far off to be drawn gives off the same light alone, so
+        // it lights the world the same near or far; and a ranked trophy's light glows from the glass
+        if (!lensDrawn && state.showcaseLight && !state.bareWell && !state.glass) {
+            if (state.lens != null) {
+                LensVisuals.submitLight(state, light, up);
+            } else if (rarity.rank() > 0) {
+                int cast = ARGB.srgbLerp(0.45F, ARGB.opaque(rarity.color()), ARGB.opaque(rarity.accent()));
+                light.light(0.5F, up + 0.1F, 0.5F, cast, 0.7F * state.rise * state.powerFade, 3.2F * Math.max(1.0F, state.size));
+            }
+        }
     }
 
     private static boolean displayLight(PedestalRarity rarity) {

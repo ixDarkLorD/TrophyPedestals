@@ -909,6 +909,16 @@ public final class PedestalLight {
 
         default void occludes() {
         }
+
+        /**
+         * Light this effect gives off onto the world around the pedestal: a point of light at ({@code x}, {@code y},
+         * {@code z}), placed like everything else drawn, of this colour and strength (1 for a bright glow, less for a
+         * faint one), reaching {@code radius} blocks. Whatever glows says so as it's drawn, with its own movement, so the
+         * light comes from it and moves with it: the lighting casts it onto the blocks around, shadows and all (see
+         * {@link PedestalLighting}). Only effects drawn in the world give light; a pedestal drawn as an item doesn't.
+         */
+        default void light(float x, float y, float z, int color, float strength, float radius) {
+        }
     }
 
     static Glow world(BlockPos pos) {
@@ -921,6 +931,7 @@ public final class PedestalLight {
         WORLD.z = z;
         WORLD.scale = scale;
         currentOwner = owner(x + 0.5 * scale, y + 0.5 * scale, z + 0.5 * scale);
+        WORLD.block = BlockPos.asLong(Mth.floor(x + 0.5 * scale), Mth.floor(y + 0.25 * scale), Mth.floor(z + 0.5 * scale));
         return WORLD;
     }
 
@@ -979,6 +990,13 @@ public final class PedestalLight {
     private static final class World implements Glow {
         private double x, y, z;
         private float scale = 1.0F;
+        private long block;
+
+        @Override
+        public void light(float x, float y, float z, int color, float strength, float radius) {
+            PedestalLighting.emit(this.block, this.x + x * this.scale, this.y + y * this.scale, this.z + z * this.scale, color,
+                    strength, radius * this.scale);
+        }
 
         @Override
         public void quad(float ax, float ay, float az, float bx, float by, float bz, float cx, float cy, float cz,

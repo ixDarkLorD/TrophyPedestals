@@ -27,6 +27,13 @@ public final class AppraisalLensVisuals extends LensVisuals {
         submitAppraisal(state, glow, lift, middle, color);
     }
 
+    @Override
+    protected void light(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
+        // the lens's glow, and the appraised item's own, in its rarity's colour
+        lensLight(state, glow, up, color, 0.6F);
+        glow.light(0.5F, middle, 0.5F, color, 0.45F * state.rise, 3.5F * state.size);
+    }
+
     private static void submitAppraisal(State state, PedestalLight.Glow glow, float lift, float middle, int color) {
         int tier = state.itemRarity;
         float pulse = 0.82F + 0.18F * Mth.sin(state.time / 16.0F);
