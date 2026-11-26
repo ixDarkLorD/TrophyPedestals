@@ -4,6 +4,7 @@ import net.ixdarklord.coolcatcore.api.client.registry.ItemColorRegistry;
 import net.ixdarklord.coolcatcore.api.core.ClientModConstructor;
 import net.ixdarklord.trophypedestals.client.CustomPedestalItemRenderer;
 import net.ixdarklord.trophypedestals.client.DisplayTrimItemRenderer;
+import net.ixdarklord.trophypedestals.client.LightingPrompt;
 import net.ixdarklord.trophypedestals.client.MobTrophiesTab;
 import net.ixdarklord.trophypedestals.client.PedestalLensItemRenderer;
 import net.ixdarklord.trophypedestals.client.PedestalRenderer;
@@ -25,6 +26,7 @@ public final class TrophyPedestalsClient implements ClientModConstructor {
         ItemDefinitions.init();
         PedestalLensItemRenderer.init();
         DisplayTrimItemRenderer.init();
+        LightingPrompt.init();
         ItemColorRegistry.register((stack, layer) -> layer == 1 ? DyedItemColor.getOrDefault(stack, -1) : -1, Pedestals.LENSES.get(Lens.CLEAR));
     }
 }

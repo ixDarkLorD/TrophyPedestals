@@ -33,7 +33,7 @@ import java.util.Arrays;
  * whatever is above it, and the Prism's light through each pane of its halo's stained glass and along each ray of its fan.
  * Each lands as a patch where it meets a block, blocks in the way cast a shadow, and it moves as the lens does: the
  * Inferno's flickers, the Blood Moon's beats. The lens's glow tints its own pedestal and the pedestals beside it. It's
- * drawn with the other world effects, so shader packs keep it, and the {@code colored_lighting} client option turns it
+ * drawn with the other world effects, so shader packs keep it, and the {@code pedestal_lighting} client option turns it
  * off.
  * <p>
  * The pedestals' faces each glow reaches, and how it falls on them, are worked out now and then and kept.
@@ -152,7 +152,7 @@ public final class PedestalLighting {
     }
 
     public static boolean enabled() {
-        return TrophyPedestalsClientConfig.COLORED_LIGHTING.get();
+        return TrophyPedestalsClientConfig.PEDESTAL_LIGHTING.get();
     }
 
     /**
