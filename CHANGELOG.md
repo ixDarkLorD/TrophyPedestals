@@ -1,16 +1,21 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v0.4.1 (unreleased)
+## v0.4.1 Release | Nov 26, 2026
 ### ✨ New Features
-- **Coloured lighting:** lit pedestals now cast their lens's or rank's colour onto the floor and walls around them, and the Prism casts a rainbow. It works with shader packs, and `colored_lighting` in the client config turns it off.
 - **Mob display sizes:** resource packs can set how big each mob shows on a pedestal and on its trophy item, with a size multiplier, a fixed size and a height offset per mob. KubeJS and KubeGroovy client scripts can set them too, with `TrophyPedestalsEvents.mobDisplaySizes`.
-- **Mob trophies from scripts:** KubeJS and KubeGroovy scripts can make mob trophy items with `TrophyPedestals.mobTrophy(...)` and add them to the mob trophies creative tab and JEI with `TrophyPedestals.addMobTrophy(...)`.
+- **Mob trophies from scripts:** KubeJS and KubeGroovy scripts can make mob trophy items with `TrophyPedestals.mobTrophy(...)` and add them to the mob trophies creative tab and JEI with `TrophyPedestals.addMobTrophy(...)`. Mods get the same through `TrophyPedestals.createMob(type)` and `addToCreativeTab(trophy)`.
 - **Mob trophies search:** the mob trophies creative tab has a search bar. Type a mob's name to narrow the list, modded mobs included.
+- **Pedestal lighting (experimental):** lit pedestals can cast their lens's or rank's colour onto the blocks around them. It's off by default; joining a world offers to turn it on, and `pedestal_lighting` in the client config switches it.
+
+### 🔧 Changes
+- Large and modded mobs fit their trophy pedestals: mobs drawn much bigger than their hit box (GeckoLib bosses, Bosses' Rise) are sized by how they're drawn, wide mobs and big bosses get more room, and mobs that live half buried, like the sandworm, rise out of the pedestal.
+- The layers drawn on a lens sit inside its gold bezel, which hides their edges.
+- Needs CoolCatLib 9.0.1 or newer.
 
 ### 🐛 Fixes
 - Lens effects no longer show broken textures when GeckoLib is installed.
-- Lens effects no longer slide off their pedestals with a shader pack and view bobbing on (with CoolCatLib 9.0.1).
+- Lens effects no longer slide off their pedestals with a shader pack and view bobbing on.
 
 ## v0.4.0 "Through the Lens" Release | Nov 24, 2026
 ### ✨ New Features
