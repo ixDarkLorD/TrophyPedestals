@@ -13,6 +13,8 @@ import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
+
 final class RenderedBounds implements MultiBufferSource {
     private static final int FULL_BRIGHT = 0xF000F0;
     private static final CameraRenderState CAMERA = new CameraRenderState();
@@ -43,7 +45,8 @@ final class RenderedBounds implements MultiBufferSource {
             }
             Bounds bounds = buffers.bounds;
             if (bounds.empty() || bounds.top - bounds.bottom < 0.01F || bounds.reach < 0.01F) return null;
-            return new float[] {bounds.reach, bounds.bottom, bounds.top};
+            float cut = bounds.cut();
+            return new float[] {bounds.reach, bounds.bottom, bounds.top, bounds.reachAbove(cut), cut};
         } catch (RuntimeException | LinkageError e) {
             return null;
         }
@@ -55,7 +58,31 @@ final class RenderedBounds implements MultiBufferSource {
     }
 
     private static final class Bounds implements VertexConsumer {
+        private static final float WIDER = 1.3F, STRETCH = 0.12F;
         float reach, bottom = Float.MAX_VALUE, top = -Float.MAX_VALUE;
+        float[] points = new float[256];
+        int count;
+
+        void keep(float y, float r) {
+            if (count + 2 > points.length) points = Arrays.copyOf(points, points.length * 2);
+            points[count++] = y;
+            points[count++] = r;
+        }
+
+        float cut() {
+            if (-bottom <= top) return bottom;
+            // The buried column is as wide as its deeper half; cut a short stretch below the lowest part wider than it.
+            float column = 0.0F, deep = bottom / 2.0F, lowest = 0.0F;
+            for (int i = 0; i < count; i += 2) if (points[i] <= deep) column = Math.max(column, points[i + 1]);
+            for (int i = 0; i < count; i += 2) if (points[i + 1] > column * WIDER) lowest = Math.min(lowest, points[i]);
+            return Math.max(bottom, lowest - STRETCH * (top - lowest));
+        }
+
+        float reachAbove(float cut) {
+            float most = 0.0F;
+            for (int i = 0; i < count; i += 2) if (points[i] >= cut) most = Math.max(most, points[i + 1]);
+            return most;
+        }
 
         boolean empty() {
             return bottom == Float.MAX_VALUE;
@@ -66,6 +93,7 @@ final class RenderedBounds implements MultiBufferSource {
             if (!Float.isFinite(x) || !Float.isFinite(y) || !Float.isFinite(z)) return this;
             // Reach is the horizontal radius from the centre; height tracks min and max y.
             reach = Math.max(reach, (float) Math.hypot(x, z));
+            keep((float) y, (float) Math.hypot(x, z));
             bottom = Math.min(bottom, y);
             top = Math.max(top, y);
             return this;

@@ -38,6 +38,7 @@ import net.ixdarklord.trophypedestals.compat.render.SubmitNodeCollector;
 import net.ixdarklord.trophypedestals.compat.render.WitherRenderState;
 import net.ixdarklord.trophypedestals.pedestal.Leaderboards;
 import net.ixdarklord.trophypedestals.pedestal.Lens;
+import net.ixdarklord.trophypedestals.pedestal.MobDisplayData;
 import net.ixdarklord.trophypedestals.pedestal.MobLooks;
 import net.ixdarklord.trophypedestals.pedestal.MobTrophyRecord;
 import net.ixdarklord.trophypedestals.pedestal.PedestalBlock;
@@ -77,7 +78,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -292,16 +292,20 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         Fit fit = fit(mob);
         state.mobReach = Math.max(0.05F, fit.reach());
         state.mobLift = fit.lift();
-        // Scale down so the mob fits both the reach and height limits, then apply pedestal scale.
-        state.mobScale = Math.min(1.0F, Math.min(MOB_REACH * reachRoom(mob) / state.mobReach, MOB_HEIGHT / fit.tall())) * (pedestal.glass() ? 1.0F : pedestal.scale());
+        state.mobBuried = fit.buried();
+        state.mobScale = baseScale(mob, fit) * (pedestal.glass() ? 1.0F : pedestal.scale());
         float drawnTall = state.mobLift + fit.height();
-        if (!pedestal.glass()) {
+        if (fit.buried()) {
+            state.lift += GLASS_TOP - MOB_FLOOR;
+        } else if (!pedestal.glass()) {
             float[] fitted = fitToCone(state, true, state.mobScale, state.mobReach, drawnTall / 2.0F, MOB_FLOOR);
             state.mobScale = fitted[0];
             float coneRaise = pedestal.scale() > 1.0F ? fitted[1] - MOB_FLOOR : 0.0F;
             float lowRaise = LOW_MIDDLE * state.size - fit.middle() * state.mobScale;
             state.lift += Math.max(0.0F, Math.max(coneRaise, lowRaise));
         }
+        MobDisplayData.Display display = MobDisplays.of(mob.getType());
+        if (display != null && !pedestal.glass()) state.lift += display.offset();
         EntityRenderState shown = EntityRenderStates.extract(mob, partialTicks);
         shown.lightCoords = FULL_BRIGHT;
         shown.shadowRadius = 0.0F;
@@ -326,7 +330,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             float[] most = pedestal.fitGlass(reach, Math.max(0.1F, high - state.mobSink));
             float inCase = fitInCase(1.0F, most[0], most[1], GLASS_FLOOR, tipped);
             state.mobScale = inCase * Math.min(1.0F, pedestal.scale());
-            state.lift = caseMiddle(most[1] * state.mobScale) - MOB_FLOOR;
+            state.lift = fit.buried() ? GLASS_TOP - MOB_FLOOR : caseMiddle(most[1] * state.mobScale) - MOB_FLOOR;
         }
         return shown;
     }
@@ -416,9 +420,15 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
     }
 
     static float fitScale(Entity mob) {
-        Fit fit = fit(mob);
+        return baseScale(mob, fit(mob));
+    }
+
+    private static float baseScale(Entity mob, Fit fit) {
         // Scale is limited by whichever is tighter: horizontal reach or height.
-        return Math.min(1.0F, Math.min(MOB_REACH * reachRoom(mob) / Math.max(0.05F, fit.reach()), MOB_HEIGHT / fit.tall()));
+        float scale = Math.min(1.0F, Math.min(MOB_REACH * reachRoom(fit) / Math.max(0.05F, fit.reach()), MOB_HEIGHT * heightRoom(fit) / fit.tall()));
+        MobDisplayData.Display display = MobDisplays.of(mob.getType());
+        if (display == null) return scale;
+        return (display.size() > 0.0F ? display.size() : scale) * display.scale();
     }
 
     static float slotScale(Entity mob) {
@@ -441,11 +451,20 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     private static final float DRAGON_FLAPS_PER_TICK = 0.05F;
 
-    private static float reachRoom(Entity mob) {
-        return mob instanceof EnderDragon ? DRAGON_ROOM : 1.0F;
+    private static float reachRoom(Fit fit) {
+        if (fit.reach() > fit.tall()) return fit.rendered() ? WIDE_ROOM : WIDE_PARTS_ROOM;
+        return big(fit) ? BIG_REACH : 1.0F;
     }
 
-    private static final float DRAGON_ROOM = 1.4F;
+    private static float heightRoom(Fit fit) {
+        return big(fit) ? BIG_HEIGHT : 1.0F;
+    }
+
+    private static boolean big(Fit fit) {
+        return Math.max(fit.tall(), 2.0F * fit.reach()) > BIG_SIZE;
+    }
+
+    private static final float WIDE_ROOM = 2.4F, WIDE_PARTS_ROOM = 3.0F, BIG_REACH = 2.6F, BIG_HEIGHT = 1.5F, BIG_SIZE = 3.0F;
 
     static float modelTurn(EntityRenderState shown) {
         return shown instanceof EnderDragonRenderState ? 180.0F : 0.0F;
@@ -461,12 +480,21 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
 
     private static final float WITHER_SINK = 0.5F;
 
+    private static float floorAt(State state, float mobY, float mobScale) {
+        // The lens surface in the mob's own units, so a buried mob is cut there wherever it's raised to.
+        return (GLASS_TOP - mobY) / Math.max(1.0E-4F, mobScale) - state.mobLift + state.mobSink - state.lieY;
+    }
+
+    static boolean buried(Entity mob) {
+        return fit(mob).buried();
+    }
+
     static float raise(Entity mob, EntityRenderState shown) {
         Fit fit = fit(mob);
         return fit.rendered() ? fit.lift() : fit.lift() - sink(shown);
     }
 
-    record Fit(float reach, float lift, float height, float tall, float middle, boolean rendered) {}
+    record Fit(float reach, float lift, float height, float tall, float middle, boolean rendered, boolean buried) {}
 
     static Fit fit(Entity mob) {
         float tall = Math.max(0.1F, mob.getBbHeight());
@@ -486,9 +514,12 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         if (drawn != null) {
             float drawnTall = drawn[2] - drawn[1];
             boolean overflows = drawn[0] > reach * OVERFLOW || drawnTall > Math.max(tall, lift + height) * OVERFLOW;
-            if (model == null || overflows) return new Fit(drawn[0], -drawn[1], drawn[2], drawnTall, drawnTall / 2.0F, true);
+            if (model == null || overflows) {
+                if (-drawn[1] > drawn[2] && drawn[2] > 0.0F) return new Fit(Math.max(0.05F, drawn[3]), -drawn[4], drawn[2], drawn[2] - drawn[4], (drawn[2] - drawn[4]) / 2.0F, true, true);
+                return new Fit(drawn[0], -drawn[1], drawn[2], drawnTall, drawnTall / 2.0F, true, false);
+            }
         }
-        return new Fit(reach, lift, height, tall, lift + tall / 2.0F, false);
+        return new Fit(reach, lift, height, tall, lift + tall / 2.0F, false, false);
     }
 
     private static final float OVERFLOW = 2.25F;
@@ -500,13 +531,13 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         if (drawn == null) {
             float[] measured = RenderedBounds.measure(mob);
             drawn = measured == null || mob.getBbHeight() <= 0.0F ? UNRENDERED
-                    : new float[] {measured[0], measured[1], measured[2], mob.getBbHeight()};
+                    : new float[] {measured[0], measured[1], measured[2], mob.getBbHeight(), measured[3], measured[4]};
             RENDERED_SIZES.put(mob.getType(), drawn);
         }
         if (drawn == UNRENDERED) return null;
         // Rescale the cached drawn size to this mob's real hitbox height.
         float scale = mob.getBbHeight() > 0.0F ? mob.getBbHeight() / drawn[3] : 1.0F;
-        return new float[] {drawn[0] * scale, drawn[1] * scale, drawn[2] * scale};
+        return new float[] {drawn[0] * scale, drawn[1] * scale, drawn[2] * scale, drawn[4] * scale, drawn[5] * scale};
     }
 
     private static float drawScale(Entity mob, float[] model) {
@@ -644,6 +675,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         public int glassTint = 0xFFFFFFFF;
         public float mobScale, mobReach;
         public float mobLift, mobSink;
+        public boolean mobBuried;
         public float size = 1.0F, iconScale = ICON_SCALE, iconY = ICON_Y, panelBottom;
         public float textScale = 1.0F;
         public float lift;
@@ -1029,7 +1061,8 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
         if (state.mob != null) {
             poseStack.pushPose();
             float mobScale = (state.rests ? Mth.lerp(state.rise, state.restMobScale, state.mobScale) : state.mobScale * state.rise) * state.lieScale;
-            float mobY = state.rests ? Mth.lerp(state.rise, REST_FLOOR, MOB_FLOOR + state.lift + state.bob) : MOB_FLOOR + state.lift + state.bob - (1.0F - state.rise) * RISE_DROP;
+            float mobBob = state.mobBuried ? 0.0F : state.bob;
+            float mobY = state.rests ? Mth.lerp(state.rise, REST_FLOOR, MOB_FLOOR + state.lift + mobBob) : MOB_FLOOR + state.lift + mobBob - (1.0F - state.rise) * RISE_DROP;
             poseStack.translate(0.5F, mobY, 0.5F);
             poseStack.mulPose(Axis.YP.rotationDegrees(state.turn));
             tilt(state, poseStack, (ICON_Y + state.middle - MOB_FLOOR) * state.rise);
@@ -1037,7 +1070,7 @@ public final class PedestalRenderer implements BlockEntityRenderer<PedestalBlock
             poseStack.scale(mobScale, mobScale, mobScale);
             poseStack.translate(0.0F, state.mobLift - state.mobSink, 0.0F);
             poseStack.translate(0.0F, state.lieY, state.lieZ);
-            if (!DrawnMobs.submit(state.mob, camera, poseStack, collector) && state.mob.entityType != null) UNDRAWABLE.add(state.mob.entityType);
+            if (!DrawnMobs.submit(state.mob, camera, poseStack, collector, state.mobBuried, floorAt(state, mobY, mobScale)) && state.mob.entityType != null) UNDRAWABLE.add(state.mob.entityType);
             poseStack.popPose();
             for (int place = 0; place < state.podium.length; place++) {
                 EntityRenderState runnerUp = state.podium[place];
