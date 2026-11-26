@@ -3,6 +3,7 @@ This file is for listing all the changes to this project
 
 ## v0.4.1 (unreleased)
 ### ✨ New Features
+- **Mob display sizes:** resource packs can set how big each mob shows on a pedestal and on its trophy item, with a size multiplier, a fixed size and a height offset per mob. KubeJS and KubeGroovy client scripts can set them too, with `TrophyPedestalsEvents.mobDisplaySizes`.
 - **Mob trophies from scripts:** KubeJS and KubeGroovy scripts can make mob trophy items with `TrophyPedestals.mobTrophy(...)` and add them to the mob trophies creative tab and JEI with `TrophyPedestals.addMobTrophy(...)`.
 - **Mob trophies search:** the mob trophies creative tab has a search bar. Type a mob's name to narrow the list, modded mobs included.
 

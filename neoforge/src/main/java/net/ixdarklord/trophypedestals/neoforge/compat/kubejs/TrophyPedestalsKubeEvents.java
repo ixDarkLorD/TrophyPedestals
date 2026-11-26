@@ -2,17 +2,23 @@ package net.ixdarklord.trophypedestals.neoforge.compat.kubejs;
 
 import dev.latvian.mods.kubejs.event.EventGroup;
 import dev.latvian.mods.kubejs.event.EventHandler;
+import dev.latvian.mods.kubejs.event.KubeEvent;
 import dev.latvian.mods.kubejs.player.KubePlayerEvent;
 import net.ixdarklord.trophypedestals.api.TrophyEvents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.Map;
+
 public final class TrophyPedestalsKubeEvents {
     public static final EventGroup GROUP = EventGroup.of("TrophyPedestalsEvents");
     public static final EventHandler MOB_TROPHY_DROP = GROUP.server("mobTrophyDrop", () -> MobTrophyDropKubeEvent.class).hasResult();
     public static final EventHandler COLLECTED = GROUP.server("collected", () -> CollectedKubeEvent.class);
+    public static final EventHandler MOB_DISPLAY_SIZES = GROUP.client("mobDisplaySizes", () -> MobDisplaySizesKubeEvent.class);
 
     private TrophyPedestalsKubeEvents() {}
 
@@ -24,6 +30,9 @@ public final class TrophyPedestalsKubeEvents {
         });
         TrophyEvents.COLLECTED.register((player, mob, gilded, first) -> {
             if (COLLECTED.hasListeners()) COLLECTED.post(new CollectedKubeEvent(player, mob, gilded, first));
+        });
+        TrophyEvents.MOB_DISPLAY_SIZES.register(sizes -> {
+            if (MOB_DISPLAY_SIZES.hasListeners()) MOB_DISPLAY_SIZES.post(new MobDisplaySizesKubeEvent(sizes));
         });
     }
 
@@ -79,6 +88,25 @@ public final class TrophyPedestalsKubeEvents {
 
         public boolean isFirst() {
             return first;
+        }
+    }
+
+    public static final class MobDisplaySizesKubeEvent implements KubeEvent {
+        private final TrophyEvents.DisplaySizes sizes;
+
+        MobDisplaySizesKubeEvent(TrophyEvents.DisplaySizes sizes) {
+            this.sizes = sizes;
+        }
+
+        public void set(String mob, Map<String, Object> display) {
+            Identifier id = Identifier.tryParse(mob);
+            EntityType<?> type = id == null ? null : BuiltInRegistries.ENTITY_TYPE.getOptional(id).orElse(null);
+            if (type == null) return;
+            sizes.set(type, number(display, "scale", 1.0F), number(display, "size", 0.0F), number(display, "offset", 0.0F));
+        }
+
+        private static float number(Map<String, Object> display, String key, float fallback) {
+            return display != null && display.get(key) instanceof Number value ? value.floatValue() : fallback;
         }
     }
 }

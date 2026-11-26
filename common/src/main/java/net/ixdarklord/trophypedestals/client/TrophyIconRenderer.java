@@ -150,7 +150,7 @@ public final class TrophyIconRenderer implements SpecialModelRenderer<TrophyIcon
             }
             poseStack.scale(scale, scale, scale);
             poseStack.translate(0.0F, raise, 0.0F);
-            boolean drawn = DrawnMobs.submit(shown, CAMERA, poseStack, collector);
+            boolean drawn = DrawnMobs.submit(shown, CAMERA, poseStack, collector, PedestalRenderer.buried(mob), -raise);
             poseStack.popPose();
             if (!drawn) {
                 UNDRAWABLE.add(type);

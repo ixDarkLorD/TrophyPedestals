@@ -1,0 +1,11 @@
+{
+  "minecraft:ender_dragon": {
+    "scale": 0.9
+  },
+  "minecraft:wither": {
+    "scale": 0.9
+  },
+  "minecraft:ghast": {
+    "scale": 0.7
+  }
+}
