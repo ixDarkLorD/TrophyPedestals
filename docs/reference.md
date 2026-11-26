@@ -331,8 +331,34 @@ names the mob:
 
 It's recorded as slain now, and items other than pedestals are left as they are. From a function or command block,
 `/trophypedestals mob_trophy <players> <entity> [pedestal] [rarity]` gives each player one, slain by them, ranked by the
-mob's toughness unless a rank is named. Mods use `TrophyPedestals.createMob` (from a living mob, look included, or a
-kind of mob and a look) and `mobRecord`; `rarity` reads either kind of trophy's rank.
+mob's toughness unless a rank is named. Mods use `TrophyPedestals.createMob` (from a living mob, look included, a kind
+of mob and a look, or just a kind of mob, of its usual rank) and `mobRecord`; `rarity` reads either kind of trophy's
+rank, `mobRarity(type)` gives a kind of mob's usual rank, and `canBeTrophy(type)` says whether it can be on a trophy at
+all. `addToCreativeTab(trophy)`, called at startup on both sides, adds a trophy to the mob trophies creative tab and JEI.
+
+### Mob display sizes (resource packs)
+
+Each mob is sized to fit its pedestal on its own. A resource pack can change how big a mob shows, on an open pedestal and
+on its trophy item, with a JSON file in `assets/<namespace>/trophypedestals/mob_displays/` (any name ending in
+`.json`). Each entry is keyed by the mob's id:
+
+- `scale`: a multiplier on the size it would have (`1.0` keeps it, `1.2` is a fifth bigger).
+- `size`: a fixed scale instead (`1.0` is the mob's real size); `scale` still multiplies it.
+- `offset`: how far to raise it on a pedestal, in blocks (negative lowers it).
+
+```json
+{
+  "minecraft:spider": {"scale": 1.2},
+  "minecraft:warden": {"size": 0.3, "offset": 0.05},
+  "examplemod:big_boss": {"scale": 0.8}
+}
+```
+
+Files are read from every enabled resource pack, and a pack higher in the list wins for a mob both set. Trophy
+Pedestals' own defaults are in `assets/trophypedestals/trophypedestals/mob_displays/defaults.json`, so a pack can
+override them too. Mobs that aren't installed are skipped. Changes load with the packs (F3+T). A pedestal's own Size
+and Height settings still apply on top, and a glass case still fits the mob inside it. Scripts and mods can set them
+too, over the packs' (see [KubeJS](#kubejs-neoforge-and-forge-up-to-2612)).
 
 ### Trophy kinds (for mods)
 
@@ -450,20 +476,37 @@ It only takes away: a pedestal whose owner turned its flourishes or sounds off s
 
 ## KubeJS (NeoForge and Forge, up to 26.1.2)
 
-Server scripts get a `TrophyPedestals` binding:
+Scripts get a `TrophyPedestals` binding:
 
 | Call | Does |
 |---|---|
 | `TrophyPedestals.isPedestal(level, pos)` | whether there's a pedestal there |
 | `TrophyPedestals.pedestalSettings(level, pos)`, `setPedestal(level, pos, {...})` | a pedestal's settings, by name: `textMode`, `scale`, `height`, `yaw`, `pitch`, `roll`, `spins`, `animates`, `effects`, `effectsMode` (`always`, `looking` or `hidden`), `sounds`, `textHeight`, `textScale`, `crown`, `light`, `redstone`, `statue`, `statuePose`, `animation` (and `locked`) |
 | `TrophyPedestals.forcePedestal(level, pos, {...}, message)`, `lockPedestal(level, pos[, message])`, `unlockPedestal(level, pos)` | set and lock its settings against every player, with a refusal message (or `null`, silently) |
+| `TrophyPedestals.mobTrophy(entity[, rarity[, pedestal[, slayer]]])` | a mob trophy item: `mobTrophy('minecraft:zombie')` gives one of its usual rarity on the default pedestal; name a rarity (`'epic'` or `'trophypedestals:epic'`), a pedestal (`'trophypedestals:deepslate_pedestal'`) and a slayer to choose them. Empty if the mob can't be a trophy |
+| `TrophyPedestals.addMobTrophy(trophy)` | adds a trophy to the mob trophies creative tab, after the mobs' own, and so to JEI; call it from a startup script, and each trophy is added once |
 
-And `TrophyPedestalsEvents`, both on the server:
+The binding is there in startup, client and server scripts. A startup script can add trophies to the creative tab:
+
+```js
+// startup_scripts
+TrophyPedestals.addMobTrophy(TrophyPedestals.mobTrophy('minecraft:warden', 'legendary', 'trophypedestals:deepslate_pedestal'))
+```
+
+and a server script can hand them out:
+
+```js
+// server_scripts
+PlayerEvents.loggedIn(event => event.player.give(TrophyPedestals.mobTrophy('minecraft:zombie', 'epic')))
+```
+
+And `TrophyPedestalsEvents`, the first two on the server and `mobDisplaySizes` in client scripts:
 
 | Event | Fires | Has |
 |---|---|---|
 | `TrophyPedestalsEvents.mobTrophyDrop(event => ...)` | a mob trophy is about to drop for the player who killed the mob | `event.player`, `event.mob`, `event.trophy` (set it to drop another); `event.cancel()` drops nothing and records nothing in their ledger |
 | `TrophyPedestalsEvents.collected(event => ...)` | a mob trophy was recorded in a player's Mob Trophies Ledger | `event.player`, `event.mobType`, `event.gilded`, `event.first` (the first of that mob they've had) |
+| `TrophyPedestalsEvents.mobDisplaySizes(event => ...)` | the mob display sizes load on the client, at their first use and after every resource reload (F3+T) | `event.set(mob, {scale, size, offset})`, the same fields as a [resource pack's](#mob-display-sizes-resource-packs) file; a script's setting wins over the packs' |
 
 ```js
 TrophyPedestalsEvents.mobTrophyDrop(event => {
@@ -471,5 +514,13 @@ TrophyPedestalsEvents.mobTrophyDrop(event => {
 })
 ```
 
-Mods on either loader get the same two events from `net.ixdarklord.trophypedestals.api.TrophyEvents` (`MOB_TROPHY_DROP`,
-`COLLECTED`).
+```js
+// client_scripts
+TrophyPedestalsEvents.mobDisplaySizes(event => {
+  event.set('minecraft:spider', {scale: 1.2})
+  event.set('examplemod:big_boss', {size: 0.05, offset: 0.1})
+})
+```
+
+Mods on either loader get the same events from `net.ixdarklord.trophypedestals.api.TrophyEvents` (`MOB_TROPHY_DROP`,
+`COLLECTED` and, on the client, `MOB_DISPLAY_SIZES`).
