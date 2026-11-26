@@ -6,6 +6,10 @@
   "mixins": [
     "EnchantmentHelperMixin"
   ],
+  "client": [
+    "client.AbstractContainerScreenAccessor",
+    "client.CreativeModeInventoryScreenMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }
