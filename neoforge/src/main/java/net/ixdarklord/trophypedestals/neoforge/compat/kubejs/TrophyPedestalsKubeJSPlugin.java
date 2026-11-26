@@ -3,7 +3,6 @@ package net.ixdarklord.trophypedestals.neoforge.compat.kubejs;
 import dev.latvian.mods.kubejs.event.EventGroupRegistry;
 import dev.latvian.mods.kubejs.plugin.KubeJSPlugin;
 import dev.latvian.mods.kubejs.script.BindingRegistry;
-import dev.latvian.mods.kubejs.script.ScriptType;
 
 public final class TrophyPedestalsKubeJSPlugin implements KubeJSPlugin {
     @Override
@@ -18,6 +17,7 @@ public final class TrophyPedestalsKubeJSPlugin implements KubeJSPlugin {
 
     @Override
     public void registerBindings(BindingRegistry bindings) {
-        if (bindings.type() == ScriptType.SERVER) bindings.add("TrophyPedestals", TrophyPedestalsBinding.INSTANCE);
+        // every script type: startup scripts add trophies to the creative tab, server scripts change pedestals
+        bindings.add("TrophyPedestals", TrophyPedestalsBinding.INSTANCE);
     }
 }

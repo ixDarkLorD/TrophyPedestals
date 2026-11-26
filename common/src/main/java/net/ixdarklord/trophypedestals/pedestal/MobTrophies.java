@@ -118,6 +118,23 @@ public final class MobTrophies {
 
     public static void creativeTrophies(FeatureFlagSet features, Consumer<ItemStack> output) {
         for (EntityType<?> type : collectable(features)) output.accept(trophy(Pedestals.DEFAULT.get(), type, "", 0L, rarity(type)));
+        for (ItemStack added : ADDED_TROPHIES) output.accept(added.copy());
+    }
+
+    private static final List<ItemStack> ADDED_TROPHIES = new ArrayList<>();
+
+    /**
+     * Adds a trophy to the mob trophies creative tab, after the mobs' own, and so to JEI: a script's or a mod's (a mob
+     * that doesn't drop one, or a special one of a mob that does). Call it at startup, on both sides; the same trophy is
+     * only added once.
+     *
+     * @return whether it was added: false if it isn't a trophy, or is already there
+     */
+    public static boolean addCreativeTrophy(ItemStack trophy) {
+        if (trophy.isEmpty() || !Pedestals.isTrophy(trophy)) return false;
+        for (ItemStack added : ADDED_TROPHIES) if (ItemStack.isSameItemSameComponents(added, trophy)) return false;
+        ADDED_TROPHIES.add(trophy.copy());
+        return true;
     }
 
     public static List<EntityType<?>> collectable(FeatureFlagSet features) {
@@ -134,6 +151,14 @@ public final class MobTrophies {
         }
         mobs.sort(Comparator.comparingInt((Ranked mob) -> mob.rarity().rank()).thenComparing(Ranked::name, String.CASE_INSENSITIVE_ORDER));
         return mobs.stream().<EntityType<?>>map(Ranked::type).toList();
+    }
+
+    /**
+     * Whether this kind of mob can be shown on a trophy: a living mob (one with attributes), not a player or armor stand,
+     * nor one tagged {@code trophypedestals:no_mob_trophy}. A mob that doesn't drop trophies can still be on one.
+     */
+    public static boolean canBeTrophy(EntityType<?> type) {
+        return type != EntityType.PLAYER && type != EntityType.ARMOR_STAND && !type.builtInRegistryHolder().is(NONE) && DefaultAttributes.hasSupplier(type);
     }
 
     public static boolean droppable(LivingEntity entity) {
