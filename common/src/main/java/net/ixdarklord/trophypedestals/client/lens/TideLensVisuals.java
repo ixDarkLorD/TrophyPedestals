@@ -26,6 +26,12 @@ final class TideLensVisuals extends LensVisuals {
         submitTideFish(state, glow, middle);
     }
 
+    @Override
+    protected void light(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
+        // the sea's light through the lens, rippling
+        lensLight(state, glow, up, color, 0.7F + 0.15F * Mth.sin(state.time / 13.0F));
+    }
+
     private static void submitKelp(State state, PedestalLight.Glow glow) {
         for (int frond = 0; frond < KELP_SPOTS.length; frond++) {
             float[] spot = KELP_SPOTS[frond];

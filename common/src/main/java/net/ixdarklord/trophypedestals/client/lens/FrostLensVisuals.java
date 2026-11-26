@@ -26,6 +26,13 @@ final class FrostLensVisuals extends LensVisuals {
         submitFrostGusts(state, glow, lift);
     }
 
+    @Override
+    protected void light(State state, PedestalLight.Glow glow, float up, float lift, float middle, int color) {
+        // a cold light off the ice, breathing with the mist
+        float breath = 0.5F + 0.5F * Mth.sin(state.time / 30.0F);
+        lensLight(state, glow, up, color, 0.6F + 0.2F * breath);
+    }
+
     private static void submitSnowCap(State state, PedestalLight.Glow glow) {
         int color = ARGB.color((int) (255 * state.rise), 0xFFFFFF);
         glow.flat(PedestalLight.Sprite.FROST_WELL, 14.06F / 16.0F, 4.0F / 16.0F, 0.0F, color);
