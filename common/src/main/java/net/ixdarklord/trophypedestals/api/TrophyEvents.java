@@ -8,7 +8,7 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * Trophy Pedestals' events, for mods (on either loader) and, on Forge, KubeJS scripts ({@code TrophyPedestalsEvents}).
- * Both fire on the server.
+ * The first two fire on the server, {@link #MOB_DISPLAY_SIZES} on the client.
  * <pre>{@code
  * TrophyEvents.MOB_TROPHY_DROP.register(drop -> {
  *     if (drop.mob().getType() == EntityType.PIG) drop.cancel();
@@ -26,6 +26,12 @@ public final class TrophyEvents {
      * whether it's the first of that mob they've had (or, for a gilded one, the first gilded one).
      */
     public static final EventInvoker<Collected> COLLECTED = EventInvoker.create(Collected.class);
+
+    /**
+     * Mob display sizes are loading on the client, at their first use and after every resource reload, once resource
+     * packs' {@code trophypedestals/mob_displays} files are read: a listener can set a mob's, which wins over the packs'.
+     */
+    public static final EventInvoker<MobDisplaySizes> MOB_DISPLAY_SIZES = EventInvoker.create(MobDisplaySizes.class);
 
     private TrophyEvents() {}
 
@@ -80,5 +86,21 @@ public final class TrophyEvents {
         public boolean cancelled() {
             return cancelled || trophy.isEmpty();
         }
+    }
+
+    @FunctionalInterface
+    public interface MobDisplaySizes {
+        void onLoad(DisplaySizes sizes);
+    }
+
+    /** The mob display sizes being loaded. */
+    @FunctionalInterface
+    public interface DisplaySizes {
+        /**
+         * Sets how big a mob shows on an open pedestal and on its trophy item: {@code scale} multiplies the size it would
+         * have, {@code size} (when above 0) is a fixed scale used instead, and {@code offset} raises it on a pedestal, in
+         * blocks. {@code set(mob, 1, 0, 0)} gives it back its own size.
+         */
+        void set(EntityType<?> mob, float scale, float size, float offset);
     }
 }

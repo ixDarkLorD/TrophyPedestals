@@ -9,6 +9,7 @@ import net.ixdarklord.trophypedestals.compat.render.SubmitNodeCollector;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import org.joml.Matrix4f;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,11 +28,18 @@ public final class DrawnMobs {
     }
 
     public static boolean submit(EntityRenderState mob, CameraRenderState camera, PoseStack poseStack, SubmitNodeCollector collector) {
+        return submit(mob, camera, poseStack, collector, false, 0.0F);
+    }
+
+    public static boolean submit(EntityRenderState mob, CameraRenderState camera, PoseStack poseStack, SubmitNodeCollector collector, boolean aboveFloor, float floorY) {
         while (!OWN_POSE.clear()) OWN_POSE.popPose();
         OWN_POSE.last().pose().set(poseStack.last().pose());
         OWN_POSE.last().normal().set(poseStack.last().normal());
         try {
-            EntityRenderStates.submit(mob, camera, 0.0, 0.0, 0.0, OWN_POSE, collector);
+            FloorClip clip = aboveFloor ? new FloorClip(collector.buffers(), new Matrix4f(OWN_POSE.last().pose()).translate(0.0F, floorY, 0.0F)) : null;
+            SubmitNodeCollector target = clip != null ? new SubmitNodeCollector(clip) : collector;
+            EntityRenderStates.submit(mob, camera, 0.0, 0.0, 0.0, OWN_POSE, target);
+            if (clip != null) target.flush();
             return true;
         } catch (RuntimeException | LinkageError e) {
             EntityType<?> type = mob.entity.getType();
